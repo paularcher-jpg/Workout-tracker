@@ -55,12 +55,19 @@ export function startWorkout({ routineId = null, name = '' } = {}) {
         const ex = get('exercises', item.exerciseId);
         if (!ex) continue;
         const entry = newEntry(item.exerciseId, item.restSec ?? ex.restSec);
+        // what the plan asks for, shown as guidance on the set rows
+        entry.target = {
+          sets: Number(item.sets) || null,
+          reps: item.reps === '' || item.reps == null ? null : String(item.reps),
+          notes: item.notes || '',
+        };
         const count = Math.max(1, Number(item.sets) || 3);
         const last = lastPerformance(item.exerciseId);
         for (let i = 0; i < count; i++) {
           const prior = last?.sets?.filter((x) => !x.warmup)[i];
           const set = blankSet(prior);
-          if (item.reps && set.reps === '') set.reps = item.reps;
+          // only prefill a plain number; a range like "8-12" stays guidance
+          if (set.reps === '' && /^\d+$/.test(String(item.reps ?? ''))) set.reps = String(item.reps);
           entry.sets.push(set);
         }
         workout.entries.push(entry);

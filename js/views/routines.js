@@ -11,13 +11,19 @@ export function destroy() {}
 
 export function render(root, { refresh, navigate }) {
   clear(root);
-  const routines = list('routines').sort((a, b) => a.name.localeCompare(b.name));
   const wrap = h('div', { class: 'view' });
-
   wrap.appendChild(h('div', { class: 'hero' },
     h('h1', {}, 'Routines'),
     h('p', { class: 'muted' }, 'Templates for the sessions you repeat.'),
   ));
+  wrap.appendChild(libraryNode({ refresh, navigate }));
+  root.appendChild(wrap);
+}
+
+/** The routine library: create button plus a card per routine. */
+export function libraryNode({ refresh, navigate }) {
+  const routines = list('routines').sort((a, b) => a.name.localeCompare(b.name));
+  const wrap = h('div', { class: 'stack' });
 
   wrap.appendChild(h('button', {
     class: 'btn btn-primary btn-block',
@@ -59,7 +65,7 @@ export function render(root, { refresh, navigate }) {
     ));
   }
 
-  root.appendChild(wrap);
+  return wrap;
 }
 
 function routineMenu(routine, refresh) {
@@ -92,7 +98,7 @@ function routineMenu(routine, refresh) {
   });
 }
 
-function editRoutine(routine, refresh) {
+export function editRoutine(routine, refresh) {
   const draft = routine
     ? { ...routine, items: (routine.items || []).map((i) => ({ ...i })) }
     : { id: uid(), name: '', items: [], lastUsedAt: 0 };

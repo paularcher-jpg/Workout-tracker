@@ -268,7 +268,7 @@ export function pickExercise({ title = 'Add exercise', onCreate } = {}) {
 
 const ICONS = {
   train: '<rect x="2" y="9.5" width="2.6" height="5" rx="1.1"/><rect x="5.2" y="7" width="3" height="10" rx="1.2"/><path d="M8.6 12h6.8"/><rect x="15.8" y="7" width="3" height="10" rx="1.2"/><rect x="19.4" y="9.5" width="2.6" height="5" rx="1.1"/>',
-  routines: '<circle cx="4.5" cy="6.5" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="17.5" r="1.4"/><path d="M9 6.5h11M9 12h11M9 17.5h11"/>',
+  plan: '<circle cx="4.5" cy="6.5" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="17.5" r="1.4"/><path d="M9 6.5h11M9 12h11M9 17.5h11"/>',
   history: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none"/>',
   progress: '<path d="M3 17.5l5.5-5.5 3.5 3.5L21 7"/><path d="M16 7h5v5"/>',
   settings: '<path d="M3 7.5h16M3 16.5h16"/><circle cx="9" cy="7.5" r="2.6"/><circle cx="15" cy="16.5" r="2.6"/>',

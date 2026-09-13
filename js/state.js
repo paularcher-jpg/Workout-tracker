@@ -112,6 +112,7 @@ export function emptyState() {
     },
     exercises: {},
     routines: {},
+    programs: {},  // scheduled plans: which routine falls on which day
     workouts: {},
     active: null, // in-progress session; local-only until finished
   };
@@ -136,6 +137,7 @@ function normalise(raw) {
     local: { ...base.local, ...(raw.local || {}) },
     exercises: raw.exercises || {},
     routines: raw.routines || {},
+    programs: raw.programs || {},
     workouts: raw.workouts || {},
     active: raw.active || null,
   };
@@ -274,6 +276,7 @@ export function mergeStates(local, remote) {
     local: local.local,
     exercises: {},
     routines: {},
+    programs: {},
     workouts: {},
     active: local.active,
   };
@@ -285,7 +288,7 @@ export function mergeStates(local, remote) {
     changed = true;
   }
 
-  for (const key of ['exercises', 'routines', 'workouts']) {
+  for (const key of ['exercises', 'routines', 'programs', 'workouts']) {
     const l = local[key] || {};
     const r = remote[key] || {};
     const ids = new Set([...Object.keys(l), ...Object.keys(r)]);
@@ -326,6 +329,7 @@ export function syncPayload() {
     settings: s.settings,
     exercises: s.exercises,
     routines: s.routines,
+    programs: s.programs,
     workouts: s.workouts,
   };
 }

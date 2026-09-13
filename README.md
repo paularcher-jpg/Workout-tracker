@@ -114,9 +114,48 @@ The same instructions are inside the app under
   being backgrounded or reloaded.
 - Beat your best estimated 1-rep max on an exercise and you get a PR flash.
 
-**Routines** are templates for the sessions you repeat — Push, Pull, Legs, or
-whatever you follow. Starting one pre-fills every exercise with the weights you
-used last time.
+**Plan** is your training schedule — which session falls on which day, laid out
+forward on a calendar. The Train tab then leads with today's session, so you
+open the app and press start.
+
+The fastest way to set one up is **Plan → Paste a plan**. Write (or paste) the
+plan as plain text and the app builds the routines and the schedule for you:
+
+```
+Monday - Push
+  Barbell Bench Press 4x8 rest 180
+  Incline Dumbbell Press 3x8-12
+  Lateral Raise 3x15 @60s
+Tuesday - Rest
+Wednesday: Pull
+  Deadlift 3x5 rest 240
+  Lat Pulldown 3x10
+Friday — Legs
+  Back Squat 5x5 rest 3min
+```
+
+The parser is deliberately forgiving:
+
+- Day headings take `-`, `:`, `–` or `—`, and full or short weekday names.
+  `Day 1` / `Day 2` also work, for rotating plans that ignore weekdays.
+- Rest days can be written out (`Tuesday - Rest`) or just left out.
+- Sets and reps as `4x8`, `3 x 12`, or a range like `3x8-12`.
+- Rest as `rest 180`, `@90s`, or `3min`. Anything missing falls back to your
+  default rest.
+- `Week 2` starts a new week, for blocks that progress. Weeks repeat in order:
+  one week repeats weekly, three weeks cycle every three.
+- Anything it can't read is reported before you commit, not silently dropped.
+
+It shows you what it understood — sessions, exercises, and any exercises it will
+add to your library — before anything is saved. Nothing is overwritten.
+
+You can also build a plan by hand, and edit the day-by-day grid afterwards under
+**Plan → Edit plan**.
+
+**Routines** are the underlying templates — Push, Pull, Legs, or whatever you
+follow. Starting one pre-fills every exercise with the weights you used last
+time. A rep range from your plan (`3×8–12`) shows as a target on the set rows
+rather than being typed into the reps box for you.
 
 **History** is every session you have logged, with sets, volume and duration.
 
@@ -167,10 +206,13 @@ framework. Open `index.html` through any static server and it runs.
 # serve locally
 npx http-server . -p 8080
 
-# unit tests (the sync merge rules)
-node --test tests/merge.test.mjs
+# unit tests (sync merge rules, schedule maths, the plan parser)
+node --test tests/merge.test.mjs tests/program.test.mjs tests/planparse.test.mjs
 
-# browser tests (33 checks at iPhone viewport, including full offline operation)
+# the schedule maths should hold in any timezone
+TZ=Europe/London node --test tests/program.test.mjs
+
+# browser tests (43 checks at iPhone viewport, including full offline operation)
 npm install --no-save playwright && npx playwright install chromium
 node tests/app.e2e.mjs
 ```
@@ -179,6 +221,8 @@ node tests/app.e2e.mjs
 | --- | --- |
 | `js/state.js` | Storage, the data model, and the merge rules |
 | `js/workout.js` | Active sessions, personal bests, progress maths |
+| `js/program.js` | Schedule maths — which routine falls on which date |
+| `js/planparse.js` | Reads a written plan into routines and a schedule |
 | `js/drive.js` | Google sign-in and the Drive sync cycle |
 | `js/timer.js` | Rest timer (deadline-based, survives backgrounding) |
 | `js/charts.js` | Hand-rolled SVG charts |
@@ -187,8 +231,8 @@ node tests/app.e2e.mjs
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `tools/make_icons.py` | Regenerates the app icons |
 
-Data is one JSON document. Collections (`exercises`, `routines`, `workouts`) are
-keyed by id, and every record has `updatedAt` plus a `deleted` flag. Anything
+Data is one JSON document. Collections (`exercises`, `routines`, `programs`,
+`workouts`) are keyed by id, and every record has `updatedAt` plus a `deleted` flag. Anything
 under `local` (your client ID, the Drive file id, the device id) stays on the
 device and is never written to Drive.
 

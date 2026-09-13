@@ -7,14 +7,14 @@ import * as Drive from './drive.js';
 import * as W from './workout.js';
 
 import * as train from './views/train.js';
-import * as routines from './views/routines.js';
+import * as plan from './views/plan.js';
 import * as history from './views/history.js';
 import * as progress from './views/progress.js';
 import * as settings from './views/settings.js';
 
 const VIEWS = {
   train: { view: train, label: 'Train' },
-  routines: { view: routines, label: 'Routines' },
+  plan: { view: plan, label: 'Plan' },
   history: { view: history, label: 'History' },
   progress: { view: progress, label: 'Progress' },
   settings: { view: settings, label: 'Settings' },

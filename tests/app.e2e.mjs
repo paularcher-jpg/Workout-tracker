@@ -172,7 +172,7 @@ await page.screenshot({ path: path.join(ROOT, 'tests', 'screenshot-progress.png'
 
 console.log('\n== routines ==');
 await step('create a routine', async () => {
-  await page.locator('.tab[data-tab="routines"]').click();
+  await page.locator('.tab[data-tab="plan"]').click();
   await page.getByRole('button', { name: '+ New routine' }).click();
   await page.waitForSelector('.sheet');
   await page.locator('.sheet .input').first().fill('Push day');
@@ -211,7 +211,7 @@ await step('units toggle to lb', async () => {
 
 console.log('\n== no horizontal overflow ==');
 await step('page does not scroll sideways', async () => {
-  for (const tab of ['train', 'routines', 'history', 'progress', 'settings']) {
+  for (const tab of ['train', 'plan', 'history', 'progress', 'settings']) {
     await page.locator(`.tab[data-tab="${tab}"]`).click();
     await page.waitForTimeout(120);
     const over = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
@@ -325,6 +325,93 @@ await step('sync badge reports offline rather than failing', async () => {
   if (!/offline|set up sync/i.test(txt)) throw new Error('badge says "' + txt + '"');
 });
 await ctx.setOffline(false);
+
+
+// ---- third pass: plans and schedules ----
+await ctx.close();
+({ context: ctx, page } = await newSession());
+
+const PLAN = `Monday - Push
+  Barbell Bench Press 4x8 rest 180
+  Incline Dumbbell Press 3x8-12
+  Lateral Raise 3x15 @60s
+Wednesday - Pull
+  Deadlift 3x5 rest 240
+  Lat Pulldown 3x10
+Friday - Legs
+  Back Squat 5x5 rest 3min
+  Zercher Squat 3x10`;
+
+console.log('\n== pasting a plan ==');
+await step('plan tab starts empty', async () => {
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.waitForSelector('.empty');
+});
+await step('paste sheet previews what was understood', async () => {
+  await page.getByRole('button', { name: 'Paste a plan' }).click();
+  await page.waitForSelector('.plan-input');
+  await page.locator('.plan-input').fill(PLAN);
+  await page.waitForSelector('.plan-ok');
+  const ok = await page.locator('.plan-ok').textContent();
+  if (!/1 week/.test(ok) || !/3 session/.test(ok) || !/7 exercises/.test(ok)) throw new Error(ok);
+});
+await step('exercises not in the library are flagged first', async () => {
+  const note = await page.locator('.plan-note').textContent();
+  if (!note.includes('Zercher')) throw new Error(note);
+});
+await step('a clean plan produces no warnings', async () => {
+  if (await page.locator('.plan-warn').count()) {
+    throw new Error(await page.locator('.plan-warn').first().textContent());
+  }
+});
+await step('importing builds routines and a schedule', async () => {
+  await page.getByRole('button', { name: 'Add this plan' }).click();
+  await page.waitForSelector('.sched-row', { timeout: 5000 });
+  const n = await page.locator('.card .routine-items').count();
+  if (n !== 3) throw new Error(`expected 3 routines, got ${n}`);
+});
+
+console.log('\n== schedule ==');
+await step('sessions land on the weekdays the plan named', async () => {
+  const rows = await page.locator('.sched-row').allInnerTexts();
+  const on = (day) => rows.filter((r) => r.startsWith(day));
+  if (!on('Mon').every((r) => r.includes('Push'))) throw new Error('Mon: ' + on('Mon').join(' | '));
+  if (!on('Wed').every((r) => r.includes('Pull'))) throw new Error('Wed: ' + on('Wed').join(' | '));
+  if (!on('Fri').every((r) => r.includes('Legs'))) throw new Error('Fri: ' + on('Fri').join(' | '));
+  if (!on('Tue').every((r) => r.includes('Rest'))) throw new Error('Tue: ' + on('Tue').join(' | '));
+});
+await step('the plan repeats into following weeks', async () => {
+  const rows = await page.locator('.sched-row').allInnerTexts();
+  if (rows.filter((r) => r.includes('Push')).length < 3) throw new Error('plan did not repeat');
+});
+await step('exactly one row is marked today', async () => {
+  const n = await page.locator('.sched-row.is-today').count();
+  if (n !== 1) throw new Error(`got ${n}`);
+});
+await step('train tab leads with today', async () => {
+  await page.locator('.tab[data-tab="train"]').click();
+  await page.waitForSelector('.card-today');
+  const t = await page.locator('.card-today').innerText();
+  if (!/Today/i.test(t)) throw new Error(t);
+  if (/Rest day/.test(t) && !/Next:/.test(t)) throw new Error('rest day did not name the next session: ' + t);
+});
+await step('rep ranges stay as targets and never enter the reps field', async () => {
+  const btn = page.locator('.card-today').getByRole('button', { name: /Start today/ });
+  if (await btn.count()) await btn.click();
+  else {
+    await page.locator('.tab[data-tab="plan"]').click();
+    await page.getByRole('button', { name: 'Start this routine' }).first().click();
+  }
+  await page.waitForSelector('.entry', { timeout: 5000 });
+  const targets = await page.locator('.entry-target').allInnerTexts();
+  if (!targets.length) throw new Error('no targets rendered');
+  const i = targets.findIndex((t) => t.includes('-'));
+  if (i >= 0) {
+    const reps = await page.locator('.entry').nth(i)
+      .locator('.set-row:not(.set-head) .set-input').nth(1).inputValue();
+    if (reps.includes('-')) throw new Error('range leaked into the numeric field: ' + reps);
+  }
+});
 
 
 console.log('\n== console errors ==');

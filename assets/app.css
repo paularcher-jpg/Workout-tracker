@@ -832,3 +832,76 @@ body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 5rem);
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+.entry-target {
+  font-size: 0.76rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------------- plan */
+
+.stack { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.card-today { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.today-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.sched { display: flex; flex-direction: column; }
+.sched-row {
+  display: grid;
+  grid-template-columns: 34px 56px 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+.sched-row:last-child { border-bottom: none; }
+.sched-day { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.sched-date { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.sched-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 550; }
+.sched-row.is-rest .sched-name { color: var(--muted); font-weight: 400; }
+.sched-row.is-today { background: var(--accent-soft); margin: 0 -0.35rem; padding-inline: 0.35rem; border-radius: 8px; }
+.sched-row.is-today .sched-day { color: var(--accent); }
+
+.week-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.week-head { display: flex; align-items: center; justify-content: space-between; }
+.week-row { display: grid; grid-template-columns: 40px 1fr; gap: 0.5rem; align-items: center; }
+.week-day { font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.plan-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 190px;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.plan-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem;
+}
+.plan-ok { font-weight: 650; font-size: 0.9rem; }
+.plan-note { font-size: 0.8rem; color: var(--accent); margin-top: 0.3rem; }
+.plan-warn { font-size: 0.8rem; color: var(--danger); }

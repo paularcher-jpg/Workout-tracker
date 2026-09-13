@@ -4,6 +4,8 @@
 import { h, clear, toast, pickExercise, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, units, emptyState } from '../ui.js';
 import { getState, list, get, addCustomExercise, commit } from '../state.js';
 import { MUSCLE_GROUPS } from '../exercises.js';
+import * as P from '../program.js';
+import { todayCard } from './plan.js';
 import * as W from '../workout.js';
 import * as Timer from '../timer.js';
 
@@ -27,6 +29,7 @@ function startView(refresh, navigate) {
   const routines = list('routines').sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0));
   const recent = W.workoutsSorted()[0];
   const stats = W.overallStats();
+  const program = P.activeProgram();
 
   const wrap = h('div', { class: 'view' });
 
@@ -38,13 +41,18 @@ function startView(refresh, navigate) {
         : 'Start your first session below.'),
   ));
 
+  // if a plan is scheduled, today's session leads
+  if (program) {
+    wrap.appendChild(todayCard(program, refresh, navigate));
+  }
+
   wrap.appendChild(h('button', {
-    class: 'btn btn-primary btn-lg btn-block',
+    class: `btn ${program ? 'btn-secondary' : 'btn-primary btn-lg'} btn-block`,
     type: 'button',
     onclick: () => { W.startWorkout(); refresh(); },
   }, 'Start empty workout'));
 
-  if (routines.length) {
+  if (routines.length && !program) {
     wrap.appendChild(h('div', { class: 'section-title' }, h('h2', {}, 'Start from a routine')));
     const grid = h('div', { class: 'routine-grid' });
     for (const r of routines) {
@@ -62,10 +70,10 @@ function startView(refresh, navigate) {
       ));
     }
     wrap.appendChild(grid);
-  } else {
+  } else if (!program) {
     wrap.appendChild(h('div', { class: 'note' },
-      h('p', {}, 'Tip: build a routine once and every session starts pre-filled with your exercises and last weights.'),
-      h('button', { class: 'btn btn-ghost', type: 'button', onclick: () => navigate('routines') }, 'Create a routine'),
+      h('p', {}, 'Tip: set up a plan and the app will tell you what to train each day, pre-filled with your last weights.'),
+      h('button', { class: 'btn btn-ghost', type: 'button', onclick: () => navigate('plan') }, 'Set up a plan'),
     ));
   }
 
@@ -258,10 +266,17 @@ function entryCard(entry, workout, refresh, drawTotals) {
   const prev = W.lastPerformance(entry.exerciseId);
   const card = h('section', { class: 'entry' });
 
+  const target = entry.target;
+  const targetText = target
+    ? [target.sets && target.reps ? `Target ${target.sets}×${target.reps}` : null, target.notes]
+      .filter(Boolean).join(' · ')
+    : '';
+
   card.appendChild(h('header', { class: 'entry-head' },
     h('div', {},
       h('h3', {}, name),
       h('p', { class: 'entry-sub' }, `${ex?.group || ''}${ex?.equipment ? ` · ${ex.equipment}` : ''}`),
+      targetText ? h('p', { class: 'entry-target' }, targetText) : null,
     ),
     h('button', {
       class: 'icon-btn',
