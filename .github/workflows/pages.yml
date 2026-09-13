@@ -26,11 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # enablement:true turns Pages on via the API if it isn't already, so
-      # there's no need to find the Pages screen in repository settings.
+      # Note: `enablement: true` is not usable here — creating a Pages site
+      # needs admin rights the default GITHUB_TOKEN does not have, so Pages
+      # must be switched on once in Settings -> Pages (see README).
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

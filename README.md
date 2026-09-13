@@ -26,11 +26,22 @@ This publishes the *code*, not your workouts. Your training data is never in
 this repository — it lives on your phone and in your Drive, and the app has no
 server to leak it to.
 
-Then just push to the default branch. The included workflow
-(`.github/workflows/pages.yml`) enables Pages itself the first time it runs
-(`enablement: true`), so there is nothing to configure by hand — handy on a
-phone, where the Pages settings screen is hard to reach. You can also run it
-from the **Actions** tab via **Run workflow**.
+Then switch Pages on once. The settings sidebar is hard to reach in the mobile
+GitHub UI, so go straight to the page:
+
+```
+https://github.com/<your-username>/<repo>/settings/pages
+```
+
+Under **Build and deployment → Source**, choose **GitHub Actions**.
+
+After that, every push to the default branch publishes the site via
+`.github/workflows/pages.yml`. You can also trigger it from the **Actions** tab
+with **Run workflow**.
+
+(The workflow cannot turn Pages on for you: `actions/configure-pages` has an
+`enablement` input, but creating a Pages site needs admin rights that the
+default `GITHUB_TOKEN` does not carry.)
 
 Your app will be at:
 
