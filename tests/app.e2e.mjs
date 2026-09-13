@@ -1,0 +1,335 @@
+// Browser tests. These drive a real Chromium at iPhone viewport size.
+//
+//   npm install --no-save playwright && npx playwright install chromium
+//   node tests/app.e2e.mjs
+//
+// Set CHROMIUM_PATH to use a browser you already have installed.
+
+import { chromium } from 'playwright';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PORT = Number(process.env.PORT || 8099);
+const LAUNCH = process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {};
+
+const TYPES = {
+  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+  '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png',
+};
+
+function serve() {
+  const server = http.createServer((req, res) => {
+    let p = decodeURIComponent(req.url.split('?')[0]);
+    if (p.endsWith('/')) p += 'index.html';
+    const file = path.join(ROOT, p);
+    if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+      res.writeHead(404);
+      return res.end('not found');
+    }
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+    fs.createReadStream(file).pipe(res);
+  });
+  return new Promise((resolve) => server.listen(PORT, () => resolve(server)));
+}
+
+const problems = [];
+const step = async (name, fn) => {
+  try { await fn(); console.log('  PASS ' + name); }
+  catch (err) { console.log('  FAIL ' + name + ' -> ' + err.message); problems.push(name + ': ' + err.message); }
+};
+
+const server = await serve();
+const browser = await chromium.launch(LAUNCH);
+const BASE = `http://localhost:${PORT}/`;
+
+/** A clean install of the app: fresh storage, fresh service worker. */
+async function newSession() {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    colorScheme: 'dark',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+  });
+  const p = await context.newPage();
+  p.on('console', (m) => { if (m.type() === 'error') problems.push('console: ' + m.text()); });
+  p.on('pageerror', (e) => problems.push('pageerror: ' + e.message));
+  await p.goto(BASE, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.tabbar', { timeout: 10000 });
+  return { context, page: p };
+}
+
+let { context: ctx, page } = await newSession();
+
+console.log('\n== boot ==');
+await step('splash removed', async () => {
+  if (await page.locator('#splash').count()) throw new Error('splash still present');
+});
+await step('5 tabs rendered', async () => {
+  const n = await page.locator('.tab').count();
+  if (n !== 5) throw new Error(`got ${n} tabs`);
+});
+
+console.log('\n== logging a workout ==');
+await step('start empty workout', async () => {
+  await page.getByRole('button', { name: 'Start empty workout' }).click();
+  await page.waitForSelector('.session-head');
+});
+await step('add exercise via picker', async () => {
+  await page.getByRole('button', { name: '+ Add exercise' }).click();
+  await page.waitForSelector('.picker-search');
+  await page.locator('.picker-search').fill('bench');
+  await page.locator('.picker-item').first().click();
+  await page.waitForSelector('.entry');
+});
+await step('exercise card shows sets', async () => {
+  const rows = await page.locator('.set-row:not(.set-head)').count();
+  if (rows < 1) throw new Error('no set rows');
+});
+await step('log a set and start rest timer', async () => {
+  const row = page.locator('.set-row:not(.set-head)').first();
+  await row.locator('.set-input').nth(0).fill('80');
+  await row.locator('.set-input').nth(1).fill('8');
+  await row.locator('.set-check').click();
+  await page.waitForSelector('.restbar:not([hidden])', { timeout: 3000 });
+  const t = await page.locator('.rest-time').textContent();
+  if (!/^\d+:\d\d$/.test(t)) throw new Error('bad timer text ' + t);
+});
+await step('rest timer +15 works', async () => {
+  const before = await page.locator('.rest-time').textContent();
+  await page.getByRole('button', { name: 'Add 15 seconds' }).click();
+  const after = await page.locator('.rest-time').textContent();
+  const s = (v) => { const [m, x] = v.split(':').map(Number); return m * 60 + x; };
+  if (s(after) <= s(before)) throw new Error(`${before} -> ${after}`);
+});
+await step('remaining blank sets inherit the logged numbers', async () => {
+  const rows = page.locator('.set-row:not(.set-head)');
+  const w = await rows.nth(1).locator('.set-input').nth(0).inputValue();
+  const r = await rows.nth(1).locator('.set-input').nth(1).inputValue();
+  if (w !== '80' || r !== '8') throw new Error(`expected 80/8, got ${w}/${r}`);
+});
+await step('added set copies the last real numbers', async () => {
+  await page.getByRole('button', { name: '+ Add set' }).first().click();
+  const rows = page.locator('.set-row:not(.set-head)');
+  const n = await rows.count();
+  const v = await rows.nth(n - 1).locator('.set-input').nth(0).inputValue();
+  if (v !== '80') throw new Error('expected 80, got ' + v);
+});
+await step('log second set', async () => {
+  const row = page.locator('.set-row:not(.set-head)').nth(1);
+  await row.locator('.set-input').nth(1).fill('6');
+  await row.locator('.set-check').click();
+});
+await step('second exercise', async () => {
+  await page.getByRole('button', { name: '+ Add exercise' }).click();
+  await page.locator('.picker-search').fill('squat');
+  await page.locator('.picker-item').first().click();
+  const row = page.locator('.entry').nth(1).locator('.set-row:not(.set-head)').first();
+  await row.locator('.set-input').nth(0).fill('100');
+  await row.locator('.set-input').nth(1).fill('5');
+  await row.locator('.set-check').click();
+});
+
+console.log('\n== persistence ==');
+await step('active workout survives reload', async () => {
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.session-head', { timeout: 5000 });
+  const done = await page.locator('.set-check.on').count();
+  if (done !== 3) throw new Error(`expected 3 completed sets, got ${done}`);
+  const name = await page.locator('.session-title').inputValue();
+  if (!name) throw new Error('workout name lost on reload');
+});
+
+console.log('\n== finish + history ==');
+await step('finish workout', async () => {
+  await page.getByRole('button', { name: 'Finish' }).click();
+  await page.waitForSelector('.hero h1', { timeout: 3000 });
+});
+await step('history shows the session', async () => {
+  await page.locator('.tab[data-tab="history"]').click();
+  await page.waitForSelector('.card-history');
+  const n = await page.locator('.card-history').count();
+  if (n !== 1) throw new Error(`expected 1 workout, got ${n}`);
+});
+await step('history detail expands', async () => {
+  await page.getByRole('button', { name: 'Show details' }).click();
+  await page.waitForSelector('.history-line');
+  const txt = await page.locator('.history-detail').first().innerText();
+  if (!txt.includes('80')) throw new Error('missing set data: ' + txt);
+});
+
+console.log('\n== progress ==');
+await step('progress renders charts', async () => {
+  await page.locator('.tab[data-tab="progress"]').click();
+  await page.waitForSelector('.stat-grid');
+  const charts = await page.locator('.chart-svg').count();
+  if (charts < 2) throw new Error(`expected charts, got ${charts}`);
+});
+await page.screenshot({ path: path.join(ROOT, 'tests', 'screenshot-progress.png') });
+
+console.log('\n== routines ==');
+await step('create a routine', async () => {
+  await page.locator('.tab[data-tab="routines"]').click();
+  await page.getByRole('button', { name: '+ New routine' }).click();
+  await page.waitForSelector('.sheet');
+  await page.locator('.sheet .input').first().fill('Push day');
+  await page.getByRole('button', { name: '+ Add exercise' }).click();
+  await page.locator('.picker-search').fill('overhead press');
+  await page.locator('.picker-item').first().click();
+  await page.waitForSelector('.editor-item', { timeout: 3000 });
+  await page.getByRole('button', { name: 'Save routine' }).click();
+  await page.waitForSelector('.routine-items', { timeout: 3000 });
+});
+await step('start from routine prefills', async () => {
+  await page.getByRole('button', { name: 'Start this routine' }).click();
+  await page.waitForSelector('.session-head', { timeout: 3000 });
+  const rows = await page.locator('.set-row:not(.set-head)').count();
+  if (rows !== 3) throw new Error(`expected 3 prefilled sets, got ${rows}`);
+});
+
+console.log('\n== settings ==');
+await step('settings renders', async () => {
+  await page.locator('.tab[data-tab="settings"]').click();
+  await page.waitForSelector('.sync-status');
+});
+await step('drive help sheet opens', async () => {
+  await page.getByRole('button', { name: 'How do I get a client ID?' }).click();
+  await page.waitForSelector('.help');
+  const t = await page.locator('.code-block').textContent();
+  if (!t.includes('localhost:8099')) throw new Error('origin not shown: ' + t);
+  await page.locator('.sheet-close').click();
+});
+await step('units toggle to lb', async () => {
+  await page.locator('select.input').first().selectOption('lb');
+  await page.locator('.tab[data-tab="progress"]').click();
+  const txt = await page.locator('.stat-grid').innerText();
+  if (!txt.toLowerCase().includes('lb')) throw new Error('units not applied: ' + txt);
+});
+
+console.log('\n== no horizontal overflow ==');
+await step('page does not scroll sideways', async () => {
+  for (const tab of ['train', 'routines', 'history', 'progress', 'settings']) {
+    await page.locator(`.tab[data-tab="${tab}"]`).click();
+    await page.waitForTimeout(120);
+    const over = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    if (over) throw new Error('overflow on ' + tab);
+  }
+});
+
+
+// ---- second pass: a clean install, for history, backup and offline ----
+await ctx.close();
+({ context: ctx, page } = await newSession());
+
+const logWorkout = async (weight, reps) => {
+  await page.getByRole('button',{name:'Start empty workout'}).click();
+  await page.getByRole('button',{name:'+ Add exercise'}).click();
+  await page.locator('.picker-search').fill('deadlift');
+  await page.locator('.picker-item').first().click();
+  await page.waitForSelector('.entry');
+  const row=page.locator('.set-row:not(.set-head)').first();
+  await row.locator('.set-input').nth(0).fill(String(weight));
+  await row.locator('.set-input').nth(1).fill(String(reps));
+  await row.locator('.set-check').click();
+  await page.getByRole('button',{name:'Finish'}).click();
+  await page.waitForSelector('.hero h1',{timeout:3000});
+};
+
+
+console.log('\n== previous-session column ==');
+await step('session 1 logged', async () => { await logWorkout(140, 5); });
+await step('session 2 shows session 1 in the Previous column', async () => {
+  await page.getByRole('button',{name:'Start empty workout'}).click();
+  await page.getByRole('button',{name:'+ Add exercise'}).click();
+  await page.locator('.picker-search').fill('deadlift');
+  await page.locator('.picker-item').first().click();
+  await page.waitForSelector('.entry');
+  const prev = await page.locator('.set-prev').first().textContent();
+  if (prev.trim() !== '140×5') throw new Error('got "' + prev + '"');
+});
+await step('tapping Previous copies the numbers in', async () => {
+  await page.locator('.set-prev').first().click();
+  const w = await page.locator('.set-row:not(.set-head)').first().locator('.set-input').nth(0).inputValue();
+  if (w !== '140') throw new Error('got ' + w);
+});
+await step('beating it is flagged as a personal best', async () => {
+  const row = page.locator('.set-row:not(.set-head)').first();
+  await row.locator('.set-input').nth(0).fill('150');
+  await row.locator('.set-input').nth(1).fill('5');
+  await row.locator('.set-check').click();
+  await page.waitForSelector('.toast.show', { timeout: 2000 });
+  const t = await page.locator('#toast').textContent();
+  if (!t.includes('Personal best')) throw new Error('got "' + t + '"');
+});
+await step('finish second session', async () => {
+  await page.getByRole('button',{name:'Finish'}).click();
+  await page.waitForSelector('.hero h1',{timeout:3000});
+});
+
+console.log('\n== backup round-trip ==');
+let exported = null;
+await step('export produces a valid file', async () => {
+  await page.locator('.tab[data-tab="settings"]').click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 5000 }),
+    page.getByRole('button', { name: 'Export file' }).click(),
+  ]);
+  const p = await download.path();
+  exported = JSON.parse(fs.readFileSync(p, 'utf8'));
+  if (Object.keys(exported.workouts).length !== 2) throw new Error('expected 2 workouts in export');
+  if (!download.suggestedFilename().endsWith('.json')) throw new Error('bad filename');
+});
+await step('importing a file with a new workout merges it in', async () => {
+  const extra = JSON.parse(JSON.stringify(exported));
+  extra.workouts['imported-1'] = {
+    id: 'imported-1', startedAt: Date.now() - 86400000 * 5, finishedAt: Date.now() - 86400000 * 5 + 3600000,
+    name: 'Imported session', updatedAt: Date.now(), deleted: false,
+    entries: [{ id: 'e1', exerciseId: 'deadlift', restSec: 180, sets: [{ id: 's1', weight: 120, reps: 5, warmup: false }] }],
+  };
+  await page.evaluate(async (doc) => {
+    const m = await import('/js/state.js');
+    await m.importDocument(doc);
+  }, extra);
+  await page.locator('.tab[data-tab="history"]').click();
+  await page.waitForSelector('.card-history');
+  const n = await page.locator('.card-history').count();
+  if (n !== 3) throw new Error(`expected 3 workouts after import, got ${n}`);
+});
+
+console.log('\n== offline ==');
+await step('service worker takes control', async () => {
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, { timeout: 10000 });
+});
+await step('app loads and data is intact with the network down', async () => {
+  await ctx.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.tabbar', { timeout: 10000 });
+  await page.locator('.tab[data-tab="history"]').click();
+  await page.waitForSelector('.card-history', { timeout: 5000 });
+  const n = await page.locator('.card-history').count();
+  if (n !== 3) throw new Error(`expected 3 workouts offline, got ${n}`);
+});
+await step('you can still log a workout offline', async () => {
+  await page.locator('.tab[data-tab="train"]').click();
+  await logWorkout(160, 3);
+  await page.locator('.tab[data-tab="history"]').click();
+  await page.waitForTimeout(200);
+  const n = await page.locator('.card-history').count();
+  if (n !== 4) throw new Error(`expected 4 workouts, got ${n}`);
+});
+await step('sync badge reports offline rather than failing', async () => {
+  const txt = await page.locator('.sync-badge').textContent();
+  if (!/offline|set up sync/i.test(txt)) throw new Error('badge says "' + txt + '"');
+});
+await ctx.setOffline(false);
+
+
+console.log('\n== console errors ==');
+console.log(problems.length ? 'PROBLEMS:\n' + problems.map((p) => ' - ' + p).join('\n') : '  none');
+
+await browser.close();
+server.close();
+process.exit(problems.length ? 1 : 0);
