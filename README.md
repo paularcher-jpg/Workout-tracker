@@ -118,8 +118,36 @@ The same instructions are inside the app under
 forward on a calendar. The Train tab then leads with today's session, so you
 open the app and press start.
 
-The fastest way to set one up is **Plan → Paste a plan**. Write (or paste) the
-plan as plain text and the app builds the routines and the schedule for you:
+The fastest way to set one up is **Plan → Paste a plan**, which reads either a
+spreadsheet or plain text.
+
+### From a CSV
+
+Upload the spreadsheet your programme came in. The only column it insists on is
+**Exercise**; everything else is used if present:
+
+| Column | Used for |
+| --- | --- |
+| `Phase` / `Block` | Groups sessions that share a stretch of weeks |
+| `Weeks` | Which weeks that phase covers — `1-2`, `3-9`, `4` |
+| `Workout` / `Session` / `Day` | Splits rows into separate sessions |
+| `Order` | Exercise order within a session |
+| `Exercise` | The movement (required) |
+| `Sets`, `Reps` | `10`, `6-8`, `30s`, `10 each` all understood |
+| `Rest` | Seconds, or `2min` |
+| `RPE` | Shown as a target during the session |
+| `Notes` | Coaching cues, shown under the exercise |
+
+Phases are laid out across the weeks they cover, so a plan with
+`Phase 1 / weeks 1-2` and `Phase 2 / weeks 3-9` becomes a nine-week calendar.
+Each session becomes one routine, reused by every week that needs it, rather
+than a copy per week.
+
+Where a CSV names sessions but not weekdays, they are spread across the week —
+two sessions land on Monday and Thursday, three on Monday, Wednesday and
+Friday — and you can move them afterwards.
+
+### From plain text
 
 ```
 Monday - Push
@@ -129,33 +157,36 @@ Monday - Push
 Tuesday - Rest
 Wednesday: Pull
   Deadlift 3x5 rest 240
-  Lat Pulldown 3x10
-Friday — Legs
-  Back Squat 5x5 rest 3min
 ```
 
-The parser is deliberately forgiving:
-
-- Day headings take `-`, `:`, `–` or `—`, and full or short weekday names.
+- Day headings take `-`, `:`, `–` or `—`, with full or short weekday names.
   `Day 1` / `Day 2` also work, for rotating plans that ignore weekdays.
 - Rest days can be written out (`Tuesday - Rest`) or just left out.
 - Sets and reps as `4x8`, `3 x 12`, or a range like `3x8-12`.
-- Rest as `rest 180`, `@90s`, or `3min`. Anything missing falls back to your
-  default rest.
-- `Week 2` starts a new week, for blocks that progress. Weeks repeat in order:
-  one week repeats weekly, three weeks cycle every three.
-- Anything it can't read is reported before you commit, not silently dropped.
+- Rest as `rest 180`, `@90s`, or `3min`; `RPE 8` is picked up too.
+- `Week 2` starts a new week, for blocks that progress. Weeks repeat in order.
+- Anything it cannot read is reported rather than silently dropped.
 
-It shows you what it understood — sessions, exercises, and any exercises it will
-add to your library — before anything is saved. Nothing is overwritten.
+### Before anything is saved
+
+Either way you get a preview: the sessions found, how the weeks lay out, and
+every exercise that would be added to your library. Importing only ever adds —
+nothing existing is changed or removed.
+
+Exercise names are matched ignoring case, spaces and punctuation, so
+`Chest Supported Row` finds the library's `Chest-Supported Row`. Matching is
+deliberately strict beyond that: anything else becomes a new exercise under your
+plan's own name. Fuzzy matching would fold `Side Plank` into `Plank` and quietly
+merge two exercises' history, which is much worse than carrying a near-duplicate.
 
 You can also build a plan by hand, and edit the day-by-day grid afterwards under
 **Plan → Edit plan**.
 
 **Routines** are the underlying templates — Push, Pull, Legs, or whatever you
 follow. Starting one pre-fills every exercise with the weights you used last
-time. A rep range from your plan (`3×8–12`) shows as a target on the set rows
-rather than being typed into the reps box for you.
+time. Targets from a plan (`3×8–12`, `RPE 8`, a 30-second hold, `10 each`) show
+on the exercise rather than being typed into the reps box — only a plain number
+is ever prefilled, since a range is a choice you make on the day.
 
 **History** is every session you have logged, with sets, volume and duration.
 
@@ -212,7 +243,7 @@ node --test tests/merge.test.mjs tests/program.test.mjs tests/planparse.test.mjs
 # the schedule maths should hold in any timezone
 TZ=Europe/London node --test tests/program.test.mjs
 
-# browser tests (43 checks at iPhone viewport, including full offline operation)
+# browser tests (51 checks at iPhone viewport, including full offline operation)
 npm install --no-save playwright && npx playwright install chromium
 node tests/app.e2e.mjs
 ```
@@ -222,7 +253,7 @@ node tests/app.e2e.mjs
 | `js/state.js` | Storage, the data model, and the merge rules |
 | `js/workout.js` | Active sessions, personal bests, progress maths |
 | `js/program.js` | Schedule maths — which routine falls on which date |
-| `js/planparse.js` | Reads a written plan into routines and a schedule |
+| `js/planparse.js` | Reads a CSV or written plan into routines and a schedule |
 | `js/drive.js` | Google sign-in and the Drive sync cycle |
 | `js/timer.js` | Rest timer (deadline-based, survives backgrounding) |
 | `js/charts.js` | Hand-rolled SVG charts |

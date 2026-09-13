@@ -1,0 +1,15 @@
+Phase,Weeks,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
+Phase 1 Full Body,1-2,Full Body A,1,Goblet Squat,3,10,90,6,Easy first week. Stop well short.
+Phase 1 Full Body,1-2,Full Body A,2,Dumbbell Bench Press,3,10,90,7,Full range of motion.
+Phase 1 Full Body,1-2,Full Body A,3,Lat Pulldown,3,12,90,7,Pause briefly at the bottom.
+Phase 1 Full Body,1-2,Full Body A,4,Plank,3,30s,45,,Hold a straight line.
+Phase 1 Full Body,1-2,Full Body B,1,Leg Press,3,12,90,6,Do not lock out.
+Phase 1 Full Body,1-2,Full Body B,2,Chest Supported Row,3,12,90,7,No swinging.
+Phase 1 Full Body,1-2,Full Body B,3,Pallof Press,3,10 each,45,,Resist the rotation.
+Phase 2 Push Pull Legs,3-9,Push,1,Barbell Bench Press,4,6-8,150,8,Main strength lift.
+Phase 2 Push Pull Legs,3-9,Push,2,Incline Dumbbell Press,3,10-12,90,8,Upper chest volume.
+Phase 2 Push Pull Legs,3-9,Pull,1,Barbell Row,3,8-10,120,8,Keep the torso steady.
+Phase 2 Push Pull Legs,3-9,Pull,2,Face Pull,3,15-20,60,8,
+Phase 2 Push Pull Legs,3-9,Legs,1,Back Squat,3,5-6,180,7,Leave two reps in reserve.
+Phase 2 Push Pull Legs,3-9,Legs,2,Bulgarian Split Squat,3,8 each,90,7,Single leg strength.
+Phase 2 Push Pull Legs,3-9,Legs,3,Side Plank,3,30s each,45,,

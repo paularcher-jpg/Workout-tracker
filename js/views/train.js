@@ -268,8 +268,10 @@ function entryCard(entry, workout, refresh, drawTotals) {
 
   const target = entry.target;
   const targetText = target
-    ? [target.sets && target.reps ? `Target ${target.sets}×${target.reps}` : null, target.notes]
-      .filter(Boolean).join(' · ')
+    ? [
+      target.sets && target.reps ? `Target ${target.sets}×${target.reps}` : null,
+      target.rpe ? `RPE ${target.rpe}` : null,
+    ].filter(Boolean).join(' · ')
     : '';
 
   card.appendChild(h('header', { class: 'entry-head' },
@@ -277,6 +279,7 @@ function entryCard(entry, workout, refresh, drawTotals) {
       h('h3', {}, name),
       h('p', { class: 'entry-sub' }, `${ex?.group || ''}${ex?.equipment ? ` · ${ex.equipment}` : ''}`),
       targetText ? h('p', { class: 'entry-target' }, targetText) : null,
+      target?.notes ? h('p', { class: 'entry-note' }, target.notes) : null,
     ),
     h('button', {
       class: 'icon-btn',
@@ -442,12 +445,19 @@ function carryForward(entry, set, row, weight, reps) {
 
   entry.sets.forEach((other, i) => {
     if (i <= from || other.done) return;
-    if (other.weight !== '' || other.reps !== '') return;
-    W.patchSet(entry.id, other.id, { weight, reps });
+
+    // Per field, not all-or-nothing: a plan prefills reps, so an all-or-nothing
+    // rule would leave every later set without a weight.
+    const patch = {};
+    if (other.weight === '') patch.weight = weight;
+    if (other.reps === '') patch.reps = reps;
+    if (!Object.keys(patch).length) return;
+
+    W.patchSet(entry.id, other.id, patch);
     const inputs = rows[i]?.querySelectorAll('.set-input');
     if (inputs?.length === 2) {
-      inputs[0].value = String(weight);
-      inputs[1].value = String(reps);
+      if (patch.weight !== undefined) inputs[0].value = String(weight);
+      if (patch.reps !== undefined) inputs[1].value = String(reps);
     }
   });
 }

@@ -905,3 +905,13 @@ body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 5rem);
 .plan-ok { font-weight: 650; font-size: 0.9rem; }
 .plan-note { font-size: 0.8rem; color: var(--accent); margin-top: 0.3rem; }
 .plan-warn { font-size: 0.8rem; color: var(--danger); }
+
+.entry-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.plan-session { font-size: 0.84rem; }
+.plan-weeks { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.15rem; }

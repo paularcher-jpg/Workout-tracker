@@ -374,7 +374,12 @@ await step('importing builds routines and a schedule', async () => {
 console.log('\n== schedule ==');
 await step('sessions land on the weekdays the plan named', async () => {
   const rows = await page.locator('.sched-row').allInnerTexts();
-  const on = (day) => rows.filter((r) => r.startsWith(day));
+  // day labels render uppercase, so match case-insensitively — and insist the
+  // filter actually found rows, or .every() would pass on an empty list
+  const on = (day) => rows.filter((r) => new RegExp('^' + day, 'i').test(r.trim()));
+  for (const day of ['Mon', 'Tue', 'Wed', 'Fri']) {
+    if (!on(day).length) throw new Error(`no ${day} rows in: ` + rows.slice(0, 3).join(' // '));
+  }
   if (!on('Mon').every((r) => r.includes('Push'))) throw new Error('Mon: ' + on('Mon').join(' | '));
   if (!on('Wed').every((r) => r.includes('Pull'))) throw new Error('Wed: ' + on('Wed').join(' | '));
   if (!on('Fri').every((r) => r.includes('Legs'))) throw new Error('Fri: ' + on('Fri').join(' | '));
@@ -410,6 +415,71 @@ await step('rep ranges stay as targets and never enter the reps field', async ()
     const reps = await page.locator('.entry').nth(i)
       .locator('.set-row:not(.set-head) .set-input').nth(1).inputValue();
     if (reps.includes('-')) throw new Error('range leaked into the numeric field: ' + reps);
+  }
+});
+
+
+console.log('\n== uploading a CSV programme ==');
+await step('upload a phased CSV plan', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Paste a plan' }).click();
+  await page.waitForSelector('.plan-input');
+  await page.locator('input[type="file"]').setInputFiles(path.join(ROOT, 'tests/fixtures/plan.csv'));
+  await page.waitForSelector('.plan-ok', { timeout: 5000 });
+});
+await step('preview counts weeks, sessions and exercises', async () => {
+  const ok = await page.locator('.plan-ok').textContent();
+  if (!/9 weeks/.test(ok) || !/5 sessions/.test(ok) || !/14 exercises/.test(ok)) throw new Error(ok);
+});
+await step('the phase change shows in the week layout', async () => {
+  const t = await page.locator('.plan-weeks').innerText();
+  if (!/Week 1: Mon Full Body A · Thu Full Body B/.test(t)) throw new Error(t.split('\n')[0]);
+  if (!/Week 3: Mon Push · Wed Pull · Fri Legs/.test(t)) throw new Error(t);
+  if (!/Week 9: Mon Push/.test(t)) throw new Error(t);
+});
+await step('importing makes one routine per session, not per week', async () => {
+  await page.getByRole('button', { name: 'Add this plan' }).click();
+  await page.waitForSelector('.sched-row', { timeout: 6000 });
+  const n = await page.locator('.card .routine-items').count();
+  if (n !== 5) throw new Error(`expected 5 routines, got ${n}`);
+});
+await step('targets, RPE and coaching notes reach the session', async () => {
+  await page.getByRole('button', { name: 'Start this routine' }).first().click();
+  await page.waitForSelector('.entry', { timeout: 5000 });
+  const target = await page.locator('.entry-target').first().innerText();
+  if (!/Target 3×10/.test(target)) throw new Error(target);
+  if (!/RPE 6/.test(target)) throw new Error('RPE missing: ' + target);
+  const notes = await page.locator('.entry-note').allInnerTexts();
+  if (!notes.some((t) => /Easy first week/.test(t))) throw new Error('note missing');
+});
+await step('a timed hold does not prefill the reps box', async () => {
+  let plank = null;
+  for (const e of await page.locator('.entry').all()) {
+    if ((await e.innerText()).startsWith('Plank')) plank = e;
+  }
+  if (!plank) throw new Error('no Plank entry');
+  if (!/30s/.test(await plank.locator('.entry-target').innerText())) throw new Error('no 30s target');
+  const reps = await plank.locator('.set-row:not(.set-head) .set-input').nth(1).inputValue();
+  if (reps !== '') throw new Error('a hold should leave reps empty, got ' + reps);
+});
+await step('rest times come from the plan', async () => {
+  const rest = (await page.locator('.rest-pill').allInnerTexts())[0];
+  if (rest !== '1:30') throw new Error('expected 1:30, got ' + rest);
+});
+await step('logging a set carries weight into plan-prefilled sets', async () => {
+  const entry = page.locator('.entry').first();
+  const row = entry.locator('.set-row:not(.set-head)').first();
+  await row.locator('.set-input').nth(0).fill('24');
+  await row.locator('.set-input').nth(1).fill('10');
+  await row.locator('.set-check').click();
+  const rows = entry.locator('.set-row:not(.set-head)');
+  for (const i of [1, 2]) {
+    const w = await rows.nth(i).locator('.set-input').nth(0).inputValue();
+    const r = await rows.nth(i).locator('.set-input').nth(1).inputValue();
+    if (w !== '24') throw new Error(`set ${i + 1} weight should carry, got "${w}"`);
+    if (r !== '10') throw new Error(`set ${i + 1} reps should stay 10, got "${r}"`);
   }
 });
 

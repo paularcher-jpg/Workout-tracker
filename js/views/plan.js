@@ -6,7 +6,7 @@ import { list, get, upsert, softDelete } from '../state.js';
 import * as P from '../program.js';
 import * as W from '../workout.js';
 import { libraryNode, editRoutine } from './routines.js';
-import { parsePlan, applyPlan, newExercisesIn } from '../planparse.js';
+import { parsePlan, applyPlan, newExercisesIn, sessionList, looksLikeCSV } from '../planparse.js';
 import { field } from './train.js';
 
 export function destroy() {}
@@ -248,17 +248,24 @@ const EXAMPLE = `Monday - Push
 
 Wednesday - Pull
   Deadlift 3x5 rest 240
-  Lat Pulldown 3x10
+  Lat Pulldown 3x10`;
 
-Friday - Legs
-  Back Squat 5x5 rest 3min
-  Romanian Deadlift 3x10`;
+function titleFromFile(fileName) {
+  return fileName
+    .replace(/\.[a-z0-9]+$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b[a-z]/g, (c) => c.toUpperCase());
+}
 
 export function openPasteSheet(refresh) {
   openSheet({
-    title: 'Paste a plan',
+    title: 'Add a plan',
     fullHeight: true,
     render: (close) => {
+      let planName = '';
+
       const input = h('textarea', {
         class: 'input plan-input', rows: 12, spellcheck: false,
         placeholder: EXAMPLE,
@@ -268,54 +275,98 @@ export function openPasteSheet(refresh) {
         class: 'input', type: 'date', value: P.toISODate(P.mondayOf(new Date())),
       });
       const preview = h('div', { class: 'plan-preview' });
+      const fileLabel = h('p', { class: 'muted small' });
+
+      const fileInput = h('input', {
+        type: 'file', accept: '.csv,.txt,text/csv,text/plain',
+        style: { display: 'none' },
+        onchange: async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            input.value = await file.text();
+            planName = titleFromFile(file.name);
+            fileLabel.textContent = `Loaded ${file.name}`;
+            showPreview();
+          } catch (err) {
+            toast('Could not read that file', 'error');
+          }
+        },
+      });
+
+      const parsed = () => parsePlan(input.value, { name: planName || 'My plan' });
 
       const showPreview = () => {
-        const parsed = parsePlan(input.value);
+        const plan = parsed();
         clear(preview);
-        if (!parsed.weeks.length) {
+
+        if (!plan.weeks.length) {
           preview.appendChild(h('p', { class: 'muted small' },
-            'Nothing readable yet. Use one line per exercise, like "Bench Press 4x8".'));
-          return null;
+            'Nothing readable yet. Upload a CSV, or type one line per exercise like "Bench Press 4x8".'));
+          return;
         }
-        const sessions = parsed.weeks.flatMap((w) => w.days.filter(Boolean));
-        const fresh = newExercisesIn(parsed);
+
+        const sessions = sessionList(plan);
+        const fresh = newExercisesIn(plan);
+
         preview.appendChild(h('p', { class: 'plan-ok' },
-          `${parsed.weeks.length} week${parsed.weeks.length === 1 ? '' : 's'} · ` +
+          `${plan.weeks.length} week${plan.weeks.length === 1 ? '' : 's'} · ` +
           `${sessions.length} session${sessions.length === 1 ? '' : 's'} · ` +
-          `${parsed.totalExercises} exercises`));
-        for (const week of parsed.weeks) {
-          for (const day of week.days) {
-            if (!day) continue;
-            preview.appendChild(h('p', { class: 'muted small' },
-              `${P.DAY_SHORT[day.dayIndex]} — ${day.sessionName}: ${day.exercises.map((e) => `${e.name} ${e.sets}×${e.reps}`).join(', ')}`));
-          }
+          `${plan.totalExercises} exercises`));
+
+        if (looksLikeCSV(input.value)) {
+          preview.appendChild(h('p', { class: 'muted small' }, `Read as a spreadsheet · “${plan.name}”`));
         }
+
+        for (const session of sessions) {
+          preview.appendChild(h('p', { class: 'plan-session' },
+            h('strong', {}, session.name),
+            ` — ${session.exercises.length} exercise${session.exercises.length === 1 ? '' : 's'}`,
+          ));
+        }
+
+        // how the weeks lay out
+        const layout = h('div', { class: 'plan-weeks' });
+        plan.weeks.forEach((week, i) => {
+          const named = week.days
+            .map((key, day) => (key ? `${P.DAY_SHORT[day]} ${plan.sessions[key].name}` : null))
+            .filter(Boolean);
+          layout.appendChild(h('p', { class: 'muted small' },
+            `Week ${i + 1}: ${named.length ? named.join(' · ') : 'nothing scheduled'}`));
+        });
+        preview.appendChild(layout);
+
         if (fresh.length) {
           preview.appendChild(h('p', { class: 'plan-note' },
             `${fresh.length} new exercise${fresh.length === 1 ? '' : 's'} will be added: ${fresh.map((e) => e.name).join(', ')}`));
         }
-        for (const warn of parsed.warnings) {
+        for (const warn of plan.warnings) {
           preview.appendChild(h('p', { class: 'plan-warn' }, warn));
         }
-        return parsed;
       };
 
-      input.addEventListener('input', showPreview);
+      input.addEventListener('input', () => { planName = planName || ''; showPreview(); });
       showPreview();
 
       return h('div', { class: 'form' },
         h('p', { class: 'muted small' },
-          'One line per exercise. Day headings like "Monday - Push" split it into sessions; ' +
-          '"Week 2" starts a new week for plans that progress.'),
+          'Upload the spreadsheet your plan came in, or type it out. A CSV needs an ' +
+          'Exercise column; Phase, Weeks, Workout, Sets, Reps, Rest, RPE and Notes are all used if present.'),
+        h('button', {
+          class: 'btn btn-secondary btn-block', type: 'button',
+          onclick: () => fileInput.click(),
+        }, 'Upload a CSV file'),
+        fileInput,
+        fileLabel,
         input,
-        field('Start date', startInput, 'The plan runs forward from here and repeats.'),
+        field('Start date', startInput, 'The plan runs forward from here, then repeats.'),
         preview,
         h('button', {
           class: 'btn btn-primary btn-block', type: 'button',
           onclick: () => {
-            const parsed = parsePlan(input.value);
-            if (!parsed.weeks.length) { toast('Nothing to import yet', 'error'); return; }
-            const result = applyPlan(parsed, { startDate: startInput.value || undefined });
+            const plan = parsed();
+            if (!plan.weeks.length) { toast('Nothing to import yet', 'error'); return; }
+            const result = applyPlan(plan, { startDate: startInput.value || undefined });
             close();
             refresh();
             toast(`Plan added · ${result.createdRoutines.length} sessions`, 'success');

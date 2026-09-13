@@ -59,6 +59,7 @@ export function startWorkout({ routineId = null, name = '' } = {}) {
         entry.target = {
           sets: Number(item.sets) || null,
           reps: item.reps === '' || item.reps == null ? null : String(item.reps),
+          rpe: item.rpe || '',
           notes: item.notes || '',
         };
         const count = Math.max(1, Number(item.sets) || 3);
@@ -66,8 +67,11 @@ export function startWorkout({ routineId = null, name = '' } = {}) {
         for (let i = 0; i < count; i++) {
           const prior = last?.sets?.filter((x) => !x.warmup)[i];
           const set = blankSet(prior);
-          // only prefill a plain number; a range like "8-12" stays guidance
-          if (set.reps === '' && /^\d+$/.test(String(item.reps ?? ''))) set.reps = String(item.reps);
+          // only a plain number can be prefilled; "8-12", "30s" and "10 each"
+          // stay as guidance on the exercise
+          if (set.reps === '' && /^\d+$/.test(String(item.reps ?? '').trim())) {
+            set.reps = String(item.reps).trim();
+          }
           entry.sets.push(set);
         }
         workout.entries.push(entry);
