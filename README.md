@@ -13,11 +13,24 @@ data exists are your phone and your Drive.
 
 ### 1. Put it online
 
-The app is plain static files, so GitHub Pages will host it for free.
+The app is plain static files, so any static host will serve it.
 
-1. In this repository, go to **Settings → Pages**.
+**This repository is currently private.** GitHub Pages only serves private
+repositories on a paid plan, and even then it puts the site behind a GitHub
+login, which stops it working properly as a home-screen app. So pick one:
+
+**Option A — make the repository public (simplest).**
+*Settings → General → Danger Zone → Change visibility → Public.*
+
+This publishes the *code*, not your workouts. Your training data is never in
+this repository — it lives on your phone and in your Drive, and the app has no
+server to leak it to.
+
+Then:
+
+1. Go to **Settings → Pages**.
 2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Merge this branch into `main`. The included workflow
+3. Push to the default branch. The included workflow
    (`.github/workflows/pages.yml`) publishes the site on every push.
 
 Your app will be at:
@@ -26,9 +39,16 @@ Your app will be at:
 https://<your-github-username>.github.io/<repository-name>/
 ```
 
-> GitHub Pages needs the repository to be **public** (or a paid plan for private
-> repos). The page being public does not expose your workouts — those never
-> leave your phone and your Drive.
+**Option B — keep the repository private, host it elsewhere.**
+[Netlify](https://netlify.com), [Vercel](https://vercel.com) and
+[Cloudflare Pages](https://pages.cloudflare.com) all serve private repositories
+on their free tiers. Connect the repository, leave the build command empty and
+set the publish directory to `/`. You will get a URL like
+`https://your-app.netlify.app` — use that everywhere this README says "your
+Pages origin".
+
+Either way, keep the URL stable. Changing it means re-adding the app to your
+home screen and re-registering the origin with Google.
 
 ### 2. Add it to your iPhone
 

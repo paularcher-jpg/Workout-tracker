@@ -1,8 +1,12 @@
 name: Deploy to GitHub Pages
 
+# Runs on the repository's default branch. If you rename or move the default
+# branch to `main`, this keeps working without changes.
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'claude/**'
   workflow_dispatch:
 
 permissions:
