@@ -128,28 +128,58 @@ export function todayCard(program = P.activeProgram(), refresh, navigate) {
 /* --------------------------------------------------------------- upcoming */
 
 function upcomingCard(program, refresh, navigate) {
-  const days = P.projection(21, new Date(), program);
   const card = h('section', { class: 'card' });
-  card.appendChild(h('h3', {}, 'Coming up'));
+
+  // Start from this Monday, not today, so a session you missed earlier in the
+  // week is still on screen and can still be done.
+  const weekStart = P.mondayOf(new Date());
+  const from = weekStart < P.startOfDay(program.startDate)
+    ? P.startOfDay(program.startDate)
+    : weekStart;
+
+  const days = P.projection(21, from, program);
+  const todayISO = P.toISODate(new Date());
+  const today = P.startOfDay(new Date());
+  const doneThisWeek = W.routinesLoggedBetween(weekStart, P.addDays(weekStart, 6));
+
+  card.appendChild(h('div', { class: 'card-head' },
+    h('h3', {}, 'Your weeks'),
+    h('span', { class: 'muted small' }, 'Tap any session to start it'),
+  ));
 
   const listEl = h('div', { class: 'sched' });
-  const todayISO = P.toISODate(new Date());
 
   for (const slot of days) {
-    const isToday = P.toISODate(slot.date) === todayISO;
-    const row = h('div', { class: `sched-row${isToday ? ' is-today' : ''}${slot.rest ? ' is-rest' : ''}` },
+    const iso = P.toISODate(slot.date);
+    const isToday = iso === todayISO;
+    const isPast = slot.date < today;
+    const sameWeek = slot.date >= weekStart && slot.date <= P.addDays(weekStart, 6);
+    const done = sameWeek && slot.routineId && doneThisWeek.has(slot.routineId);
+
+    const classes = ['sched-row'];
+    if (isToday) classes.push('is-today');
+    if (slot.rest) classes.push('is-rest');
+    if (isPast && !isToday) classes.push('is-past');
+    if (done) classes.push('is-done');
+
+    const row = h('div', { class: classes.join(' ') },
       h('span', { class: 'sched-day' }, P.DAY_SHORT[slot.dayIndex]),
       h('span', { class: 'sched-date' }, slot.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })),
       h('span', { class: 'sched-name' }, slot.routine ? slot.routine.name : 'Rest'),
-      slot.routine && isToday
+      slot.routine
         ? h('button', {
-          class: 'btn btn-primary btn-sm', type: 'button',
+          class: `btn btn-sm ${isToday ? 'btn-primary' : 'btn-quiet'} sched-start`,
+          type: 'button',
+          'aria-label': `Start ${slot.routine.name} scheduled for ${slot.date.toDateString()}`,
           onclick: () => startScheduled(slot, refresh, navigate),
-        }, 'Start')
-        : h('span', {}),
+        }, done ? 'Again' : 'Start')
+        : h('span', { class: 'sched-tick' }, ''),
     );
+
+    if (done) row.querySelector('.sched-name').append(h('span', { class: 'sched-done-tag' }, 'done'));
     listEl.appendChild(row);
   }
+
   card.appendChild(listEl);
 
   const end = P.planEndDate(program);
@@ -157,6 +187,10 @@ function upcomingCard(program, refresh, navigate) {
     card.appendChild(h('p', { class: 'muted small pad-top' },
       `Plan ends ${end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}.`));
   }
+
+  card.appendChild(h('p', { class: 'muted small pad-top' },
+    'A session is logged on the day you actually do it, whichever day it was planned for.'));
+
   return card;
 }
 

@@ -484,6 +484,85 @@ await step('logging a set carries weight into plan-prefilled sets', async () => 
 });
 
 
+console.log('\n== starting a session on any day ==');
+await step('close the session the previous block left open', async () => {
+  // the app refuses to start a second workout while one is in progress, which
+  // is correct behaviour — so finish it the way a person would
+  await page.locator('.tab[data-tab="train"]').click();
+  const finish = page.getByRole('button', { name: 'Finish' });
+  if (await finish.count()) {
+    await finish.click();
+    await page.waitForSelector('.hero h1', { timeout: 5000 });
+  }
+});
+await step('every scheduled session is startable, rest days are not', async () => {
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.waitForSelector('.sched-row');
+  const rows = await page.locator('.sched-row').count();
+  const rests = await page.locator('.sched-row.is-rest').count();
+  const starts = await page.locator('.sched-start').count();
+  if (starts !== rows - rests) throw new Error(`${rows} rows, ${rests} rest, ${starts} buttons`);
+  if (await page.locator('.sched-row.is-rest .sched-start').count()) throw new Error('rest day is startable');
+});
+await step('the list begins on Monday so a missed day is still reachable', async () => {
+  const first = (await page.locator('.sched-row').first().innerText()).trim();
+  if (!/^mon/i.test(first)) throw new Error('does not start on Monday: ' + first);
+});
+
+let planned = null;
+await step('start a session planned for a different day', async () => {
+  for (const r of await page.locator('.sched-row').all()) {
+    const cls = await r.getAttribute('class');
+    if (cls.includes('is-rest') || cls.includes('is-today')) continue;
+    planned = (await r.locator('.sched-name').innerText()).trim().replace(/\s*done$/i, '');
+    await r.locator('.sched-start').click();
+    break;
+  }
+  if (!planned) throw new Error('no non-today session found');
+  await page.waitForSelector('.entry', { timeout: 5000 });
+  const name = await page.locator('.session-title').inputValue();
+  if (!name.startsWith(planned)) throw new Error(`tapped "${planned}" but opened "${name}"`);
+});
+await step('it is logged on the day it was actually done', async () => {
+  const row = page.locator('.set-row:not(.set-head)').first();
+  await row.locator('.set-input').nth(0).fill('60');
+  await row.locator('.set-input').nth(1).fill('8');
+  await row.locator('.set-check').click();
+  await page.getByRole('button', { name: 'Finish' }).click();
+  await page.waitForSelector('.hero h1', { timeout: 4000 });
+
+  const logged = await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    const w = Object.values(m.getState().workouts)
+      .filter((x) => !x.deleted).sort((a, b) => b.startedAt - a.startedAt)[0];
+    const d = new Date(w.startedAt);
+    const pad = (n) => String(n).padStart(2, '0');
+    return {
+      iso: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+      finishedSameDay: new Date(w.finishedAt).toDateString() === d.toDateString(),
+    };
+  });
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  if (logged.iso !== todayISO) throw new Error(`logged ${logged.iso}, expected today ${todayISO}`);
+  if (!logged.finishedSameDay) throw new Error('finishedAt fell on a different day');
+});
+await step('history files it under today', async () => {
+  await page.locator('.tab[data-tab="history"]').click();
+  await page.waitForSelector('.card-history');
+  const t = await page.locator('.card-history').first().innerText();
+  if (!/Today/.test(t)) throw new Error('history does not say Today: ' + t);
+});
+await step('the plan ticks that session off for the week', async () => {
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.waitForSelector('.sched-row');
+  if (!(await page.locator('.sched-row.is-done').count())) throw new Error('nothing marked done');
+  const label = await page.locator('.sched-row.is-done .sched-start').first().innerText();
+  if (!/again/i.test(label)) throw new Error('a done session should offer "Again", got ' + label);
+});
+
+
 console.log('\n== a plan that finishes ==');
 await step('a multi-week CSV block is set not to repeat', async () => {
   const repeat = await page.evaluate(async () => {

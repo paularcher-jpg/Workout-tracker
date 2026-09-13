@@ -915,3 +915,15 @@ body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 5rem);
 
 .plan-session { font-size: 0.84rem; }
 .plan-weeks { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.15rem; }
+
+.sched-row.is-past { opacity: 0.55; }
+.sched-row.is-done .sched-name { color: var(--muted); }
+.sched-done-tag {
+  margin-left: 0.4rem;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--success);
+  font-weight: 700;
+}
+.sched-start { min-height: 32px; padding: 0.25rem 0.6rem; font-size: 0.8rem; }

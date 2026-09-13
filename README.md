@@ -118,6 +118,12 @@ The same instructions are inside the app under
 forward on a calendar. The Train tab then leads with today's session, so you
 open the app and press start.
 
+Every scheduled session has a Start button, not just today's, and the list runs
+from Monday so a session you missed earlier in the week is still on screen. Life
+rarely matches the plan: do Friday's legs on a Wednesday if that is when you get
+to the gym. A workout is always logged on the day you actually did it, whichever
+day it was planned for, and the week's schedule ticks it off wherever it sat.
+
 The fastest way to set one up is **Plan → Paste a plan**, which reads either a
 spreadsheet or plain text.
 
@@ -253,7 +259,7 @@ node --test tests/merge.test.mjs tests/program.test.mjs tests/planparse.test.mjs
 TZ=Europe/London node --test tests/program.test.mjs
 TZ=Pacific/Chatham node --test tests/program.test.mjs
 
-# browser tests (55 checks at iPhone viewport, including full offline operation)
+# browser tests (62 checks at iPhone viewport, including full offline operation)
 npm install --no-save playwright && npx playwright install chromium
 node tests/app.e2e.mjs
 ```

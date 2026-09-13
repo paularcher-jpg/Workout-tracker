@@ -368,6 +368,25 @@ export function overallStats() {
   return { workouts: workouts.length, volume, sets, streak };
 }
 
+/**
+ * Which routines were logged between two dates, inclusive.
+ *
+ * Used to tick off sessions on the plan. Matching is by routine across the
+ * window rather than by exact date, so doing Friday's session on Wednesday
+ * still marks it done for that week.
+ */
+export function routinesLoggedBetween(from, to) {
+  const start = new Date(from).setHours(0, 0, 0, 0);
+  const end = new Date(to).setHours(23, 59, 59, 999);
+  const done = new Map();
+  for (const w of list('workouts')) {
+    if (!w.routineId) continue;
+    if (w.startedAt < start || w.startedAt > end) continue;
+    if (!done.has(w.routineId)) done.set(w.routineId, w);
+  }
+  return done;
+}
+
 export function exercisesUsed() {
   const counts = new Map();
   for (const w of list('workouts')) {

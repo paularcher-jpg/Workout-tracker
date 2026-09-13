@@ -543,7 +543,7 @@ async function finish(refresh) {
   refresh();
   if (record) {
     const st = W.workoutStats(record);
-    toast(`Saved · ${st.sets} sets · ${fmtVolume(st.volume)}`, 'success');
+    toast(`Saved · ${st.sets} set${st.sets === 1 ? '' : 's'} · ${fmtVolume(st.volume)}`, 'success');
     document.dispatchEvent(new CustomEvent('wt:workout-saved'));
   }
 }
