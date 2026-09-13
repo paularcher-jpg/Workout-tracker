@@ -4,6 +4,27 @@ import { getState, commit, uid, now, list, get, upsert } from './state.js';
 
 /* ---------------------------------------------------------------- helpers */
 
+/**
+ * Reps come in several flavours: a number, a range ("6-8"), a hold ("30s"),
+ * or per-side work ("10 each"). Only a plain number can be prefilled into the
+ * reps box; everything else is shown as a target.
+ */
+export function describeReps(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return { label: '', prefill: null, perSide: false, isTime: false };
+  const perSide = /\beach\b|\bper side\b|\be\/s\b/i.test(text);
+  const core = text.replace(/\b(each|per side|e\/s)\b/gi, '').trim();
+  const isTime = /^\d+(\.\d+)?\s*s(ec(onds?)?)?$/i.test(core);
+  const plain = /^\d+$/.test(core);
+  return {
+    label: text.replace(/\s+/g, ' '),
+    prefill: plain ? core : null,
+    perSide,
+    isTime,
+  };
+}
+
+
 export function estimate1RM(weight, reps) {
   const w = Number(weight) || 0;
   const r = Number(reps) || 0;
@@ -67,11 +88,10 @@ export function startWorkout({ routineId = null, name = '' } = {}) {
         for (let i = 0; i < count; i++) {
           const prior = last?.sets?.filter((x) => !x.warmup)[i];
           const set = blankSet(prior);
-          // only a plain number can be prefilled; "8-12", "30s" and "10 each"
-          // stay as guidance on the exercise
-          if (set.reps === '' && /^\d+$/.test(String(item.reps ?? '').trim())) {
-            set.reps = String(item.reps).trim();
-          }
+          // one rule for what may be prefilled: a range or a hold is guidance,
+          // a plain number (including "10 each") goes straight into the box
+          const prefill = describeReps(item.reps).prefill;
+          if (set.reps === '' && prefill !== null) set.reps = prefill;
           entry.sets.push(set);
         }
         workout.entries.push(entry);

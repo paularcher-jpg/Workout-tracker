@@ -75,13 +75,36 @@ export function todayCard(program = P.activeProgram(), refresh, navigate) {
   card.appendChild(heading);
 
   if (!slot) {
+    const state = P.planState(program);
+    if (state === 'finished') {
+      heading.lastChild.textContent = 'Plan complete';
+      card.appendChild(h('p', { class: 'muted small' },
+        `${program.weeks.length} weeks done. Start the next block, or run this one again.`));
+      card.appendChild(h('div', { class: 'btn-row' },
+        h('button', {
+          class: 'btn btn-primary', type: 'button',
+          onclick: () => {
+            upsert('programs', { ...program, startDate: P.toISODate(P.mondayOf(new Date())) });
+            refresh();
+            toast('Plan restarted from this week', 'success');
+          },
+        }, 'Run it again'),
+        h('button', {
+          class: 'btn btn-quiet', type: 'button',
+          onclick: () => openPasteSheet(refresh),
+        }, 'Add a new plan'),
+      ));
+      return card;
+    }
     card.appendChild(h('p', { class: 'muted small' },
-      `Starts ${new Date(P.startOfDay(program.startDate)).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}.`));
+      `Starts ${P.startOfDay(program.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}.`));
     return card;
   }
 
+  const end = P.planEndDate(program);
   card.appendChild(h('p', { class: 'muted small' },
-    `Week ${slot.weekIndex + 1} of ${program.weeks.length} · ${P.DAY_NAMES[slot.dayIndex]}`));
+    `Week ${slot.weekNumber + 1} of ${program.weeks.length} · ${P.DAY_NAMES[slot.dayIndex]}` +
+    (end ? ` · ends ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : '')));
 
   if (slot.routine) {
     const names = (slot.routine.items || [])
@@ -128,6 +151,12 @@ function upcomingCard(program, refresh, navigate) {
     listEl.appendChild(row);
   }
   card.appendChild(listEl);
+
+  const end = P.planEndDate(program);
+  if (end && days.length && days.at(-1).date >= end) {
+    card.appendChild(h('p', { class: 'muted small pad-top' },
+      `Plan ends ${end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}.`));
+  }
   return card;
 }
 
@@ -217,8 +246,24 @@ function openPlanEditor(program, refresh) {
           },
         }, '+ Add a week'));
 
-        body.appendChild(h('p', { class: 'muted small' },
-          'Weeks repeat in order. One week repeats every week; three weeks cycle every three.'));
+        const repeats = current.repeat !== false;
+        const repeatToggle = h('input', {
+          type: 'checkbox', class: 'switch-input', checked: repeats,
+          onchange: (e) => {
+            upsert('programs', { ...(get('programs', program.id) || current), repeat: e.target.checked });
+            draw();
+          },
+        });
+        body.appendChild(h('label', { class: 'switch' },
+          h('span', {}, 'Repeat when it ends'),
+          repeatToggle,
+          h('span', { class: 'switch-track' }),
+        ));
+
+        const end = P.planEndDate(current);
+        body.appendChild(h('p', { class: 'muted small' }, repeats
+          ? 'Weeks run in order and start again from week 1. Good for an ongoing weekly split.'
+          : `Runs once and finishes${end ? ` on ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}` : ''}. Good for a fixed block.`));
 
         body.appendChild(h('button', {
           class: 'btn btn-quiet btn-block', type: 'button',

@@ -8,6 +8,7 @@
 import { list, getState, upsert, uid, addCustomExercise } from './state.js';
 import { slugify } from './exercises.js';
 import { newProgram, setActiveProgram, toISODate, mondayOf } from './program.js';
+export { describeReps } from './workout.js';
 
 /* ------------------------------------------------------------ exercise ids */
 
@@ -33,26 +34,6 @@ export function resolveExerciseName(name) {
 }
 
 /* ------------------------------------------------------------- rep parsing */
-
-/**
- * Reps come in several flavours: a number, a range ("6-8"), a hold ("30s"),
- * or per-side work ("10 each"). Only a plain number can be prefilled into the
- * reps box; everything else is shown as a target.
- */
-export function describeReps(raw) {
-  const text = String(raw ?? '').trim();
-  if (!text) return { label: '', prefill: null, perSide: false, isTime: false };
-  const perSide = /\beach\b|\bper side\b|\be\/s\b/i.test(text);
-  const core = text.replace(/\b(each|per side|e\/s)\b/gi, '').trim();
-  const isTime = /^\d+(\.\d+)?\s*s(ec(onds?)?)?$/i.test(core);
-  const plain = /^\d+$/.test(core);
-  return {
-    label: text.replace(/\s+/g, ' '),
-    prefill: plain ? core : null,
-    perSide,
-    isTime,
-  };
-}
 
 /* ---------------------------------------------------------------- helpers */
 

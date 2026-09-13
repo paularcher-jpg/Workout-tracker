@@ -5,8 +5,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parsePlan, parseTextPlan, parseCSVPlan, parseCSVRows,
-  looksLikeCSV, describeReps, sessionList, spreadDays,
+  looksLikeCSV, sessionList, spreadDays,
 } from '../js/planparse.js';
+import { describeReps } from '../js/workout.js';
 
 const dayOf = (p, week, day) => {
   const key = p.weeks[week].days[day];

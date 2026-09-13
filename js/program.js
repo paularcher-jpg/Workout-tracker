@@ -37,11 +37,25 @@ export function weekdayIndex(date) {
 
 export function mondayOf(date) {
   const d = startOfDay(date);
-  return new Date(d.getTime() - weekdayIndex(d) * MS_DAY);
+  return addDays(d, -weekdayIndex(d));
 }
 
 function daysBetween(a, b) {
+  // rounding absorbs the hour a DST change adds or removes
   return Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / MS_DAY);
+}
+
+/**
+ * Add whole days using calendar arithmetic.
+ *
+ * Never do this by adding n × 86400000 ms: across a daylight-saving change a
+ * day is 23 or 25 hours long, so millisecond arithmetic drifts and lands on
+ * the wrong date. Letting the Date constructor normalise the day-of-month
+ * keeps the local wall-clock day correct.
+ */
+export function addDays(date, n) {
+  const d = startOfDay(date);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 }
 
 /* --------------------------------------------------------------- programs */
@@ -56,8 +70,32 @@ export function newProgram(name = 'My plan', weeks = 1) {
     name,
     startDate: toISODate(mondayOf(new Date())),
     weeks: Array.from({ length: Math.max(1, weeks) }, emptyWeek),
+    // a single repeating week is the common case; a multi-week block is
+    // usually finite, so it stops rather than silently starting again
+    repeat: Math.max(1, weeks) === 1,
     active: true,
   };
+}
+
+/**
+ * Where a date sits relative to the plan.
+ * @returns {'none'|'upcoming'|'active'|'finished'}
+ */
+export function planState(program = activeProgram(), date = new Date()) {
+  if (!program || !program.weeks?.length) return 'none';
+  const day = startOfDay(date);
+  if (day < startOfDay(program.startDate)) return 'upcoming';
+  const weekNumber = Math.floor(daysBetween(mondayOf(program.startDate), day) / 7);
+  // `repeat` is absent on plans saved before it existed: those keep looping,
+  // so an upgrade can never silently strip days off someone's schedule
+  if (program.repeat === false && weekNumber >= program.weeks.length) return 'finished';
+  return 'active';
+}
+
+/** The date a non-repeating plan runs out, or null if it repeats. */
+export function planEndDate(program = activeProgram()) {
+  if (!program?.weeks?.length || program.repeat !== false) return null;
+  return addDays(mondayOf(program.startDate), program.weeks.length * 7 - 1);
 }
 
 export function allPrograms() {
@@ -89,6 +127,7 @@ export function slotFor(program, date) {
 
   const day = startOfDay(date);
   if (day < startOfDay(program.startDate)) return null;
+  if (planState(program, day) === 'finished') return null;
 
   // Weeks run Monday to Sunday, counted from the Monday of the start week, so
   // a plan starting mid-week still lines up with the calendar.
@@ -138,7 +177,7 @@ export function projection(days = 28, from = new Date(), program = activeProgram
   const out = [];
   const start = startOfDay(from);
   for (let i = 0; i < days; i++) {
-    const date = new Date(start.getTime() + i * MS_DAY);
+    const date = addDays(start, i);
     const slot = scheduledFor(date, program);
     if (!slot) continue;
     out.push(slot);

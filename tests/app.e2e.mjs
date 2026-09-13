@@ -484,6 +484,44 @@ await step('logging a set carries weight into plan-prefilled sets', async () => 
 });
 
 
+console.log('\n== a plan that finishes ==');
+await step('a multi-week CSV block is set not to repeat', async () => {
+  const repeat = await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    const p = Object.values(m.getState().programs).find((x) => !x.deleted && x.active);
+    return { repeat: p.repeat, weeks: p.weeks.length };
+  });
+  if (repeat.weeks !== 9) throw new Error('expected 9 weeks, got ' + repeat.weeks);
+  if (repeat.repeat !== false) throw new Error('a 9-week block should not repeat, got ' + repeat.repeat);
+});
+await step('the plan says when it ends', async () => {
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.waitForSelector('.card-today');
+  const t = await page.locator('.view').innerText();
+  if (!/ends/i.test(t)) throw new Error('no end date shown');
+});
+await step('once past the end it reports completion, not week 1 again', async () => {
+  await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    const p = Object.values(m.getState().programs).find((x) => !x.deleted && x.active);
+    // move the start back so the block has already run its course
+    m.upsert('programs', { ...p, startDate: '2020-01-06' });
+  });
+  await page.locator('.tab[data-tab="train"]').click();
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.waitForSelector('.card-today');
+  const t = await page.locator('.card-today').innerText();
+  if (!/Plan complete/.test(t)) throw new Error('expected completion, got: ' + t);
+  if (await page.locator('.sched-row').count() !== 0) throw new Error('finished plan still lists days');
+});
+await step('“Run it again” restarts it from this week', async () => {
+  await page.getByRole('button', { name: 'Run it again' }).click();
+  await page.waitForSelector('.sched-row', { timeout: 4000 });
+  const t = await page.locator('.card-today').innerText();
+  if (/Plan complete/.test(t)) throw new Error('still complete after restart');
+});
+
+
 console.log('\n== console errors ==');
 console.log(problems.length ? 'PROBLEMS:\n' + problems.map((p) => ' - ' + p).join('\n') : '  none');
 

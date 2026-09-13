@@ -164,8 +164,16 @@ Wednesday: Pull
 - Rest days can be written out (`Tuesday - Rest`) or just left out.
 - Sets and reps as `4x8`, `3 x 12`, or a range like `3x8-12`.
 - Rest as `rest 180`, `@90s`, or `3min`; `RPE 8` is picked up too.
-- `Week 2` starts a new week, for blocks that progress. Weeks repeat in order.
+- `Week 2` starts a new week, for blocks that progress.
 - Anything it cannot read is reported rather than silently dropped.
+
+### Repeating, or finishing
+
+A single-week plan repeats: week 1 runs again every week, which is what an
+ongoing split wants. A multi-week block is treated as finite — it runs its
+weeks once and then reports *Plan complete* rather than quietly starting over
+at week 1, with the option to run it again from the current week or import a
+new block. Toggle this under **Plan → Edit plan → Repeat when it ends**.
 
 ### Before anything is saved
 
@@ -240,10 +248,12 @@ npx http-server . -p 8080
 # unit tests (sync merge rules, schedule maths, the plan parser)
 node --test tests/merge.test.mjs tests/program.test.mjs tests/planparse.test.mjs
 
-# the schedule maths should hold in any timezone
+# the schedule maths must hold in any timezone — day arithmetic is calendar
+# based, because a day is 23 or 25 hours long across a clock change
 TZ=Europe/London node --test tests/program.test.mjs
+TZ=Pacific/Chatham node --test tests/program.test.mjs
 
-# browser tests (51 checks at iPhone viewport, including full offline operation)
+# browser tests (55 checks at iPhone viewport, including full offline operation)
 npm install --no-save playwright && npx playwright install chromium
 node tests/app.e2e.mjs
 ```
@@ -252,7 +262,7 @@ node tests/app.e2e.mjs
 | --- | --- |
 | `js/state.js` | Storage, the data model, and the merge rules |
 | `js/workout.js` | Active sessions, personal bests, progress maths |
-| `js/program.js` | Schedule maths — which routine falls on which date |
+| `js/program.js` | Schedule maths — which routine falls on which date, and when a plan ends |
 | `js/planparse.js` | Reads a CSV or written plan into routines and a schedule |
 | `js/drive.js` | Google sign-in and the Drive sync cycle |
 | `js/timer.js` | Rest timer (deadline-based, survives backgrounding) |
