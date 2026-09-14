@@ -256,6 +256,17 @@ Two rules hold it together:
   throughout; ember appears exclusively when you beat a personal best, so
   colour carries meaning rather than decoration.
 
+Three constraints the stylesheet holds to, checked by a design detector:
+
+- **No chromatic glow.** Coloured halo shadows and saturated radial-gradient
+  washes on a dark page are the default "cool" look of generated UI. Elevation
+  is neutral; depth comes from a quiet tonal gradient and layered material.
+- **No overshoot easing.** Real objects decelerate, they do not bounce past
+  their resting position, so motion uses ease-out-quint and ease-out-expo.
+- **Animate transform and opacity only.** The rest-timer fill scales on the
+  compositor rather than animating `width`, which would re-lay out the bar
+  every frame of a three-minute countdown.
+
 Translucency (`backdrop-filter`) is reserved for floating chrome — the tab bar,
 rest timer, sheets and toasts — and never applied to scrolling content, where
 it costs frames on iOS for no visual gain. Swapping the accent is a one-line

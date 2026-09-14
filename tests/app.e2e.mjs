@@ -105,6 +105,22 @@ await step('rest timer +15 works', async () => {
   const s = (v) => { const [m, x] = v.split(':').map(Number); return m * 60 + x; };
   if (s(after) <= s(before)) throw new Error(`${before} -> ${after}`);
 });
+await step('the rest bar fill is driven by transform, not width', async () => {
+  // animating width re-lays out the bar every frame for the whole countdown;
+  // this asserts the compositor-friendly mechanism is actually wired up
+  const fill = await page.evaluate(() => {
+    const el = document.querySelector('.rest-fill');
+    const cs = getComputedStyle(el);
+    return { transform: cs.transform, width: cs.width, transitionProperty: cs.transitionProperty };
+  });
+  if (fill.transform === 'none' || !fill.transform.startsWith('matrix')) {
+    throw new Error('fill is not transformed: ' + fill.transform);
+  }
+  if (!/transform/.test(fill.transitionProperty)) {
+    throw new Error('fill still transitions ' + fill.transitionProperty);
+  }
+  if (/width/.test(fill.transitionProperty)) throw new Error('width is still animated');
+});
 await step('remaining blank sets inherit the logged numbers', async () => {
   const rows = page.locator('.set-row:not(.set-head)');
   const w = await rows.nth(1).locator('.set-input').nth(0).inputValue();

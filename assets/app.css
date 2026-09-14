@@ -65,8 +65,10 @@
   --lift: 0 18px 40px -18px rgba(0, 0, 0, 0.9);
   --lift-sheet: 0 -20px 60px -20px rgba(0, 0, 0, 0.85);
 
+  /* ease-out-quint and ease-out-expo. Neither overshoots: real objects
+     decelerate, they do not bounce past their resting position. */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease-exp: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (prefers-color-scheme: light) {
@@ -125,11 +127,10 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(90% 58% at 8% -8%, rgba(44, 116, 255, 0.30), transparent 62%),
-    radial-gradient(70% 46% at 102% 6%, rgba(95, 217, 255, 0.16), transparent 60%),
-    radial-gradient(120% 70% at 50% 108%, rgba(19, 32, 58, 0.85), transparent 70%),
-    var(--ink);
+  /* A quiet tonal gradient, not a chromatic halo: it gives the glass a
+     luminance range to pick up without the saturated bloom that reads as
+     stock "dark mode with a glow". */
+  background: linear-gradient(178deg, #0C1219 0%, #080C12 46%, var(--ink) 100%);
 }
 
 .atmos::after {
@@ -143,10 +144,7 @@ body {
 
 @media (prefers-color-scheme: light) {
   .atmos {
-    background:
-      radial-gradient(90% 58% at 8% -10%, rgba(0, 103, 199, 0.14), transparent 62%),
-      radial-gradient(70% 46% at 102% 4%, rgba(95, 180, 255, 0.14), transparent 60%),
-      var(--ink);
+    background: linear-gradient(178deg, #F7F9FC 0%, #EFF2F7 52%, var(--ink) 100%);
   }
   .atmos::after { opacity: 0.22; mix-blend-mode: multiply; }
 }
@@ -315,7 +313,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   background: var(--glass-strong);
   color: var(--text);
   border-color: var(--hairline);
-  transition: transform 0.12s var(--spring), filter 0.2s, opacity 0.2s;
+  transition: transform 0.12s var(--ease-exp), filter 0.2s, opacity 0.2s;
 }
 .btn:active { transform: scale(0.975); }
 .btn:disabled { opacity: 0.4; cursor: default; }
@@ -326,7 +324,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   border-color: transparent;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    0 10px 24px -12px var(--accent-edge);
+    0 8px 18px -10px rgba(0, 0, 0, 0.65);
   font-weight: 700;
 }
 @media (prefers-color-scheme: light) {
@@ -583,7 +581,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   font-size: 1.05rem;
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.15s var(--spring), background 0.2s, color 0.2s;
+  transition: transform 0.15s var(--ease-exp), background 0.2s, color 0.2s;
 }
 .set-check:active { transform: scale(0.9); }
 .set-check.on {
@@ -600,8 +598,8 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 .set-pr { animation: ember 1.5s var(--ease); }
 @keyframes ember {
   0% { background: transparent; }
-  22% { background: var(--ember-wash); box-shadow: 0 0 26px -6px var(--ember); }
-  100% { background: transparent; box-shadow: none; }
+  22% { background: var(--ember-wash); }
+  100% { background: transparent; }
 }
 .set-pr .set-check.on {
   background: linear-gradient(180deg, var(--ember) 0%, var(--ember-hot) 120%);
@@ -627,16 +625,20 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   box-shadow: inset 0 1px 0 var(--specular), var(--lift);
   max-width: 604px;
   margin: 0 auto;
-  animation: rise 0.35s var(--spring) both;
+  animation: rise 0.35s var(--ease-exp) both;
 }
 .restbar[hidden] { display: none; }
 
+/* scaleX, never width: animating a layout property re-lays out the bar on
+   every frame of a three-minute countdown. */
 .rest-fill {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 0;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
   background: linear-gradient(90deg, var(--accent-wash), color-mix(in srgb, var(--accent) 22%, transparent));
-  transition: width 0.25s linear;
+  transition: transform 0.25s linear;
 }
 
 .restbar-inner {
@@ -726,7 +728,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   cursor: pointer;
   transition: color 0.22s var(--ease);
 }
-.tab-icon { display: block; width: 21px; height: 21px; transition: transform 0.3s var(--spring); }
+.tab-icon { display: block; width: 21px; height: 21px; transition: transform 0.3s var(--ease-exp); }
 .tab-icon svg { width: 100%; height: 100%; display: block; }
 .tab-label { font-size: 0.6rem; font-weight: 650; letter-spacing: 0.02em; }
 
@@ -741,7 +743,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   background: var(--accent-wash);
   border: 1px solid var(--accent-edge);
   z-index: -1;
-  animation: pill 0.34s var(--spring) both;
+  animation: pill 0.34s var(--ease-exp) both;
 }
 @keyframes pill { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: none; } }
 
@@ -802,7 +804,7 @@ textarea.input { min-height: 96px; resize: vertical; }
   height: 23px;
   border-radius: 50%;
   background: var(--text-3);
-  transition: transform 0.28s var(--spring), background 0.24s;
+  transition: transform 0.28s var(--ease-exp), background 0.24s;
 }
 .switch-input:checked ~ .switch-track {
   background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 130%);
@@ -996,7 +998,7 @@ textarea.input { min-height: 96px; resize: vertical; }
   background:
     linear-gradient(180deg, var(--accent-wash), transparent 62%),
     var(--glass);
-  box-shadow: inset 0 1px 0 var(--specular), 0 0 44px -22px var(--accent), var(--lift);
+  box-shadow: inset 0 1px 0 var(--specular), var(--lift);
 }
 .today-label { color: var(--accent); }
 .card-today h3 { font-size: 1.55rem; letter-spacing: -0.035em; }
@@ -1135,7 +1137,7 @@ textarea.input { min-height: 96px; resize: vertical; }
   box-shadow: inset 0 1px 0 var(--specular), var(--lift);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.24s var(--ease), transform 0.34s var(--spring);
+  transition: opacity 0.24s var(--ease), transform 0.34s var(--ease-exp);
   max-width: calc(100vw - 2rem);
   text-align: center;
 }
@@ -1148,7 +1150,7 @@ body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 6rem);
 .toast-success.is-pr {
   border-color: var(--ember);
   color: var(--ember);
-  box-shadow: inset 0 1px 0 var(--specular), 0 0 30px -8px var(--ember);
+  box-shadow: inset 0 1px 0 var(--specular), var(--lift);
 }
 
 @media (prefers-reduced-motion: reduce) {

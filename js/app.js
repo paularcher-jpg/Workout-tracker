@@ -176,7 +176,7 @@ function buildRestBar() {
     if (!snap.running) { document.body.classList.remove('resting'); return; }
     document.body.classList.add('resting');
     label.textContent = Timer.formatClock(snap.remainingSec);
-    ring.style.width = `${Math.min(100, snap.progress * 100).toFixed(1)}%`;
+    ring.style.transform = `scaleX(${Math.min(1, snap.progress).toFixed(4)})`;
     bar.classList.toggle('urgent', snap.remainingSec <= 10);
   });
 
