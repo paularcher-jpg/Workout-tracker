@@ -84,18 +84,20 @@ const SEED = [
   ['Seated Calf Raise', 'Calves', 'Machine', 75],
   ['Leg Press Calf Raise', 'Calves', 'Machine', 75],
   // Core
-  ['Plank', 'Core', 'Bodyweight', 60],
+  ['Plank', 'Core', 'Bodyweight', 60, 'time'],
+  ['Side Plank', 'Core', 'Bodyweight', 45, 'time'],
   ['Hanging Leg Raise', 'Core', 'Bodyweight', 75],
   ['Cable Crunch', 'Core', 'Cable', 75],
   ['Ab Wheel Rollout', 'Core', 'Other', 75],
   ['Russian Twist', 'Core', 'Other', 60],
   ['Back Extension', 'Core', 'Machine', 90],
+  ['Pallof Press', 'Core', 'Cable', 45],
   // Cardio
-  ['Treadmill', 'Cardio', 'Machine', 0],
-  ['Rowing Machine', 'Cardio', 'Machine', 0],
-  ['Stationary Bike', 'Cardio', 'Machine', 0],
-  ['Stair Climber', 'Cardio', 'Machine', 0],
-  ['Elliptical', 'Cardio', 'Machine', 0],
+  ['Treadmill', 'Cardio', 'Machine', 0, 'time'],
+  ['Rowing Machine', 'Cardio', 'Machine', 0, 'time'],
+  ['Stationary Bike', 'Cardio', 'Machine', 0, 'time'],
+  ['Stair Climber', 'Cardio', 'Machine', 0, 'time'],
+  ['Elliptical', 'Cardio', 'Machine', 0, 'time'],
 ];
 
 export function slugify(str) {
@@ -106,10 +108,11 @@ export function slugify(str) {
     .slice(0, 60);
 }
 
-export const SEED_EXERCISES = SEED.map(([name, group, equipment, restSec]) => ({
+export const SEED_EXERCISES = SEED.map(([name, group, equipment, restSec, mode]) => ({
   id: slugify(name),
   name,
   group,
   equipment,
   restSec,
+  ...(mode && { mode }),
 }));

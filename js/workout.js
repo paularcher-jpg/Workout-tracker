@@ -4,6 +4,11 @@ import { getState, commit, uid, now, list, get, upsert } from './state.js';
 
 /* ---------------------------------------------------------------- helpers */
 
+export function isTimeExercise(exerciseId) {
+  const ex = get('exercises', exerciseId);
+  return ex?.mode === 'time';
+}
+
 /**
  * Reps come in several flavours: a number, a range ("6-8"), a hold ("30s"),
  * or per-side work ("10 each"). Only a plain number can be prefilled into the
@@ -34,6 +39,8 @@ export function estimate1RM(weight, reps) {
 }
 
 export function setVolume(set) {
+  // time sets (secs > 0) don't contribute to volume
+  if ((Number(set.secs) || 0) > 0) return 0;
   return (Number(set.weight) || 0) * (Number(set.reps) || 0);
 }
 
@@ -42,6 +49,7 @@ function blankSet(prev) {
     id: uid(),
     weight: prev?.weight ?? '',
     reps: prev?.reps ?? '',
+    secs: prev?.secs ?? '',
     warmup: false,
     done: false,
     doneAt: null,
@@ -88,10 +96,15 @@ export function startWorkout({ routineId = null, name = '' } = {}) {
         for (let i = 0; i < count; i++) {
           const prior = last?.sets?.filter((x) => !x.warmup)[i];
           const set = blankSet(prior);
-          // one rule for what may be prefilled: a range or a hold is guidance,
-          // a plain number (including "10 each") goes straight into the box
-          const prefill = describeReps(item.reps).prefill;
-          if (set.reps === '' && prefill !== null) set.reps = prefill;
+          // one rule for what may be prefilled: a range stays guidance, a plain
+          // number goes in the box, and a hold fills seconds rather than reps
+          const shape = describeReps(item.reps);
+          if (shape.isTime) {
+            const secs = String(item.reps).match(/\d+/);
+            if (!set.secs && secs) set.secs = secs[0];
+          } else if (set.reps === '' && shape.prefill !== null) {
+            set.reps = shape.prefill;
+          }
           entry.sets.push(set);
         }
         workout.entries.push(entry);
@@ -206,13 +219,21 @@ export function finishWorkout() {
     .map((e) => ({
       ...e,
       sets: e.sets
-        .filter((set) => set.done && (Number(set.reps) > 0 || Number(set.weight) > 0))
-        .map((set) => ({
-          id: set.id,
-          weight: Number(set.weight) || 0,
-          reps: Number(set.reps) || 0,
-          warmup: !!set.warmup,
-        })),
+        .filter((set) => set.done && (Number(set.reps) > 0 || Number(set.secs) > 0 || Number(set.weight) > 0))
+        .map((set) => {
+          const record = {
+            id: set.id,
+            weight: Number(set.weight) || 0,
+            warmup: !!set.warmup,
+          };
+          // include reps or secs depending on what's present
+          if ((Number(set.secs) || 0) > 0) {
+            record.secs = Number(set.secs) || 0;
+          } else {
+            record.reps = Number(set.reps) || 0;
+          }
+          return record;
+        }),
     }))
     .filter((e) => e.sets.length > 0);
 
@@ -257,39 +278,54 @@ export function workoutStats(w) {
   let volume = 0;
   let sets = 0;
   let reps = 0;
+  let seconds = 0;
   for (const e of w.entries || []) {
     for (const s of e.sets) {
       if (s.warmup) continue;
       volume += setVolume(s);
       sets += 1;
       reps += Number(s.reps) || 0;
+      seconds += Number(s.secs) || 0;
     }
   }
   const durationMs = (w.finishedAt || w.startedAt) - w.startedAt;
-  return { volume, sets, reps, durationMs, exercises: (w.entries || []).length };
+  return { volume, sets, reps, seconds, durationMs, exercises: (w.entries || []).length };
 }
 
 /** Per-session series for one exercise, oldest first. */
 export function exerciseSeries(exerciseId) {
+  const isTime = isTimeExercise(exerciseId);
   const out = [];
   for (const w of workoutsSorted().slice().reverse()) {
     const entry = w.entries?.find((e) => e.exerciseId === exerciseId);
     if (!entry) continue;
     const working = entry.sets.filter((s) => !s.warmup);
     if (!working.length) continue;
-    let top = working[0];
+    let topWeight = 0;
+    let topReps = 0;
+    let topSecs = 0;
     let best1RM = 0;
     let volume = 0;
     for (const s of working) {
-      if ((Number(s.weight) || 0) > (Number(top.weight) || 0)) top = s;
-      best1RM = Math.max(best1RM, estimate1RM(s.weight, s.reps));
+      if (isTime) {
+        topSecs = Math.max(topSecs, Number(s.secs) || 0);
+        if ((Number(s.secs) || 0) > 0 && (Number(s.weight) || 0) > topWeight) topWeight = Number(s.weight) || 0;
+      } else {
+        // reps must come from the heaviest set, not whichever set came last
+        if ((Number(s.weight) || 0) > topWeight || topReps === 0) {
+          topWeight = Math.max(topWeight, Number(s.weight) || 0);
+          topReps = Number(s.reps) || 0;
+        }
+        best1RM = Math.max(best1RM, estimate1RM(s.weight, s.reps));
+      }
       volume += setVolume(s);
     }
     out.push({
       t: w.startedAt,
       date: new Date(w.startedAt),
-      topWeight: Number(top.weight) || 0,
-      topReps: Number(top.reps) || 0,
+      topWeight,
+      topReps,
+      ...(isTime && { topSecs }),
       est1RM: best1RM,
       volume,
       sets: working.length,
@@ -301,6 +337,15 @@ export function exerciseSeries(exerciseId) {
 export function personalBests(exerciseId) {
   const series = exerciseSeries(exerciseId);
   if (!series.length) return null;
+  const isTime = isTimeExercise(exerciseId);
+  if (isTime) {
+    const best = { secs: 0, weight: 0, secsAt: 0, weightAt: 0 };
+    for (const p of series) {
+      if (p.topSecs > best.secs) { best.secs = p.topSecs; best.secsAt = p.t; }
+      if (p.topWeight > best.weight) { best.weight = p.topWeight; best.weightAt = p.t; }
+    }
+    return best;
+  }
   const best = { weight: 0, est1RM: 0, volume: 0, weightAt: 0, est1RMAt: 0, volumeAt: 0, reps: 0 };
   for (const p of series) {
     if (p.topWeight > best.weight) { best.weight = p.topWeight; best.reps = p.topReps; best.weightAt = p.t; }
@@ -314,7 +359,14 @@ export function personalBests(exerciseId) {
 export function isPR(exerciseId, set) {
   if (set.warmup) return false;
   const pbs = personalBests(exerciseId);
-  if (!pbs) return (Number(set.weight) || 0) > 0;
+  if (!pbs) return (Number(set.weight) || 0) > 0 || (Number(set.secs) || 0) > 0;
+  const isTime = isTimeExercise(exerciseId);
+  if (isTime) {
+    const secs = Number(set.secs) || 0;
+    if (secs > pbs.secs) return true;
+    if (secs === pbs.secs && (Number(set.weight) || 0) > pbs.weight) return true;
+    return false;
+  }
   return estimate1RM(set.weight, set.reps) > pbs.est1RM + 0.01;
 }
 

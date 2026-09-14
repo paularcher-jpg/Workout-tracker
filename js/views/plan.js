@@ -69,6 +69,17 @@ function startScheduled(slot, refresh, navigate) {
   navigate('train');
 }
 
+function gripIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('fill', 'currentColor');
+  svg.innerHTML = '<circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>'
+    + '<circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>'
+    + '<circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>';
+  return svg;
+}
+
 export function todayCard(program = P.activeProgram(), refresh, navigate) {
   const slot = P.todaysSession(program);
   const card = h('section', { class: 'card card-today' });
@@ -130,6 +141,73 @@ export function todayCard(program = P.activeProgram(), refresh, navigate) {
   return card;
 }
 
+/* -------------------------------------------------------- assign sheet */
+
+function openAssignSheet(slot, program, refresh) {
+  const routines = list('routines').sort((a, b) => a.name.localeCompare(b.name));
+  const selected = slot.routineId;
+
+  return new Promise((resolve) => {
+    openSheet({
+      title: `${P.DAY_NAMES[slot.dayIndex]}, ${slot.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`,
+      fullHeight: true,
+      onClose: () => resolve(),
+      render: (close) => {
+        const body = h('div', { class: 'picker-list' });
+
+        // Add routine options
+        for (const routine of routines) {
+          const isSelected = routine.id === selected;
+          body.appendChild(h('button', {
+            class: `picker-item${isSelected ? ' is-selected' : ''}`,
+            type: 'button',
+            title: isSelected ? 'Currently scheduled' : '',
+            onclick: () => {
+              P.setSlot(program, slot.weekIndex, slot.dayIndex, routine.id);
+              refresh();
+              close();
+            },
+          },
+            h('span', { class: 'picker-name' }, routine.name),
+            isSelected ? h('span', { class: 'picker-meta' }, '✓') : null,
+          ));
+        }
+
+        // Add rest day option
+        const isRest = !selected;
+        body.appendChild(h('button', {
+          class: `picker-item${isRest ? ' is-selected' : ''}`,
+          type: 'button',
+          title: isRest ? 'Currently a rest day' : '',
+          onclick: () => {
+            P.setSlot(program, slot.weekIndex, slot.dayIndex, null);
+            refresh();
+            close();
+          },
+        },
+          h('span', { class: 'picker-name' }, 'Rest day'),
+          isRest ? h('span', { class: 'picker-meta' }, '✓') : null,
+        ));
+
+        // Add remove option if there's currently a session
+        if (selected) {
+          body.appendChild(h('button', {
+            class: 'picker-item picker-danger',
+            type: 'button',
+            onclick: () => {
+              P.setSlot(program, slot.weekIndex, slot.dayIndex, null);
+              refresh();
+              close();
+            },
+          }, 'Remove from this day'));
+        }
+
+        return body;
+      },
+    });
+  });
+}
+
 /* --------------------------------------------------------------- upcoming */
 
 function upcomingCard(program, refresh, navigate) {
@@ -164,13 +242,18 @@ function upcomingCard(program, refresh, navigate) {
     const sameWeek = slot.date >= weekStart && slot.date <= P.addDays(weekStart, 6);
     const done = sameWeek && slot.routineId && doneThisWeek.has(slot.routineId);
 
-    const classes = ['sched-row'];
+    const classes = ['sched-row', 'sched-draggable'];
     if (isToday) classes.push('is-today');
     if (slot.rest) classes.push('is-rest');
     if (isPast && !isToday) classes.push('is-past');
     if (done) classes.push('is-done');
 
-    const row = h('div', { class: classes.join(' ') },
+    const row = h('div', {
+      class: classes.join(' '),
+      'aria-grabbed': false,
+      title: slot.routine ? 'Long press to move' : 'Tap to assign a session',
+      dataset: { weekIndex: slot.weekIndex, dayIndex: slot.dayIndex },
+    },
       h('span', { class: 'sched-day' }, P.DAY_SHORT[slot.dayIndex]),
       h('span', { class: 'sched-date' }, slot.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })),
       h('span', { class: 'sched-name' }, slot.routine ? slot.routine.name : 'Rest'),
@@ -183,13 +266,115 @@ function upcomingCard(program, refresh, navigate) {
           'aria-label': live
             ? `${slot.routine.name} — finish your current workout first`
             : `Start ${slot.routine.name} scheduled for ${slot.date.toDateString()}`,
-          onclick: () => startScheduled(slot, refresh, navigate),
+          onclick: (e) => { e.stopPropagation(); startScheduled(slot, refresh, navigate); },
         }, done ? 'Again' : 'Start')
         : h('span', { class: 'sched-tick' }, ''),
     );
 
+    // Tap to assign a session or open the edit sheet
+    row.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sched-start')) return; // Don't trigger on start button
+      openAssignSheet(slot, program, refresh);
+    });
+
+    // Dragging starts from a grip, not the row. A long-press on the row would
+    // need touch-action:none to work, which would stop the list scrolling at
+    // all — much worse than having no drag.
+    if (slot.routine) {
+      const grip = h('button', {
+        class: 'sched-grip',
+        type: 'button',
+        'aria-label': `Move ${slot.routine.name} to another day`,
+        title: 'Drag to move to another day',
+        onclick: (e) => e.stopPropagation(),
+      }, gripIcon());
+      grip.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        e.preventDefault();
+        startDrag(e, grip, row, slot);
+      });
+      row.appendChild(grip);
+    }
+
     if (done) row.querySelector('.sched-name').append(h('span', { class: 'sched-done-tag' }, 'done'));
     listEl.appendChild(row);
+  }
+
+  // Drag-to-move implementation
+  let activeDrag = null;
+
+  function startDrag(downEvent, grip, sourceRow, sourceSlot) {
+    if (!sourceSlot.routine || activeDrag) return;
+
+    grip.setPointerCapture(downEvent.pointerId);
+    sourceRow.classList.add('is-dragging');
+    sourceRow.setAttribute('aria-grabbed', 'true');
+
+    activeDrag = {
+      grip,
+      pointerId: downEvent.pointerId,
+      sourceRow,
+      sourceSlot,
+      startY: downEvent.clientY,
+      dropTarget: null,
+      onMove: null,
+      onEnd: null,
+    };
+
+    const onMove = (e) => {
+      if (!activeDrag) return;
+      e.preventDefault();
+      sourceRow.style.transform = `translateY(${e.clientY - activeDrag.startY}px)`;
+
+      // the dragged row carries pointer-events:none, so this sees through it
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const candidate = under?.closest('.sched-row');
+      const valid = candidate
+        && candidate !== sourceRow
+        && Number(candidate.dataset.weekIndex) === sourceSlot.weekIndex
+        ? candidate
+        : null;
+
+      if (valid !== activeDrag.dropTarget) {
+        activeDrag.dropTarget?.classList.remove('is-drop-target');
+        valid?.classList.add('is-drop-target');
+        activeDrag.dropTarget = valid;
+      }
+    };
+
+    const onEnd = () => {
+      if (!activeDrag) return;
+      const target = activeDrag.dropTarget;
+      const slot = activeDrag.sourceSlot;
+      cleanupDrag();
+      if (!target) return;
+      const toDay = Number(target.dataset.dayIndex);
+      if (Number.isInteger(toDay) && toDay !== slot.dayIndex) {
+        P.moveSlot(program, slot.weekIndex, slot.dayIndex, toDay);
+        refresh();
+      }
+    };
+
+    activeDrag.onMove = onMove;
+    activeDrag.onEnd = onEnd;
+    grip.addEventListener('pointermove', onMove);
+    grip.addEventListener('pointerup', onEnd);
+    grip.addEventListener('pointercancel', cleanupDrag);
+  }
+
+  function cleanupDrag() {
+    if (!activeDrag) return;
+    const { grip, sourceRow, onMove, onEnd, pointerId } = activeDrag;
+    grip.removeEventListener('pointermove', onMove);
+    grip.removeEventListener('pointerup', onEnd);
+    grip.removeEventListener('pointercancel', cleanupDrag);
+    try { grip.releasePointerCapture(pointerId); } catch { /* already released */ }
+    sourceRow.classList.remove('is-dragging');
+    sourceRow.setAttribute('aria-grabbed', 'false');
+    sourceRow.style.transform = '';
+    activeDrag.dropTarget?.classList.remove('is-drop-target');
+    activeDrag = null;
   }
 
   card.appendChild(listEl);

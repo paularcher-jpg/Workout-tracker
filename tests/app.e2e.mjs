@@ -524,15 +524,33 @@ await step('targets, RPE and coaching notes reach the session', async () => {
   const notes = await page.locator('.entry-note').allInnerTexts();
   if (!notes.some((t) => /Easy first week/.test(t))) throw new Error('note missing');
 });
-await step('a timed hold does not prefill the reps box', async () => {
+await step('a hold logs seconds, never reps', async () => {
   let plank = null;
   for (const e of await page.locator('.entry').all()) {
     if ((await e.innerText()).startsWith('Plank')) plank = e;
   }
   if (!plank) throw new Error('no Plank entry');
-  if (!/30s/.test(await plank.locator('.entry-meta').innerText())) throw new Error('no 30s target');
-  const reps = await plank.locator('.set-row .set-input').nth(1).inputValue();
-  if (reps !== '') throw new Error('a hold should leave reps empty, got ' + reps);
+  const row = plank.locator('.set-row').first();
+
+  const units = await row.locator('.set-unit').allInnerTexts();
+  if (units[1] !== 's') throw new Error(`second field should read "s", got "${units[1]}"`);
+
+  const aria = await row.locator('.set-input').nth(1).getAttribute('aria-label');
+  if (!/seconds/i.test(aria)) throw new Error('aria-label is still reps: ' + aria);
+
+  const val = await row.locator('.set-input').nth(1).inputValue();
+  if (val !== '30') throw new Error(`plan says 30s, box shows "${val}"`);
+
+  // and it must be stored as secs — a hold must never write a reps value,
+  // or it re-enters the volume and 1RM maths
+  const stored = await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    const e = m.getState().active.entries.find((x) => x.exerciseId === 'plank');
+    return e ? e.sets[0] : null;
+  });
+  if (!stored) throw new Error('no plank entry in state');
+  if (stored.reps) throw new Error('a hold wrote reps: ' + JSON.stringify(stored));
+  if (String(stored.secs) !== '30') throw new Error('secs not set: ' + JSON.stringify(stored));
 });
 await step('rest times come from the plan', async () => {
   const rest = (await page.locator('.rest-pill').allInnerTexts())[0];
@@ -663,6 +681,77 @@ await step('“Run it again” restarts it from this week', async () => {
   await page.waitForSelector('.sched-row', { timeout: 4000 });
   const t = await page.locator('.card-today').innerText();
   if (/Plan complete/.test(t)) throw new Error('still complete after restart');
+});
+
+
+console.log('\n== editing the schedule ==');
+await step('tapping a rest day offers the routines', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Paste a plan' }).click();
+  await page.locator('input[type="file"]').setInputFiles(path.join(ROOT, 'tests/fixtures/plan.csv'));
+  await page.waitForSelector('.plan-ok');
+  await page.getByRole('button', { name: 'Add this plan' }).click();
+  await page.waitForSelector('.sched-row');
+
+  const rest = page.locator('.sched-row.is-rest').first();
+  const day = (await rest.locator('.sched-day').innerText()).trim();
+  await rest.locator('.sched-name').click();
+  await page.waitForSelector('.sheet', { timeout: 4000 });
+  const sheet = await page.locator('.sheet').innerText();
+  if (!/Full Body A/.test(sheet)) throw new Error('routines not offered: ' + sheet.slice(0, 120));
+  if (!/rest/i.test(sheet)) throw new Error('no rest-day option');
+  globalThis.__restDay = day;
+});
+await step('choosing a routine assigns it to that day', async () => {
+  await page.locator('.picker-item, .menu-item').filter({ hasText: 'Full Body A' }).first().click();
+  await page.waitForSelector('.sheet', { state: 'detached', timeout: 4000 });
+  const rows = await page.locator('.sched-row').allInnerTexts();
+  const target = rows.find((r) => r.trim().startsWith(globalThis.__restDay));
+  if (!/Full Body A/.test(target)) throw new Error(`${globalThis.__restDay} is still: ${target}`);
+});
+await step('a session can be dragged to another day', async () => {
+  const before = await page.locator('.sched-row').allInnerTexts();
+  const fromIdx = before.findIndex((r) => /Full Body B/.test(r));
+  if (fromIdx < 0) throw new Error('no Full Body B row to drag');
+  const toIdx = before.findIndex((r, i) => i !== fromIdx && /Rest/.test(r) && i < 7);
+  if (toIdx < 0) throw new Error('no rest row in week 1 to drop onto');
+
+  const grip = page.locator('.sched-row').nth(fromIdx).locator('.sched-grip');
+  if (!(await grip.count())) throw new Error('session row has no drag grip');
+  const from = await grip.boundingBox();
+  const to = await page.locator('.sched-row').nth(toIdx).boundingBox();
+
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+
+  const after = await page.locator('.sched-row').allInnerTexts();
+  if (!/Full Body B/.test(after[toIdx])) {
+    throw new Error(`drop did not land: row ${toIdx} is "${after[toIdx]}"`);
+  }
+});
+await step('only the grip opts out of touch scrolling', async () => {
+  // touch-action:none on the rows themselves would make the 21-day list
+  // unscrollable on a phone — worse than having no drag at all
+  const ta = await page.evaluate(() => ({
+    row: getComputedStyle(document.querySelector('.sched-row')).touchAction,
+    grip: getComputedStyle(document.querySelector('.sched-grip')).touchAction,
+    rowsWithNone: [...document.querySelectorAll('.sched-row')]
+      .filter((r) => getComputedStyle(r).touchAction === 'none').length,
+  }));
+  if (ta.grip !== 'none') throw new Error('grip must be touch-action:none, got ' + ta.grip);
+  if (ta.rowsWithNone > 0) throw new Error(`${ta.rowsWithNone} rows block touch scrolling`);
+});
+await step('the page still scrolls with the plan open', async () => {
+  const before = await page.evaluate(() => window.scrollY);
+  await page.evaluate(() => window.scrollBy(0, 400));
+  await page.waitForTimeout(150);
+  const after = await page.evaluate(() => window.scrollY);
+  if (after <= before) throw new Error(`page did not scroll (${before} -> ${after})`);
 });
 
 

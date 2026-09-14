@@ -8,7 +8,8 @@
 import { list, getState, upsert, uid, addCustomExercise } from './state.js';
 import { slugify } from './exercises.js';
 import { newProgram, setActiveProgram, toISODate, mondayOf } from './program.js';
-export { describeReps } from './workout.js';
+import { describeReps } from './workout.js';
+export { describeReps };
 
 /* ------------------------------------------------------------ exercise ids */
 
@@ -190,7 +191,7 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
     const rpe = cell(row, 'rpe');
     const notes = cell(row, 'notes');
 
-    sessions[key].exercises.push({
+    const exercise = {
       name: exerciseName,
       sets,
       reps,
@@ -198,7 +199,14 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
       rpe: rpe || '',
       notes: notes || '',
       order: Number(cell(row, 'order')) || sessions[key].exercises.length + 1,
-    });
+    };
+
+    // check if this is a time-based exercise
+    if (describeReps(reps).isTime) {
+      exercise.mode = 'time';
+    }
+
+    sessions[key].exercises.push(exercise);
     totalExercises += 1;
   }
 
@@ -285,7 +293,7 @@ function parseExerciseLine(line) {
     .replace(/^[\s,;–—-]+|[\s,;–—-]+$/g, '')
     .trim();
 
-  return {
+  const result = {
     name,
     sets: Math.min(20, Math.max(1, Number(m[2]) || 1)),
     reps: m[3].replace(/\s+/g, ' ').trim(),
@@ -293,6 +301,13 @@ function parseExerciseLine(line) {
     rpe: rpeMatch ? rpeMatch[1] : '',
     notes,
   };
+
+  // check if this is a time-based exercise
+  if (describeReps(result.reps).isTime) {
+    result.mode = 'time';
+  }
+
+  return result;
 }
 
 export function parseTextPlan(text, { name = 'My plan' } = {}) {
@@ -419,6 +434,7 @@ export function applyPlan(parsed, { startDate } = {}) {
 
   // 1. make sure every exercise exists
   const idFor = new Map();
+  const modeFor = new Map();
   for (const session of Object.values(parsed.sessions)) {
     for (const ex of session.exercises) {
       const key = normaliseName(ex.name);
@@ -428,11 +444,14 @@ export function applyPlan(parsed, { startDate } = {}) {
         const made = addCustomExercise({
           name: ex.name, group: 'Other', equipment: 'Other',
           restSec: ex.restSec ?? defaultRest(),
+          mode: ex.mode,
         });
         createdExercises.push(made);
         idFor.set(key, made.id);
+        modeFor.set(key, ex.mode);
       } else {
         idFor.set(key, exercise.id);
+        modeFor.set(key, exercise.mode);
       }
     }
   }
@@ -443,14 +462,21 @@ export function applyPlan(parsed, { startDate } = {}) {
     const routine = upsert('routines', {
       id: uid(),
       name: session.name,
-      items: session.exercises.map((ex) => ({
-        exerciseId: idFor.get(normaliseName(ex.name)),
-        sets: ex.sets,
-        reps: ex.reps,          // may be a range, a hold, or per-side
-        restSec: ex.restSec ?? defaultRest(),
-        rpe: ex.rpe || '',
-        notes: ex.notes || '',
-      })),
+      items: session.exercises.map((ex) => {
+        const key = normaliseName(ex.name);
+        const item = {
+          exerciseId: idFor.get(key),
+          sets: ex.sets,
+          reps: ex.reps,          // may be a range, a hold, or per-side
+          restSec: ex.restSec ?? defaultRest(),
+          rpe: ex.rpe || '',
+          notes: ex.notes || '',
+        };
+        if (ex.mode === 'time' || modeFor.get(key) === 'time') {
+          item.mode = 'time';
+        }
+        return item;
+      }),
       lastUsedAt: 0,
     });
     routineFor.set(session.key, routine.id);

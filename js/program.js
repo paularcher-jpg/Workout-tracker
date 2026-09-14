@@ -210,3 +210,20 @@ export function setSlot(program, weekIndex, dayIndex, routineId) {
   });
   return upsert('programs', { ...program, weeks });
 }
+
+/** Move a slot from one day to another within the same cycle week. Swaps if destination is occupied. */
+export function moveSlot(program, weekIndex, fromDay, toDay) {
+  if (fromDay === toDay || fromDay < 0 || fromDay > 6 || toDay < 0 || toDay > 6) {
+    return program;
+  }
+
+  const weeks = program.weeks.map((w, i) => {
+    if (i !== weekIndex) return { days: [...w.days] };
+    const days = [...w.days];
+    const temp = days[fromDay];
+    days[fromDay] = days[toDay];
+    days[toDay] = temp;
+    return { days };
+  });
+  return upsert('programs', { ...program, weeks });
+}

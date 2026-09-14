@@ -109,14 +109,18 @@ function repeatWorkout(source) {
     // drops its targets, RPE, coaching notes and rest times
     if (entry.target) created.target = { ...entry.target };
     if (entry.restSec != null) created.restSec = entry.restSec;
-    created.sets = entry.sets.map((s) => ({
-      id: Math.random().toString(36).slice(2),
-      weight: s.weight,
-      reps: s.reps,
-      warmup: !!s.warmup,
-      done: false,
-      doneAt: null,
-    }));
+    created.sets = entry.sets.map((s) => {
+      const set = {
+        id: Math.random().toString(36).slice(2),
+        weight: s.weight,
+        reps: s.reps,
+        warmup: !!s.warmup,
+        done: false,
+        doneAt: null,
+      };
+      if (s.secs !== undefined) set.secs = s.secs;
+      return set;
+    });
   }
   commit({ immediate: true });
   return w;
@@ -333,6 +337,7 @@ function setRow(entry, set, index, prev, refresh, drawTotals) {
   const workingIndex = working.indexOf(set);
   const priorSets = prev?.sets?.filter((x) => !x.warmup) || [];
   const prior = workingIndex >= 0 ? priorSets[workingIndex] : null;
+  const isTime = W.isTimeExercise(entry.exerciseId);
 
   const row = h('div', {
     class: `set-row${set.done ? ' set-done' : ''}${set.warmup ? ' set-warmup' : ''}`,
@@ -360,28 +365,37 @@ function setRow(entry, set, index, prev, refresh, drawTotals) {
     onfocus: (e) => e.target.select(),
   });
 
-  const repsInput = h('input', {
+  const secondsOrRepsInput = h('input', {
     class: 'set-input',
     type: 'text',
     inputmode: 'numeric',
     enterkeyhint: 'done',
-    value: set.reps === '' ? '' : String(set.reps),
-    placeholder: prior ? String(prior.reps) : '0',
-    'aria-label': `Set ${workingIndex + 1} reps`,
-    oninput: (e) => { W.patchSet(entry.id, set.id, { reps: sanitiseNumber(e.target.value, true) }); },
+    value: isTime
+      ? (set.secs === '' ? '' : String(set.secs))
+      : (set.reps === '' ? '' : String(set.reps)),
+    placeholder: prior ? String(isTime ? (prior.secs || prior.reps) : prior.reps) : '0',
+    'aria-label': isTime
+      ? `Set ${workingIndex + 1} seconds`
+      : `Set ${workingIndex + 1} reps`,
+    oninput: (e) => {
+      const patch = isTime
+        ? { secs: sanitiseNumber(e.target.value, true) }
+        : { reps: sanitiseNumber(e.target.value, true) };
+      W.patchSet(entry.id, set.id, patch);
+    },
     onfocus: (e) => e.target.select(),
   });
 
   row.appendChild(h('label', { class: 'set-field' },
     weightInput, h('span', { class: 'set-unit' }, units())));
   row.appendChild(h('label', { class: 'set-field' },
-    repsInput, h('span', { class: 'set-unit' }, 'reps')));
+    secondsOrRepsInput, h('span', { class: 'set-unit' }, isTime ? 's' : 'reps')));
 
   row.appendChild(h('button', {
     class: `set-check${set.done ? ' on' : ''}`,
     type: 'button',
     'aria-label': set.done ? 'Undo set' : 'Complete set',
-    onclick: () => completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotals),
+    onclick: () => completeSet(entry, set, weightInput, secondsOrRepsInput, isTime, row, refresh, drawTotals),
   }, '✓'));
 
   return row;
@@ -393,7 +407,7 @@ function sanitiseNumber(value, integer = false) {
   return cleaned;
 }
 
-function completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotals) {
+function completeSet(entry, set, weightInput, secondsOrRepsInput, isTime, row, refresh, drawTotals) {
   // The tick is the only confirmation a set registered, so its state is painted
   // here rather than waiting for a re-render that may never come.
   const check = row.querySelector('.set-check');
@@ -413,24 +427,37 @@ function completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotal
   }
 
   const weight = Number(weightInput.value || weightInput.placeholder || 0);
-  const reps = Number(repsInput.value || repsInput.placeholder || 0);
-  if (reps <= 0) {
-    repsInput.focus();
-    toast('Enter your reps first', 'error');
-    return;
+  let patch, pr;
+  if (isTime) {
+    const secs = Number(secondsOrRepsInput.value || secondsOrRepsInput.placeholder || 0);
+    if (secs <= 0) {
+      secondsOrRepsInput.focus();
+      toast('Enter the time first', 'error');
+      return;
+    }
+    patch = { weight, secs, done: true, doneAt: Date.now() };
+    pr = !set.warmup && W.isPR(entry.exerciseId, { weight, secs, warmup: false });
+    secondsOrRepsInput.value = String(secs);
+  } else {
+    const reps = Number(secondsOrRepsInput.value || secondsOrRepsInput.placeholder || 0);
+    if (reps <= 0) {
+      secondsOrRepsInput.focus();
+      toast('Enter your reps first', 'error');
+      return;
+    }
+    patch = { weight, reps, done: true, doneAt: Date.now() };
+    pr = !set.warmup && W.isPR(entry.exerciseId, { weight, reps, warmup: false });
+    secondsOrRepsInput.value = String(reps);
   }
 
-  const pr = !set.warmup && W.isPR(entry.exerciseId, { weight, reps, warmup: false });
-
   weightInput.value = String(weight);
-  repsInput.value = String(reps);
-  W.patchSet(entry.id, set.id, { weight, reps, done: true, doneAt: Date.now() });
+  W.patchSet(entry.id, set.id, patch);
   paint(true);
   weightInput.blur();
-  repsInput.blur();
+  secondsOrRepsInput.blur();
   drawTotals();
 
-  carryForward(entry, set, row, weight, reps);
+  carryForward(entry, set, row, weight, isTime ? patch.secs : patch.reps, isTime);
 
   if (pr) {
     toast('Personal best', 'success', { pr: true });
@@ -468,7 +495,7 @@ function keepVisible(row) {
  * After you log a set, the sets below it that are still empty inherit the same
  * numbers — so a straight-sets exercise is three taps, not six.
  */
-function carryForward(entry, set, row, weight, reps) {
+function carryForward(entry, set, row, weight, secondsOrReps, isTime) {
   const container = row.parentElement;
   if (!container) return;
   const rows = [...container.querySelectorAll('.set-row')];
@@ -478,18 +505,23 @@ function carryForward(entry, set, row, weight, reps) {
   entry.sets.forEach((other, i) => {
     if (i <= from || other.done) return;
 
-    // Per field, not all-or-nothing: a plan prefills reps, so an all-or-nothing
+    // Per field, not all-or-nothing: a plan prefills reps/secs, so an all-or-nothing
     // rule would leave every later set without a weight.
     const patch = {};
     if (other.weight === '') patch.weight = weight;
-    if (other.reps === '') patch.reps = reps;
+    if (isTime) {
+      if (other.secs === '') patch.secs = secondsOrReps;
+    } else {
+      if (other.reps === '') patch.reps = secondsOrReps;
+    }
     if (!Object.keys(patch).length) return;
 
     W.patchSet(entry.id, other.id, patch);
     const inputs = rows[i]?.querySelectorAll('.set-input');
     if (inputs?.length === 2) {
       if (patch.weight !== undefined) inputs[0].value = String(weight);
-      if (patch.reps !== undefined) inputs[1].value = String(reps);
+      if (isTime && patch.secs !== undefined) inputs[1].value = String(secondsOrReps);
+      if (!isTime && patch.reps !== undefined) inputs[1].value = String(secondsOrReps);
     }
   });
 }
@@ -589,11 +621,25 @@ async function finish(refresh) {
 function collectPRs(workout) {
   const out = [];
   for (const entry of workout.entries) {
-    const best = entry.sets
-      .filter((s) => s.done && !s.warmup)
-      .reduce((a, b) => (W.estimate1RM(b.weight, b.reps) > W.estimate1RM(a?.weight, a?.reps) ? b : a), null);
+    const isTime = W.isTimeExercise(entry.exerciseId);
+    let best;
+    if (isTime) {
+      // for time exercises, find the longest hold
+      best = entry.sets
+        .filter((s) => s.done && !s.warmup)
+        .reduce((a, b) => ((Number(b.secs) || 0) > (Number(a?.secs) || 0) ? b : a), null);
+    } else {
+      // for reps exercises, find the highest 1RM
+      best = entry.sets
+        .filter((s) => s.done && !s.warmup)
+        .reduce((a, b) => (W.estimate1RM(b.weight, b.reps) > W.estimate1RM(a?.weight, a?.reps) ? b : a), null);
+    }
     if (best && W.isPR(entry.exerciseId, { ...best, warmup: false })) {
-      out.push({ name: get('exercises', entry.exerciseId)?.name || 'Exercise', set: best });
+      out.push({
+        name: get('exercises', entry.exerciseId)?.name || 'Exercise',
+        exerciseId: entry.exerciseId,
+        set: best,
+      });
     }
   }
   return out;
@@ -632,19 +678,32 @@ function showSummary(record, previous, prs, refresh) {
       prs.length
         ? h('div', { class: 'sum-prs' },
           h('p', { class: 'today-label' }, `${prs.length} personal best${prs.length === 1 ? '' : 's'}`),
-          prs.map((p) => h('p', { class: 'sum-pr' },
-            h('strong', {}, p.name),
-            ` ${fmtWeight(p.set.weight, { withUnit: false })}×${p.set.reps}`)),
+          prs.map((p) => {
+            const isTime = W.isTimeExercise(p.exerciseId);
+            const display = isTime
+              ? `${p.set.secs}s${Number(p.set.weight) ? ` @ ${fmtWeight(p.set.weight, { withUnit: false })}` : ''}`
+              : `${fmtWeight(p.set.weight, { withUnit: false })}×${p.set.reps}`;
+            return h('p', { class: 'sum-pr' },
+              h('strong', {}, p.name),
+              ` ${display}`);
+          }),
         )
         : null,
 
       h('div', { class: 'sum-lines' },
         record.entries.map((e) => {
           const working = e.sets.filter((x) => !x.warmup);
-          const top = working.reduce((a, b) => ((Number(b.weight) || 0) > (Number(a?.weight) || 0) ? b : a), working[0]);
+          const isTime = W.isTimeExercise(e.exerciseId);
+          const top = isTime
+            ? working.reduce((a, b) => ((Number(b.secs) || 0) > (Number(a?.secs) || 0) ? b : a), working[0])
+            : working.reduce((a, b) => ((Number(b.weight) || 0) > (Number(a?.weight) || 0) ? b : a), working[0]);
+          const display = top ? (isTime
+            ? `${top.secs}s${Number(top.weight) ? ` @ ${fmtWeight(top.weight, { withUnit: false })}` : ''}`
+            : `${fmtWeight(top.weight, { withUnit: false })}×${top.reps}`)
+            : '—';
           return h('p', { class: 'sum-line' },
             h('span', {}, get('exercises', e.exerciseId)?.name || 'Exercise'),
-            h('span', { class: 'muted' }, top ? `${fmtWeight(top.weight, { withUnit: false })}×${top.reps}` : '—'),
+            h('span', { class: 'muted' }, display),
           );
         }),
       ),

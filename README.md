@@ -196,6 +196,18 @@ merge two exercises' history, which is much worse than carrying a near-duplicate
 You can also build a plan by hand, and edit the day-by-day grid afterwards under
 **Plan → Edit plan**.
 
+Days are editable: tap any day to assign a session or clear it back to rest,
+and drag a session to another day by its grip handle. Dragging uses pointer
+events from the grip alone — putting `touch-action: none` on the rows would
+stop the list scrolling on a phone, which is worse than having no drag.
+
+**Holds and cardio** log time rather than reps. An exercise carries
+`mode: 'reps' | 'time'`; a hold stores seconds with weight as an optional
+secondary (a plate on your back during a plank breaks ties). Time exercises
+are excluded from estimated 1RM and from volume totals, and a personal best is
+the longest hold, then the heaviest. Plans importing `3x30s` set this
+automatically.
+
 **Routines** are the underlying templates — Push, Pull, Legs, or whatever you
 follow. Starting one pre-fills every exercise with the weights you used last
 time. Targets from a plan (`3×8–12`, `RPE 8`, a 30-second hold, `10 each`) show
@@ -291,7 +303,7 @@ node --test tests/merge.test.mjs tests/program.test.mjs tests/planparse.test.mjs
 TZ=Europe/London node --test tests/program.test.mjs
 TZ=Pacific/Chatham node --test tests/program.test.mjs
 
-# browser tests (65 checks at iPhone viewport, including full offline operation)
+# browser tests (70 checks at iPhone viewport, including full offline operation)
 npm install --no-save playwright && npx playwright install chromium
 node tests/app.e2e.mjs
 ```

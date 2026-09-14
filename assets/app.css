@@ -1012,7 +1012,7 @@ textarea.input { min-height: 96px; resize: vertical; }
 .sched { display: flex; flex-direction: column; }
 .sched-row {
   display: grid;
-  grid-template-columns: 32px 54px 1fr auto;
+  grid-template-columns: 32px 54px 1fr auto auto;
   gap: 0.55rem;
   align-items: center;
   padding: 0.5rem 0;
@@ -1250,3 +1250,45 @@ textarea.input { min-height: 96px; resize: vertical; }
   .tabbar, .restbar, .toast { border: 1px solid var(--hairline-strong); }
   .sheet { border-top: 1px solid var(--hairline-strong); }
 }
+
+
+/* -------------------------------------------------------- schedule editing */
+
+/* Only the grip opts out of touch scrolling. Putting touch-action:none on the
+   whole row would make the 21-day list impossible to scroll on a phone. */
+.sched-grip {
+  touch-action: none;
+  background: none;
+  border: 0;
+  padding: 0 0.15rem;
+  width: 36px;
+  height: 44px;
+  color: var(--text-3);
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sched-grip svg { width: 20px; height: 20px; display: block; }
+.sched-grip:active { cursor: grabbing; color: var(--text); }
+
+.sched-row.is-dragging {
+  /* so elementFromPoint sees the row underneath, not the one being dragged */
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+  background: var(--ink-raise);
+  border-radius: 12px;
+  box-shadow: var(--lift);
+  opacity: 0.96;
+}
+
+.sched-row.is-drop-target {
+  background: var(--accent-wash);
+  border-radius: 12px;
+  outline: 2px solid var(--accent-edge);
+  outline-offset: -2px;
+}
+
+.picker-item.is-selected { background: var(--accent-wash); }
+.picker-item.picker-danger { color: var(--danger); }
