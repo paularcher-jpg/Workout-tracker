@@ -242,6 +242,25 @@ stand; you should never need to open the JSON file yourself.
 
 ---
 
+## Design
+
+The interface is a single stylesheet driven by CSS custom properties, so the
+whole look can be retuned without touching a line of application code.
+
+Two rules hold it together:
+
+- **Numbers are the content.** Weights, reps and the clock get the largest type,
+  tabular figures and the tightest tracking. Everything else is quiet
+  supporting text.
+- **Cold by default, warm only for achievement.** The interface is arctic blue
+  throughout; ember appears exclusively when you beat a personal best, so
+  colour carries meaning rather than decoration.
+
+Translucency (`backdrop-filter`) is reserved for floating chrome — the tab bar,
+rest timer, sheets and toasts — and never applied to scrolling content, where
+it costs frames on iOS for no visual gain. Swapping the accent is a one-line
+change to `--accent` / `--accent-deep`.
+
 ## Development
 
 Everything is dependency-free ES modules — no build step, no bundler, no
@@ -275,6 +294,7 @@ node tests/app.e2e.mjs
 | `js/charts.js` | Hand-rolled SVG charts |
 | `js/ui.js` | DOM helpers, bottom sheets, the exercise picker |
 | `js/views/` | One file per tab |
+| `assets/app.css` | The entire visual design — tokens, material, layout |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `tools/make_icons.py` | Regenerates the app icons |
 

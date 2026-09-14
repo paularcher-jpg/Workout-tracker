@@ -1,7 +1,7 @@
 // Reusable workout templates. Starting a session from one pre-fills every
 // exercise with your last weights.
 
-import { h, clear, toast, pickExercise, confirmSheet, openSheet, emptyState } from '../ui.js';
+import { h, clear, toast, pickExercise, confirmSheet, openSheet, emptyState, icon } from '../ui.js';
 import { list, get, upsert, softDelete, uid } from '../state.js';
 import { formatClock } from '../timer.js';
 import * as W from '../workout.js';
@@ -32,7 +32,7 @@ export function libraryNode({ refresh, navigate }) {
   }, '+ New routine'));
 
   if (!routines.length) {
-    wrap.appendChild(emptyState('📋', 'No routines yet',
+    wrap.appendChild(emptyState(icon('plan'), 'No routines yet',
       'Create one for each training day — Push, Pull, Legs, or whatever you follow.'));
   }
 

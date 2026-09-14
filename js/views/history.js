@@ -1,6 +1,6 @@
 // Everything you've logged, newest first.
 
-import { h, clear, toast, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, fmtDate, emptyState } from '../ui.js';
+import { h, clear, toast, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, fmtDate, emptyState, icon } from '../ui.js';
 import { get, softDelete, commit, upsert } from '../state.js';
 import * as W from '../workout.js';
 
@@ -19,7 +19,7 @@ export function render(root, { refresh, navigate }) {
   ));
 
   if (!workouts.length) {
-    wrap.appendChild(emptyState('📆', 'Nothing logged yet', 'Finish a workout and it will show up here.'));
+    wrap.appendChild(emptyState(icon('history'), 'Nothing logged yet', 'Finish a workout and it will show up here.'));
     root.appendChild(wrap);
     return;
   }

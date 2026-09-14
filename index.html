@@ -5,8 +5,8 @@
 <title>Workout Tracker</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="description" content="A private, offline-first gym log that syncs to your own Google Drive.">
-<meta name="theme-color" content="#0a0c0f" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#05070B" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#EEF1F6" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,9 +17,19 @@
 <link rel="stylesheet" href="./assets/app.css">
 </head>
 <body>
+  <div class="atmos" aria-hidden="true"></div>
   <div id="app">
     <div id="splash" class="splash">
-      <div class="splash-mark">🏋️</div>
+      <div class="splash-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="9.5" width="2.6" height="5" rx="1.1"/>
+          <rect x="5.2" y="7" width="3" height="10" rx="1.2"/>
+          <path d="M8.6 12h6.8"/>
+          <rect x="15.8" y="7" width="3" height="10" rx="1.2"/>
+          <rect x="19.4" y="9.5" width="2.6" height="5" rx="1.1"/>
+        </svg>
+      </div>
       <p>Loading your workouts…</p>
     </div>
   </div>

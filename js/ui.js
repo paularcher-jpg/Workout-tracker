@@ -84,11 +84,11 @@ export function relativeTime(ts) {
 /* ------------------------------------------------------------------ toast */
 
 let toastTimer = null;
-export function toast(message, kind = 'info') {
+export function toast(message, kind = 'info', { pr = false } = {}) {
   const host = document.getElementById('toast');
   if (!host) return;
   host.textContent = message;
-  host.className = `toast toast-${kind} show`;
+  host.className = `toast toast-${kind}${pr ? ' is-pr' : ''} show`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { host.className = 'toast'; }, kind === 'error' ? 4800 : 2600);
 }

@@ -1,6 +1,6 @@
 // Charts and personal bests.
 
-import { h, clear, fmtWeight, fmtVolume, emptyState, pickExercise } from '../ui.js';
+import { h, clear, fmtWeight, fmtVolume, emptyState, pickExercise, icon } from '../ui.js';
 import { get, getState, updateLocal } from '../state.js';
 import { lineChart, barChart } from '../charts.js';
 import * as W from '../workout.js';
@@ -18,7 +18,7 @@ export function render(root, { refresh }) {
   ));
 
   if (!stats.workouts) {
-    wrap.appendChild(emptyState('📈', 'No data yet', 'Log a couple of sessions and your trends will appear here.'));
+    wrap.appendChild(emptyState(icon('progress'), 'No data yet', 'Log a couple of sessions and your trends will appear here.'));
     root.appendChild(wrap);
     return;
   }

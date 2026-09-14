@@ -1,7 +1,7 @@
 // Your training plan on a calendar: what you are doing today, and what is
 // coming up. Routines are the templates; the plan says which day each falls on.
 
-import { h, clear, toast, confirmSheet, openSheet, emptyState } from '../ui.js';
+import { h, clear, toast, confirmSheet, openSheet, emptyState, icon } from '../ui.js';
 import { list, get, upsert, softDelete } from '../state.js';
 import * as P from '../program.js';
 import * as W from '../workout.js';
@@ -16,15 +16,20 @@ export function render(root, { refresh, navigate }) {
   const wrap = h('div', { class: 'view' });
   const program = P.activeProgram();
 
+  const summary = program ? P.programSummary(program) : null;
   wrap.appendChild(h('div', { class: 'hero' },
     h('h1', {}, 'Plan'),
     h('p', { class: 'muted' }, program
-      ? program.name
+      ? [
+        program.name,
+        `${summary.weeks} week${summary.weeks === 1 ? '' : 's'}`,
+        `${summary.sessions} session${summary.sessions === 1 ? '' : 's'} a cycle`,
+      ].filter((part, i) => i !== 0 || part.toLowerCase() !== 'plan').join(' · ')
       : 'Schedule your sessions so the app knows what today is.'),
   ));
 
   if (!program) {
-    wrap.appendChild(emptyState('🗓', 'No plan yet',
+    wrap.appendChild(emptyState(icon('plan'), 'No plan yet',
       'Paste a written plan and the app will lay it out across your week.'));
     wrap.appendChild(h('button', {
       class: 'btn btn-primary btn-lg btn-block', type: 'button',

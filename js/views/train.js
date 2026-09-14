@@ -1,7 +1,7 @@
 // The screen you actually use in the gym. Big tap targets, no full re-render
 // while typing, every change written to disk immediately.
 
-import { h, clear, toast, pickExercise, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, units, emptyState } from '../ui.js';
+import { h, clear, toast, pickExercise, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, units, emptyState, icon } from '../ui.js';
 import { getState, list, get, addCustomExercise, commit } from '../state.js';
 import { MUSCLE_GROUPS } from '../exercises.js';
 import * as P from '../program.js';
@@ -173,7 +173,7 @@ function activeView(workout, refresh) {
   wrap.appendChild(listEl);
 
   if (!workout.entries.length) {
-    wrap.appendChild(emptyState('🏋️', 'No exercises yet', 'Add your first exercise to start logging sets.'));
+    wrap.appendChild(emptyState(icon('train'), 'No exercises yet', 'Add your first exercise to start logging sets.'));
   }
 
   wrap.appendChild(h('button', {
@@ -422,7 +422,7 @@ function completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotal
   carryForward(entry, set, row, weight, reps);
 
   if (pr) {
-    toast('🏆 Personal best!', 'success');
+    toast('Personal best', 'success', { pr: true });
     row.classList.add('set-pr');
   }
 
