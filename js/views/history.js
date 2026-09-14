@@ -129,6 +129,8 @@ function repeat(source) {
   for (const entry of source.entries || []) {
     const created = W.addExerciseToActive(entry.exerciseId);
     if (!created) continue;
+    if (entry.target) created.target = { ...entry.target };
+    if (entry.restSec != null) created.restSec = entry.restSec;
     created.sets = entry.sets.map((s) => ({
       id: Math.random().toString(36).slice(2),
       weight: s.weight, reps: s.reps, warmup: !!s.warmup, done: false, doneAt: null,

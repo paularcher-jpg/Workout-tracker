@@ -105,6 +105,10 @@ function repeatWorkout(source) {
   for (const entry of source.entries || []) {
     const created = W.addExerciseToActive(entry.exerciseId);
     if (!created) continue;
+    // carry the plan's prescription too, or repeating a session silently
+    // drops its targets, RPE, coaching notes and rest times
+    if (entry.target) created.target = { ...entry.target };
+    if (entry.restSec != null) created.restSec = entry.restSec;
     created.sets = entry.sets.map((s) => ({
       id: Math.random().toString(36).slice(2),
       weight: s.weight,
@@ -302,7 +306,7 @@ function entryCard(entry, workout, refresh, drawTotals) {
   const table = h('div', { class: 'sets' });
   table.appendChild(h('div', { class: 'set-row set-head' },
     h('span', {}, 'Set'),
-    h('span', {}, 'Previous'),
+    h('span', {}, 'Prev'),
     h('span', {}, units()),
     h('span', {}, 'Reps'),
     h('span', {}, ''),
@@ -394,9 +398,20 @@ function sanitiseNumber(value, integer = false) {
 }
 
 function completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotals) {
+  // The tick is the only confirmation a set registered, so its state is painted
+  // here rather than waiting for a re-render that may never come.
+  const check = row.querySelector('.set-check');
+  const paint = (done) => {
+    row.classList.toggle('set-done', done);
+    if (!check) return;
+    check.classList.toggle('on', done);
+    check.setAttribute('aria-label', done ? 'Undo set' : 'Complete set');
+  };
+
   if (set.done) {
     W.patchSet(entry.id, set.id, { done: false, doneAt: null });
-    row.classList.remove('set-done');
+    paint(false);
+    row.classList.remove('set-pr');
     drawTotals();
     return;
   }
@@ -414,7 +429,7 @@ function completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotal
   weightInput.value = String(weight);
   repsInput.value = String(reps);
   W.patchSet(entry.id, set.id, { weight, reps, done: true, doneAt: Date.now() });
-  row.classList.add('set-done');
+  paint(true);
   weightInput.blur();
   repsInput.blur();
   drawTotals();
@@ -423,14 +438,35 @@ function completeSet(entry, set, weightInput, repsInput, row, refresh, drawTotal
 
   if (pr) {
     toast('Personal best', 'success', { pr: true });
+    // A flash, not a state: warm has to stay rare to mean anything, and in a
+    // first session every set is a personal best. Remove before re-adding so
+    // consecutive PRs replay, and clear it once the animation finishes.
+    row.classList.remove('set-pr');
+    void row.offsetWidth;
     row.classList.add('set-pr');
+    row.addEventListener('animationend', () => row.classList.remove('set-pr'), { once: true });
   }
 
   const settings = getState().settings;
   if (settings.autoStartRest && !set.warmup && entry.restSec > 0) {
     Timer.start(entry.restSec);
+    keepVisible(row);
   }
 }
+
+/** Keep a just-logged row clear of the rest bar, which floats over the list. */
+function keepVisible(row) {
+  requestAnimationFrame(() => {
+    const bar = document.querySelector('.restbar:not([hidden])');
+    if (!bar) return;
+    const overlap = row.getBoundingClientRect().bottom - bar.getBoundingClientRect().top;
+    if (overlap > -8) {
+      const main = document.getElementById('main');
+      main?.scrollBy({ top: overlap + 16, behavior: 'smooth' });
+    }
+  });
+}
+
 
 /**
  * After you log a set, the sets below it that are still empty inherit the same
@@ -538,12 +574,86 @@ async function finish(refresh) {
     return;
   }
 
+  // capture the comparison before the new session lands in history
+  const previous = workout.routineId
+    ? W.workoutsSorted().find((w) => w.routineId === workout.routineId)
+    : null;
+  const prs = collectPRs(workout);
+
   const record = W.finishWorkout();
   Timer.stop();
   refresh();
-  if (record) {
-    const st = W.workoutStats(record);
-    toast(`Saved · ${st.sets} set${st.sets === 1 ? '' : 's'} · ${fmtVolume(st.volume)}`, 'success');
-    document.dispatchEvent(new CustomEvent('wt:workout-saved'));
+  if (!record) return;
+
+  document.dispatchEvent(new CustomEvent('wt:workout-saved'));
+  showSummary(record, previous, prs, refresh);
+}
+
+/** Personal bests hit in this session, resolved before it is saved. */
+function collectPRs(workout) {
+  const out = [];
+  for (const entry of workout.entries) {
+    const best = entry.sets
+      .filter((s) => s.done && !s.warmup)
+      .reduce((a, b) => (W.estimate1RM(b.weight, b.reps) > W.estimate1RM(a?.weight, a?.reps) ? b : a), null);
+    if (best && W.isPR(entry.exerciseId, { ...best, warmup: false })) {
+      out.push({ name: get('exercises', entry.exerciseId)?.name || 'Exercise', set: best });
+    }
   }
+  return out;
+}
+
+/**
+ * The end of a session is the half people remember, so it gets a real screen
+ * rather than a toast that has gone before you have put the phone down.
+ */
+function showSummary(record, previous, prs, refresh) {
+  const st = W.workoutStats(record);
+  const prev = previous ? W.workoutStats(previous) : null;
+
+  const delta = (now, before, fmt) => {
+    if (!prev || !before) return null;
+    const diff = now - before;
+    if (Math.abs(diff) < 0.01) return h('span', { class: 'sum-delta' }, 'same as last time');
+    return h('span', { class: `sum-delta ${diff > 0 ? 'up' : 'down'}` },
+      `${diff > 0 ? '+' : '−'}${fmt(Math.abs(diff))} vs last time`);
+  };
+
+  openSheet({
+    title: record.name || 'Workout complete',
+    onClose: refresh,
+    render: (close) => h('div', { class: 'summary' },
+      h('p', { class: 'today-label' }, 'Session complete'),
+      h('h2', { class: 'sum-headline' }, `${st.sets} set${st.sets === 1 ? '' : 's'} · ${fmtVolume(st.volume)}`),
+      delta(st.volume, prev?.volume, (v) => fmtVolume(v)),
+
+      h('div', { class: 'stat-row sum-stats' },
+        stat(String(st.exercises), 'exercises'),
+        stat(String(st.reps), 'reps'),
+        stat(fmtDuration(st.durationMs), 'time'),
+      ),
+
+      prs.length
+        ? h('div', { class: 'sum-prs' },
+          h('p', { class: 'today-label' }, `${prs.length} personal best${prs.length === 1 ? '' : 's'}`),
+          prs.map((p) => h('p', { class: 'sum-pr' },
+            h('strong', {}, p.name),
+            ` ${fmtWeight(p.set.weight, { withUnit: false })}×${p.set.reps}`)),
+        )
+        : null,
+
+      h('div', { class: 'sum-lines' },
+        record.entries.map((e) => {
+          const working = e.sets.filter((x) => !x.warmup);
+          const top = working.reduce((a, b) => ((Number(b.weight) || 0) > (Number(a?.weight) || 0) ? b : a), working[0]);
+          return h('p', { class: 'sum-line' },
+            h('span', {}, get('exercises', e.exerciseId)?.name || 'Exercise'),
+            h('span', { class: 'muted' }, top ? `${fmtWeight(top.weight, { withUnit: false })}×${top.reps}` : '—'),
+          );
+        }),
+      ),
+
+      h('button', { class: 'btn btn-primary btn-block', type: 'button', onclick: close }, 'Done'),
+    ),
+  });
 }

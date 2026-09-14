@@ -80,6 +80,7 @@ export function navigate(tab) {
 function render() {
   const { view } = VIEWS[current];
   view.render(main, { refresh: render, navigate });
+  paintTabs();
 }
 
 function buildTabBar() {
@@ -97,10 +98,13 @@ function buildTabBar() {
 }
 
 function paintTabs() {
+  const live = !!W.activeWorkout();
   for (const btn of tabBar.querySelectorAll('.tab')) {
     const on = btn.dataset.tab === current;
     btn.classList.toggle('on', on);
     btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    // a session in progress has to be visible from every tab, not just Train
+    if (btn.dataset.tab === 'train') btn.classList.toggle('live', live);
   }
 }
 

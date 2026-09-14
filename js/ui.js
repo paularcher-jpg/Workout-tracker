@@ -54,7 +54,9 @@ export function fmtVolume(value) {
 }
 
 export function fmtDuration(ms) {
-  const mins = Math.max(0, Math.round((Number(ms) || 0) / 60000));
+  const secs = Math.max(0, Math.round((Number(ms) || 0) / 1000));
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.round(secs / 60);
   if (mins < 60) return `${mins}m`;
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }

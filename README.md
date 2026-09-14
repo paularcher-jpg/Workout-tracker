@@ -256,6 +256,13 @@ Two rules hold it together:
   throughout; ember appears exclusively when you beat a personal best, so
   colour carries meaning rather than decoration.
 
+Measured floors, re-checked in both colour schemes after any change:
+
+- **Every text/background pair clears WCAG AA** (4.5:1 body, 3:1 large and UI).
+- **Every interactive target is at least 44x44** (Apple HIG).
+- **A completed set is obvious without reading it** — the row fills, not just a
+  border shift, and the tick repaints on tap rather than on the next re-render.
+
 Three constraints the stylesheet holds to, checked by a design detector:
 
 - **No chromatic glow.** Coloured halo shadows and saturated radial-gradient
@@ -289,7 +296,7 @@ node --test tests/merge.test.mjs tests/program.test.mjs tests/planparse.test.mjs
 TZ=Europe/London node --test tests/program.test.mjs
 TZ=Pacific/Chatham node --test tests/program.test.mjs
 
-# browser tests (62 checks at iPhone viewport, including full offline operation)
+# browser tests (65 checks at iPhone viewport, including full offline operation)
 npm install --no-save playwright && npx playwright install chromium
 node tests/app.e2e.mjs
 ```

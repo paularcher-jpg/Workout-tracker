@@ -134,6 +134,7 @@ export function todayCard(program = P.activeProgram(), refresh, navigate) {
 
 function upcomingCard(program, refresh, navigate) {
   const card = h('section', { class: 'card' });
+  const live = W.activeWorkout();
 
   // Start from this Monday, not today, so a session you missed earlier in the
   // week is still on screen and can still be done.
@@ -149,7 +150,9 @@ function upcomingCard(program, refresh, navigate) {
 
   card.appendChild(h('div', { class: 'card-head' },
     h('h3', {}, 'Your weeks'),
-    h('span', { class: 'muted small' }, 'Tap any session to start it'),
+    h('span', { class: 'muted small' }, live
+      ? 'Finish your session to start another'
+      : 'Tap any session to start it'),
   ));
 
   const listEl = h('div', { class: 'sched' });
@@ -173,9 +176,13 @@ function upcomingCard(program, refresh, navigate) {
       h('span', { class: 'sched-name' }, slot.routine ? slot.routine.name : 'Rest'),
       slot.routine
         ? h('button', {
-          class: `btn btn-sm ${isToday ? 'btn-primary' : 'btn-quiet'} sched-start`,
+          class: `btn btn-sm ${isToday && !live ? 'btn-primary' : 'btn-quiet'} sched-start`,
           type: 'button',
-          'aria-label': `Start ${slot.routine.name} scheduled for ${slot.date.toDateString()}`,
+          disabled: !!live,
+          title: live ? 'Finish your current workout first' : '',
+          'aria-label': live
+            ? `${slot.routine.name} — finish your current workout first`
+            : `Start ${slot.routine.name} scheduled for ${slot.date.toDateString()}`,
           onclick: () => startScheduled(slot, refresh, navigate),
         }, done ? 'Again' : 'Start')
         : h('span', { class: 'sched-tick' }, ''),

@@ -41,6 +41,22 @@ const step = async (name, fn) => {
   catch (err) { console.log('  FAIL ' + name + ' -> ' + err.message); problems.push(name + ': ' + err.message); }
 };
 
+/**
+ * Finish the live session and dismiss the summary sheet it now opens.
+ * The sheet is modal, so leaving it up blocks every later interaction.
+ */
+async function endSession(p) {
+  const finish = p.getByRole('button', { name: 'Finish' });
+  if (!(await finish.count())) return false;
+  await finish.click();
+  const done = p.getByRole('button', { name: 'Done' });
+  await done.waitFor({ timeout: 5000 });
+  await done.click();
+  await p.waitForSelector('.sheet', { state: 'detached', timeout: 5000 });
+  await p.waitForSelector('.hero h1', { timeout: 5000 });
+  return true;
+}
+
 const server = await serve();
 const browser = await chromium.launch(LAUNCH);
 const BASE = `http://localhost:${PORT}/`;
@@ -105,6 +121,34 @@ await step('rest timer +15 works', async () => {
   const s = (v) => { const [m, x] = v.split(':').map(Number); return m * 60 + x; };
   if (s(after) <= s(before)) throw new Error(`${before} -> ${after}`);
 });
+await step('ticking a set repaints immediately, without waiting for a re-render', async () => {
+  // the whole logging loop rests on this: if the tick does not change on tap,
+  // you tap again and silently un-log the set
+  const state = await page.evaluate(() => {
+    const row = document.querySelector('.set-row.set-done');
+    const chk = row?.querySelector('.set-check');
+    if (!row || !chk) return null;
+    const rowBg = getComputedStyle(row).backgroundColor;
+    const open = document.querySelector('.set-row:not(.set-head):not(.set-done)');
+    return {
+      checkOn: chk.classList.contains('on'),
+      aria: chk.getAttribute('aria-label'),
+      rowBg,
+      openBg: open ? getComputedStyle(open).backgroundColor : null,
+    };
+  });
+  if (!state) throw new Error('no completed row found');
+  if (!state.checkOn) throw new Error('tick did not turn on: still ' + state.aria);
+  if (state.aria !== 'Undo set') throw new Error('aria not updated: ' + state.aria);
+  if (state.rowBg === state.openBg) {
+    throw new Error('a done row is painted identically to an open one: ' + state.rowBg);
+  }
+});
+await step('the personal-best flash clears instead of becoming a state', async () => {
+  await page.waitForTimeout(1800);
+  const stuck = await page.locator('.set-row.set-pr').count();
+  if (stuck) throw new Error(`${stuck} rows still flagged as a PR after the animation`);
+});
 await step('the rest bar fill is driven by transform, not width', async () => {
   // animating width re-lays out the bar every frame for the whole countdown;
   // this asserts the compositor-friendly mechanism is actually wired up
@@ -160,9 +204,16 @@ await step('active workout survives reload', async () => {
 });
 
 console.log('\n== finish + history ==');
-await step('finish workout', async () => {
+await step('finishing shows a session summary, not just a toast', async () => {
   await page.getByRole('button', { name: 'Finish' }).click();
-  await page.waitForSelector('.hero h1', { timeout: 3000 });
+  const sheet = page.locator('.summary');
+  await sheet.waitFor({ timeout: 5000 });
+  const text = await sheet.innerText();
+  if (!/set/i.test(text)) throw new Error('summary has no set count: ' + text);
+  if (!/exercises/i.test(text)) throw new Error('summary has no exercise count: ' + text);
+  await page.getByRole('button', { name: 'Done' }).click();
+  await page.waitForSelector('.sheet', { state: 'detached', timeout: 5000 });
+  await page.waitForSelector('.hero h1', { timeout: 5000 });
 });
 await step('history shows the session', async () => {
   await page.locator('.tab[data-tab="history"]').click();
@@ -250,8 +301,7 @@ const logWorkout = async (weight, reps) => {
   await row.locator('.set-input').nth(0).fill(String(weight));
   await row.locator('.set-input').nth(1).fill(String(reps));
   await row.locator('.set-check').click();
-  await page.getByRole('button',{name:'Finish'}).click();
-  await page.waitForSelector('.hero h1',{timeout:3000});
+  await endSession(page);
 };
 
 
@@ -281,8 +331,7 @@ await step('beating it is flagged as a personal best', async () => {
   if (!t.includes('Personal best')) throw new Error('got "' + t + '"');
 });
 await step('finish second session', async () => {
-  await page.getByRole('button',{name:'Finish'}).click();
-  await page.waitForSelector('.hero h1',{timeout:3000});
+  await endSession(page);
 });
 
 console.log('\n== backup round-trip ==');
@@ -505,11 +554,7 @@ await step('close the session the previous block left open', async () => {
   // the app refuses to start a second workout while one is in progress, which
   // is correct behaviour — so finish it the way a person would
   await page.locator('.tab[data-tab="train"]').click();
-  const finish = page.getByRole('button', { name: 'Finish' });
-  if (await finish.count()) {
-    await finish.click();
-    await page.waitForSelector('.hero h1', { timeout: 5000 });
-  }
+  await endSession(page);
 });
 await step('every scheduled session is startable, rest days are not', async () => {
   await page.locator('.tab[data-tab="plan"]').click();
@@ -544,8 +589,7 @@ await step('it is logged on the day it was actually done', async () => {
   await row.locator('.set-input').nth(0).fill('60');
   await row.locator('.set-input').nth(1).fill('8');
   await row.locator('.set-check').click();
-  await page.getByRole('button', { name: 'Finish' }).click();
-  await page.waitForSelector('.hero h1', { timeout: 4000 });
+  await endSession(page);
 
   const logged = await page.evaluate(async () => {
     const m = await import('/js/state.js');

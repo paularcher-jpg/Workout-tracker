@@ -38,13 +38,16 @@
   /* ink on material */
   --text: #EEF3F9;
   --text-2: #94A3B6;
-  --text-3: #5E6C80;
+  --text-3: #9AA9BD;
 
   /* signal */
   --accent: #5FD9FF;
   --accent-deep: #2C74FF;
   --accent-wash: rgba(95, 217, 255, 0.13);
+  --done-wash: rgba(95, 217, 255, 0.21);
   --accent-edge: rgba(95, 217, 255, 0.42);
+  /* foreground for anything painted with --accent; flips with the theme */
+  --on-accent: #01121F;
 
   /* achievement — used nowhere else */
   --ember: #FF8A3D;
@@ -53,6 +56,8 @@
 
   --ok: #46E2A4;
   --danger: #FF6274;
+  /* the fill behind white button text; --danger itself is tuned for text on ink */
+  --danger-solid: #B3202F;
 
   --r-card: 22px;
   --r-control: 14px;
@@ -62,7 +67,7 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-  --lift: 0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  --lift: 0 14px 28px -16px rgba(0, 0, 0, 0.9);
   --lift-sheet: 0 -20px 60px -20px rgba(0, 0, 0, 0.85);
 
   /* ease-out-quint and ease-out-expo. Neither overshoots: real objects
@@ -85,17 +90,20 @@
     --specular: rgba(255, 255, 255, 0.9);
     --text: #0B1220;
     --text-2: #55647A;
-    --text-3: #8695AA;
+    --text-3: #4E5C6E;
     --accent: #0067C7;
     --accent-deep: #0A4FD6;
     --accent-wash: rgba(0, 103, 199, 0.1);
+    --done-wash: rgba(0, 103, 199, 0.15);
     --accent-edge: rgba(0, 103, 199, 0.32);
-    --ember: #C4441A;
-    --ember-hot: #A8320F;
-    --ember-wash: rgba(196, 68, 26, 0.1);
+    --on-accent: #FFFFFF;
+    --ember: #8A5A00;
+    --ember-hot: #6E4700;
+    --ember-wash: rgba(138, 90, 0, 0.12);
     --ok: #00875A;
     --danger: #C22B3E;
-    --lift: 0 16px 34px -20px rgba(11, 18, 32, 0.35);
+    --danger-solid: #B02133;
+    --lift: 0 12px 26px -18px rgba(11, 18, 32, 0.35);
     --lift-sheet: 0 -18px 50px -24px rgba(11, 18, 32, 0.3);
   }
 }
@@ -181,7 +189,7 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .section-title h2, .month-head, .stat span, .stat-card span, .set-head span,
 .today-label, .rest-caption, .sched-day, .mini-head, .chart-caption,
 .week-day, .field-label, .sched-done-tag, .empty-tag {
-  font-size: 0.67rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.13em;
@@ -235,14 +243,15 @@ a { color: var(--accent); text-underline-offset: 3px; }
 
 .sync-badge {
   border: 1px solid var(--hairline);
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: var(--text-2);
+  /* opaque: a blurred backdrop makes per-pixel contrast depend on whatever
+     the atmosphere happens to paint behind it */
+  background: var(--ink-raise);
+  color: var(--text);
   font: inherit;
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 0.36rem 0.7rem;
+  min-height: 44px;
+  padding: 0 0.85rem;
   border-radius: var(--r-capsule);
   cursor: pointer;
   white-space: nowrap;
@@ -320,24 +329,21 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 
 .btn-primary {
   background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 115%);
-  color: #01121F;
+  color: var(--on-accent);
   border-color: transparent;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
     0 8px 18px -10px rgba(0, 0, 0, 0.65);
   font-weight: 700;
 }
-@media (prefers-color-scheme: light) {
-  .btn-primary { color: #fff; }
-}
 
 .btn-secondary { background: var(--glass); border-color: var(--hairline); }
 .btn-ghost { background: transparent; border-color: var(--hairline-strong); }
 .btn-quiet { background: transparent; color: var(--text-2); border-color: transparent; }
-.btn-danger { background: var(--danger); color: #fff; border-color: transparent; }
+.btn-danger { background: var(--danger-solid); color: #fff; border-color: transparent; }
 .btn-block { width: 100%; }
 .btn-lg { min-height: 56px; font-size: 1.06rem; border-radius: 17px; }
-.btn-sm { min-height: 36px; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 11px; }
+.btn-sm { min-height: 46px; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 11px; }
 
 .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .btn-row .btn { flex: 1 1 auto; }
@@ -348,8 +354,8 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   color: var(--text-3);
   font-size: 1.15rem;
   line-height: 1;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   cursor: pointer;
   flex: none;
@@ -432,6 +438,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 .session-title {
   background: transparent;
   border: none;
+  min-height: 44px;
   color: var(--text);
   font: inherit;
   font-size: 1.75rem;
@@ -498,7 +505,10 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   border: 1px solid var(--hairline);
   color: var(--text);
   border-radius: var(--r-capsule);
-  padding: 0.24rem 0.68rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.95rem;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 650;
@@ -511,7 +521,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 
 .set-row {
   display: grid;
-  grid-template-columns: 32px minmax(50px, 0.85fr) 1fr 1fr 46px;
+  grid-template-columns: 44px minmax(44px, 0.7fr) 1fr 1fr 46px;
   gap: 0.4rem;
   align-items: center;
 }
@@ -536,7 +546,11 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 .set-prev {
   background: transparent;
   border: none;
-  color: var(--text-3);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  /* the number you are trying to beat: --text-2, never the hint colour */
+  color: var(--text-2);
   font: inherit;
   font-size: 0.82rem;
   font-weight: 600;
@@ -547,7 +561,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.set-prev:disabled { cursor: default; opacity: 0.45; }
+.set-prev:disabled { cursor: default; color: var(--text-3); }
 
 .set-input {
   background: var(--glass-sunken);
@@ -586,12 +600,23 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 .set-check:active { transform: scale(0.9); }
 .set-check.on {
   background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 120%);
-  color: #01121F;
+  color: var(--on-accent);
   border-color: transparent;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-.set-done .set-input { border-color: color-mix(in srgb, var(--accent) 24%, var(--hairline)); }
+/* A logged set has to be unmistakable at arm's length, mid-set, so the whole
+   row fills rather than nudging a 1px border. */
+.set-row.set-done {
+  background: var(--done-wash);
+  border-radius: 12px;
+  margin-inline: -0.4rem;
+  padding-inline: 0.4rem;
+}
+.set-done .set-input {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--hairline));
+}
+.set-done .set-index { border-color: var(--accent-edge); }
 .set-warmup .set-index { color: var(--accent); border-color: var(--accent-edge); }
 
 /* the one warm moment in the whole interface */
@@ -599,11 +624,11 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 @keyframes ember {
   0% { background: transparent; }
   22% { background: var(--ember-wash); }
-  100% { background: transparent; }
+  100% { background: var(--done-wash); }
 }
 .set-pr .set-check.on {
   background: linear-gradient(180deg, var(--ember) 0%, var(--ember-hot) 120%);
-  color: #190701;
+  color: var(--on-accent);
 }
 
 /* --------------------------------------------------------------- rest bar
@@ -667,7 +692,8 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   font: inherit;
   font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.5rem 0.65rem;
+  min-height: 44px;
+  padding: 0 0.75rem;
   cursor: pointer;
   flex: none;
 }
@@ -686,7 +712,7 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 }
 .rest-option.on {
   background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 120%);
-  color: #01121F;
+  color: var(--on-accent);
   border-color: transparent;
 }
 
@@ -730,7 +756,20 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 }
 .tab-icon { display: block; width: 21px; height: 21px; transition: transform 0.3s var(--ease-exp); }
 .tab-icon svg { width: 100%; height: 100%; display: block; }
-.tab-label { font-size: 0.6rem; font-weight: 650; letter-spacing: 0.02em; }
+.tab-label { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.02em; }
+
+.tab.live { color: var(--text); }
+.tab.live .tab-icon::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tab.live .tab-icon { position: relative; }
 
 .tab.on { color: var(--text); }
 .tab.on .tab-icon { transform: translateY(-1px) scale(1.06); }
@@ -879,8 +918,8 @@ textarea.input { min-height: 96px; resize: vertical; }
   color: var(--text-3);
   font-size: 1.6rem;
   line-height: 1;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   cursor: pointer;
 }
 
@@ -916,14 +955,26 @@ textarea.input { min-height: 96px; resize: vertical; }
 .picker { display: flex; flex-direction: column; gap: 0.65rem; height: 100%; }
 .picker-search { position: sticky; top: 0; }
 
-.chips { display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: none; }
+/* flex-shrink:0 or the 5000px-tall result list below crushes this row to a
+   few unreadable pixels. */
+.chips {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
 .chips::-webkit-scrollbar { display: none; }
 .chip {
   background: var(--glass-sunken);
   border: 1px solid var(--hairline);
   color: var(--text-2);
   border-radius: var(--r-capsule);
-  padding: 0.38rem 0.78rem;
+  padding: 0 0.9rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
@@ -933,7 +984,7 @@ textarea.input { min-height: 96px; resize: vertical; }
 }
 .chip-on {
   background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 130%);
-  color: #01121F;
+  color: var(--on-accent);
   border-color: transparent;
 }
 
@@ -1028,7 +1079,7 @@ textarea.input { min-height: 96px; resize: vertical; }
 .sched-row.is-past { opacity: 0.45; }
 .sched-row.is-done .sched-name { color: var(--text-2); }
 .sched-done-tag { margin-left: 0.45rem; color: var(--ok); }
-.sched-start { min-height: 32px; padding: 0.26rem 0.7rem; font-size: 0.79rem; border-radius: 10px; }
+.sched-start { min-height: 44px; padding: 0 0.85rem; font-size: 0.82rem; border-radius: 11px; }
 
 .week-block {
   border: 1px solid var(--hairline);
@@ -1161,3 +1212,35 @@ body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 6rem);
   }
   .view > * { animation: none; opacity: 1; transform: none; }
 }
+
+
+/* ---------------------------------------------------------------- summary */
+
+.summary { display: flex; flex-direction: column; gap: 0.9rem; }
+.sum-headline { font-size: 1.9rem; letter-spacing: -0.042em; }
+.sum-delta { font-size: 0.88rem; font-weight: 650; color: var(--text-2); }
+.sum-delta.up { color: var(--ok); }
+.sum-delta.down { color: var(--text-2); }
+.sum-stats { border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); padding: 0.8rem 0; }
+.sum-prs {
+  background: var(--ember-wash);
+  border: 1px solid color-mix(in srgb, var(--ember) 40%, transparent);
+  border-radius: var(--r-control);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.sum-prs .today-label { color: var(--ember); }
+.sum-pr { font-size: 0.92rem; }
+.sum-lines { display: flex; flex-direction: column; }
+.sum-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.sum-line:last-child { border-bottom: none; }
