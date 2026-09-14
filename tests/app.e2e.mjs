@@ -102,11 +102,11 @@ await step('add exercise via picker', async () => {
   await page.waitForSelector('.entry');
 });
 await step('exercise card shows sets', async () => {
-  const rows = await page.locator('.set-row:not(.set-head)').count();
+  const rows = await page.locator('.set-row').count();
   if (rows < 1) throw new Error('no set rows');
 });
 await step('log a set and start rest timer', async () => {
-  const row = page.locator('.set-row:not(.set-head)').first();
+  const row = page.locator('.set-row').first();
   await row.locator('.set-input').nth(0).fill('80');
   await row.locator('.set-input').nth(1).fill('8');
   await row.locator('.set-check').click();
@@ -129,7 +129,7 @@ await step('ticking a set repaints immediately, without waiting for a re-render'
     const chk = row?.querySelector('.set-check');
     if (!row || !chk) return null;
     const rowBg = getComputedStyle(row).backgroundColor;
-    const open = document.querySelector('.set-row:not(.set-head):not(.set-done)');
+    const open = document.querySelector('.set-row:not(.set-done)');
     return {
       checkOn: chk.classList.contains('on'),
       aria: chk.getAttribute('aria-label'),
@@ -166,20 +166,20 @@ await step('the rest bar fill is driven by transform, not width', async () => {
   if (/width/.test(fill.transitionProperty)) throw new Error('width is still animated');
 });
 await step('remaining blank sets inherit the logged numbers', async () => {
-  const rows = page.locator('.set-row:not(.set-head)');
+  const rows = page.locator('.set-row');
   const w = await rows.nth(1).locator('.set-input').nth(0).inputValue();
   const r = await rows.nth(1).locator('.set-input').nth(1).inputValue();
   if (w !== '80' || r !== '8') throw new Error(`expected 80/8, got ${w}/${r}`);
 });
 await step('added set copies the last real numbers', async () => {
-  await page.getByRole('button', { name: '+ Add set' }).first().click();
-  const rows = page.locator('.set-row:not(.set-head)');
+  await page.getByRole('button', { name: 'Add set' }).first().click();
+  const rows = page.locator('.set-row');
   const n = await rows.count();
   const v = await rows.nth(n - 1).locator('.set-input').nth(0).inputValue();
   if (v !== '80') throw new Error('expected 80, got ' + v);
 });
 await step('log second set', async () => {
-  const row = page.locator('.set-row:not(.set-head)').nth(1);
+  const row = page.locator('.set-row').nth(1);
   await row.locator('.set-input').nth(1).fill('6');
   await row.locator('.set-check').click();
 });
@@ -187,7 +187,7 @@ await step('second exercise', async () => {
   await page.getByRole('button', { name: '+ Add exercise' }).click();
   await page.locator('.picker-search').fill('squat');
   await page.locator('.picker-item').first().click();
-  const row = page.locator('.entry').nth(1).locator('.set-row:not(.set-head)').first();
+  const row = page.locator('.entry').nth(1).locator('.set-row').first();
   await row.locator('.set-input').nth(0).fill('100');
   await row.locator('.set-input').nth(1).fill('5');
   await row.locator('.set-check').click();
@@ -253,7 +253,7 @@ await step('create a routine', async () => {
 await step('start from routine prefills', async () => {
   await page.getByRole('button', { name: 'Start this routine' }).click();
   await page.waitForSelector('.session-head', { timeout: 3000 });
-  const rows = await page.locator('.set-row:not(.set-head)').count();
+  const rows = await page.locator('.set-row').count();
   if (rows !== 3) throw new Error(`expected 3 prefilled sets, got ${rows}`);
 });
 
@@ -297,7 +297,7 @@ const logWorkout = async (weight, reps) => {
   await page.locator('.picker-search').fill('deadlift');
   await page.locator('.picker-item').first().click();
   await page.waitForSelector('.entry');
-  const row=page.locator('.set-row:not(.set-head)').first();
+  const row=page.locator('.set-row').first();
   await row.locator('.set-input').nth(0).fill(String(weight));
   await row.locator('.set-input').nth(1).fill(String(reps));
   await row.locator('.set-check').click();
@@ -307,22 +307,27 @@ const logWorkout = async (weight, reps) => {
 
 console.log('\n== previous-session column ==');
 await step('session 1 logged', async () => { await logWorkout(140, 5); });
-await step('session 2 shows session 1 in the Previous column', async () => {
+await step('last session becomes this session\u2019s placeholders', async () => {
   await page.getByRole('button',{name:'Start empty workout'}).click();
   await page.getByRole('button',{name:'+ Add exercise'}).click();
   await page.locator('.picker-search').fill('deadlift');
   await page.locator('.picker-item').first().click();
   await page.waitForSelector('.entry');
-  const prev = await page.locator('.set-prev').first().textContent();
-  if (prev.trim() !== '140×5') throw new Error('got "' + prev + '"');
+  const row = page.locator('.set-row').first();
+  const w = await row.locator('.set-input').nth(0).getAttribute('placeholder');
+  const r = await row.locator('.set-input').nth(1).getAttribute('placeholder');
+  if (w !== '140' || r !== '5') throw new Error(`placeholders were ${w}/${r}, expected 140/5`);
 });
-await step('tapping Previous copies the numbers in', async () => {
-  await page.locator('.set-prev').first().click();
-  const w = await page.locator('.set-row:not(.set-head)').first().locator('.set-input').nth(0).inputValue();
-  if (w !== '140') throw new Error('got ' + w);
+await step('ticking an untouched set accepts last time\u2019s numbers', async () => {
+  const row = page.locator('.set-row').first();
+  await row.locator('.set-check').click();
+  const w = await row.locator('.set-input').nth(0).inputValue();
+  const r = await row.locator('.set-input').nth(1).inputValue();
+  if (w !== '140' || r !== '5') throw new Error(`logged ${w}x${r}, expected 140x5`);
 });
 await step('beating it is flagged as a personal best', async () => {
-  const row = page.locator('.set-row:not(.set-head)').first();
+  await page.getByRole('button', { name: 'Add set' }).first().click();
+  const row = page.locator('.set-row').last();
   await row.locator('.set-input').nth(0).fill('150');
   await row.locator('.set-input').nth(1).fill('5');
   await row.locator('.set-check').click();
@@ -473,12 +478,12 @@ await step('rep ranges stay as targets and never enter the reps field', async ()
     await page.getByRole('button', { name: 'Start this routine' }).first().click();
   }
   await page.waitForSelector('.entry', { timeout: 5000 });
-  const targets = await page.locator('.entry-target').allInnerTexts();
+  const targets = await page.locator('.entry-meta').allInnerTexts();
   if (!targets.length) throw new Error('no targets rendered');
   const i = targets.findIndex((t) => t.includes('-'));
   if (i >= 0) {
     const reps = await page.locator('.entry').nth(i)
-      .locator('.set-row:not(.set-head) .set-input').nth(1).inputValue();
+      .locator('.set-row .set-input').nth(1).inputValue();
     if (reps.includes('-')) throw new Error('range leaked into the numeric field: ' + reps);
   }
 });
@@ -513,8 +518,8 @@ await step('importing makes one routine per session, not per week', async () => 
 await step('targets, RPE and coaching notes reach the session', async () => {
   await page.getByRole('button', { name: 'Start this routine' }).first().click();
   await page.waitForSelector('.entry', { timeout: 5000 });
-  const target = await page.locator('.entry-target').first().innerText();
-  if (!/Target 3×10/.test(target)) throw new Error(target);
+  const target = await page.locator('.entry-meta').first().innerText();
+  if (!/3×10/.test(target)) throw new Error(target);
   if (!/RPE 6/.test(target)) throw new Error('RPE missing: ' + target);
   const notes = await page.locator('.entry-note').allInnerTexts();
   if (!notes.some((t) => /Easy first week/.test(t))) throw new Error('note missing');
@@ -525,21 +530,21 @@ await step('a timed hold does not prefill the reps box', async () => {
     if ((await e.innerText()).startsWith('Plank')) plank = e;
   }
   if (!plank) throw new Error('no Plank entry');
-  if (!/30s/.test(await plank.locator('.entry-target').innerText())) throw new Error('no 30s target');
-  const reps = await plank.locator('.set-row:not(.set-head) .set-input').nth(1).inputValue();
+  if (!/30s/.test(await plank.locator('.entry-meta').innerText())) throw new Error('no 30s target');
+  const reps = await plank.locator('.set-row .set-input').nth(1).inputValue();
   if (reps !== '') throw new Error('a hold should leave reps empty, got ' + reps);
 });
 await step('rest times come from the plan', async () => {
   const rest = (await page.locator('.rest-pill').allInnerTexts())[0];
-  if (rest !== '1:30') throw new Error('expected 1:30, got ' + rest);
+  if (!/1:30/.test(rest)) throw new Error('expected 1:30, got ' + rest);
 });
 await step('logging a set carries weight into plan-prefilled sets', async () => {
   const entry = page.locator('.entry').first();
-  const row = entry.locator('.set-row:not(.set-head)').first();
+  const row = entry.locator('.set-row').first();
   await row.locator('.set-input').nth(0).fill('24');
   await row.locator('.set-input').nth(1).fill('10');
   await row.locator('.set-check').click();
-  const rows = entry.locator('.set-row:not(.set-head)');
+  const rows = entry.locator('.set-row');
   for (const i of [1, 2]) {
     const w = await rows.nth(i).locator('.set-input').nth(0).inputValue();
     const r = await rows.nth(i).locator('.set-input').nth(1).inputValue();
@@ -585,7 +590,7 @@ await step('start a session planned for a different day', async () => {
   if (!name.startsWith(planned)) throw new Error(`tapped "${planned}" but opened "${name}"`);
 });
 await step('it is logged on the day it was actually done', async () => {
-  const row = page.locator('.set-row:not(.set-head)').first();
+  const row = page.locator('.set-row').first();
   await row.locator('.set-input').nth(0).fill('60');
   await row.locator('.set-input').nth(1).fill('8');
   await row.locator('.set-check').click();

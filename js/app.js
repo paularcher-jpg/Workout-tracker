@@ -127,7 +127,7 @@ function buildTopBar() {
   });
   paintSyncBadge();
   return h('header', { class: 'topbar' },
-    h('span', { class: 'brand' }, 'Workout Tracker'),
+    h('span', { class: 'brand' }, 'Workouts'),
     syncBadge,
   );
 }

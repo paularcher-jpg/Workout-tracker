@@ -1,110 +1,112 @@
 /* ===========================================================================
-   Workout Tracker — "Instrument"
+   Workout Tracker
 
-   A precision instrument rather than a lifestyle app. Ink-black with cold
-   atmospheric depth; the chrome is genuine translucent material (Liquid
-   Glass) while content sits on top of it, opaque and legible.
+   Paper, not a console. A light ground because the use scene is a brightly
+   lit gym; ink for the primary action; green only for work completed; one
+   warm note when a set beats your best.
 
-   Two rules hold the whole thing together:
+   Two structural rules, both learned the hard way:
 
-   1. Numbers are the content. Weights, reps and the clock get the largest
-      type, tabular figures and the tightest tracking. Everything else is
-      quiet supporting text.
-   2. Cold by default, warm only for achievement. The interface is arctic
-      blue throughout; ember appears exclusively when you beat a personal
-      best, so colour carries meaning instead of decoration.
-
-   Material note: backdrop-filter is reserved for fixed chrome and sheets —
-   the surfaces Apple actually makes of glass — never for scrolling content,
-   where it costs frames on iOS for no visual gain.
+   1. No eyebrows. A heading carries its own weight — no SET / PREVIOUS / KG
+      label rows, no kicker above a title. Units live inline with the number
+      they belong to, so a logged set reads "24 kg x 10" rather than sitting
+      under a spreadsheet header.
+   2. Last week's numbers are the placeholders. Recognition beats recall, and
+      it removes a whole column from the densest screen in the app.
    =========================================================================== */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
 
-  /* ground */
-  --ink: #05070B;
-  --ink-raise: #0B0F16;
+  /* Ground is light because the use scene is a brightly lit gym, not because
+     fitness apps are usually dark. */
+  --ink: #F1F2F4;
+  --ink-raise: #FFFFFF;
+  --chrome: rgba(255, 255, 255, 0.88);
 
-  /* material */
-  --glass: rgba(255, 255, 255, 0.055);
-  --glass-strong: rgba(255, 255, 255, 0.09);
-  --glass-sunken: rgba(0, 0, 0, 0.25);
-  --chrome: rgba(14, 19, 28, 0.78);
-  --hairline: rgba(255, 255, 255, 0.085);
-  --hairline-strong: rgba(255, 255, 255, 0.16);
-  --specular: rgba(255, 255, 255, 0.22);
+  --glass: #FFFFFF;
+  --glass-strong: #FFFFFF;
+  --glass-sunken: #F5F6F8;
+  --hairline: #E4E7EB;
+  --hairline-strong: #D2D7DE;
+  --specular: rgba(255, 255, 255, 0);
 
-  /* ink on material */
-  --text: #EEF3F9;
-  --text-2: #94A3B6;
-  --text-3: #9AA9BD;
+  --text: #14161A;
+  --text-2: #5C6472;
+  --text-3: #5A616C;
 
-  /* signal */
-  --accent: #5FD9FF;
-  --accent-deep: #2C74FF;
-  --accent-wash: rgba(95, 217, 255, 0.13);
-  --done-wash: rgba(95, 217, 255, 0.21);
-  --accent-edge: rgba(95, 217, 255, 0.42);
-  /* foreground for anything painted with --accent; flips with the theme */
-  --on-accent: #01121F;
+  /* The primary action is ink on paper, not a glowing accent. */
+  --accent: #16181C;
+  --accent-deep: #000000;
+  --on-accent: #FFFFFF;
+  --accent-wash: #EDEFF2;
+  --accent-edge: #D2D7DE;
 
-  /* achievement — used nowhere else */
-  --ember: #FF8A3D;
-  --ember-hot: #FF5B2E;
-  --ember-wash: rgba(255, 138, 61, 0.15);
+  /* Completed work reads green; it is the only routine colour in the app. */
+  --done: #14743F;
+  --done-wash: #E4F1E9;
+  --done-edge: #B4DCC4;
+  --on-done: #FFFFFF;
 
-  --ok: #46E2A4;
-  --danger: #FF6274;
-  /* the fill behind white button text; --danger itself is tuned for text on ink */
-  --danger-solid: #B3202F;
+  /* Beating your best is the one warm moment. */
+  --ember: #A34A00;
+  --ember-hot: #7E3800;
+  --ember-wash: #FBEBDC;
 
-  --r-card: 22px;
+  --ok: #14743F;
+  --danger: #B3261E;
+  --danger-solid: #B3261E;
+
+  --r-card: 24px;
   --r-control: 14px;
   --r-capsule: 999px;
 
-  --tabbar-h: 58px;
+  --tabbar-h: 60px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-  --lift: 0 14px 28px -16px rgba(0, 0, 0, 0.9);
-  --lift-sheet: 0 -20px 60px -20px rgba(0, 0, 0, 0.85);
+  --surface-border: transparent;
+  --surface-shadow: 0 6px 20px -10px rgba(16, 20, 28, 0.22);
+  --lift: 0 6px 20px -10px rgba(16, 20, 28, 0.22);
+  --lift-sheet: 0 -16px 44px -24px rgba(16, 20, 28, 0.28);
 
-  /* ease-out-quint and ease-out-expo. Neither overshoots: real objects
-     decelerate, they do not bounce past their resting position. */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-exp: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    color-scheme: light;
-    --ink: #EEF1F6;
-    --ink-raise: #FFFFFF;
-    --glass: rgba(255, 255, 255, 0.62);
-    --glass-strong: rgba(255, 255, 255, 0.82);
-    --glass-sunken: rgba(9, 17, 30, 0.05);
-    --chrome: rgba(255, 255, 255, 0.8);
-    --hairline: rgba(9, 17, 30, 0.1);
-    --hairline-strong: rgba(9, 17, 30, 0.16);
-    --specular: rgba(255, 255, 255, 0.9);
-    --text: #0B1220;
-    --text-2: #55647A;
-    --text-3: #4E5C6E;
-    --accent: #0067C7;
-    --accent-deep: #0A4FD6;
-    --accent-wash: rgba(0, 103, 199, 0.1);
-    --done-wash: rgba(0, 103, 199, 0.15);
-    --accent-edge: rgba(0, 103, 199, 0.32);
-    --on-accent: #FFFFFF;
-    --ember: #8A5A00;
-    --ember-hot: #6E4700;
-    --ember-wash: rgba(138, 90, 0, 0.12);
-    --ok: #00875A;
-    --danger: #C22B3E;
-    --danger-solid: #B02133;
-    --lift: 0 12px 26px -18px rgba(11, 18, 32, 0.35);
-    --lift-sheet: 0 -18px 50px -24px rgba(11, 18, 32, 0.3);
+    --ink: #101215;
+    --ink-raise: #181B20;
+    --chrome: rgba(24, 27, 32, 0.90);
+    --glass: #181B20;
+    --glass-strong: #1D2126;
+    --glass-sunken: #14171B;
+    --hairline: #2A2F36;
+    --hairline-strong: #3A4048;
+    --specular: rgba(255, 255, 255, 0.04);
+    --text: #F2F4F6;
+    --text-2: #A7AFBA;
+    --text-3: #98A1AC;
+    --accent: #F2F4F6;
+    --accent-deep: #FFFFFF;
+    --on-accent: #101215;
+    --accent-wash: #22262C;
+    --accent-edge: #3A4048;
+    --done: #63D397;
+    --done-wash: #14301F;
+    --done-edge: #2A6B45;
+    --on-done: #07210F;
+    --ember: #FFA55C;
+    --ember-hot: #FF8A3D;
+    --ember-wash: #33220F;
+    --ok: #63D397;
+    --danger: #FF7A6E;
+    --danger-solid: #A8281F;
+    --surface-border: #2A2F36;
+    --surface-shadow: none;
+    --lift: 0 8px 24px -14px rgba(0, 0, 0, 0.75);
+    --lift-sheet: 0 -16px 44px -24px rgba(0, 0, 0, 0.7);
   }
 }
 
@@ -135,34 +137,10 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* A quiet tonal gradient, not a chromatic halo: it gives the glass a
-     luminance range to pick up without the saturated bloom that reads as
-     stock "dark mode with a glow". */
-  background: linear-gradient(178deg, #0C1219 0%, #080C12 46%, var(--ink) 100%);
+  background: var(--ink);
 }
 
-.atmos::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
-}
 
-@media (prefers-color-scheme: light) {
-  .atmos {
-    background: linear-gradient(178deg, #F7F9FC 0%, #EFF2F7 52%, var(--ink) 100%);
-  }
-  .atmos::after { opacity: 0.22; mix-blend-mode: multiply; }
-}
-
-#app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  min-height: 100dvh;
-}
 
 /* ------------------------------------------------------------- typography */
 
@@ -185,14 +163,13 @@ a { color: var(--accent); text-underline-offset: 3px; }
   font-feature-settings: "tnum" 1, "ss01" 1;
 }
 
-/* the label style used for every small caps heading */
-.section-title h2, .month-head, .stat span, .stat-card span, .set-head span,
-.today-label, .rest-caption, .sched-day, .mini-head, .chart-caption,
-.week-day, .field-label, .sched-done-tag, .empty-tag {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
+/* Supporting labels are quiet, not shouted. */
+.section-title h2, .month-head, .stat span, .stat-card span,
+.sched-day, .mini-head, .chart-caption, .week-day, .field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-3);
 }
 
@@ -234,10 +211,9 @@ a { color: var(--accent); text-underline-offset: 3px; }
 }
 
 .brand {
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
   color: var(--text-2);
 }
 
@@ -371,13 +347,13 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 
 .card {
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
   border-radius: var(--r-card);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  box-shadow: inset 0 1px 0 var(--specular), var(--lift);
+  box-shadow: var(--surface-shadow);
 }
 
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
@@ -420,13 +396,13 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
 .stat-card {
   background: var(--glass);
-  border: 1px solid var(--hairline);
+  border: 0;
   border-radius: 18px;
   padding: 0.95rem;
   display: flex;
   flex-direction: column;
   gap: 0.22rem;
-  box-shadow: inset 0 1px 0 var(--specular);
+  box-shadow: var(--surface-shadow);
 }
 .stat-card strong { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.045em; }
 
@@ -451,185 +427,164 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
 .session-title:focus { outline: none; }
 
 .session-elapsed { color: var(--text-2); font-size: 0.86rem; font-weight: 600; }
+.tile .session-elapsed { color: var(--text); font-size: inherit; font-weight: inherit; }
 
-.session-totals {
-  display: flex;
-  gap: 1.1rem;
-  color: var(--text-2);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding-bottom: 0.1rem;
-}
 
 .entries { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .entry {
-  background: var(--glass);
-  border: 1px solid var(--hairline);
+  background: var(--ink-raise);
+  border: 0;
   border-radius: var(--r-card);
-  padding: 0.9rem 0.85rem 0.7rem;
+  padding: 1.1rem 1rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  box-shadow: inset 0 1px 0 var(--specular);
+  gap: 0.85rem;
+  box-shadow: var(--surface-shadow);
 }
 .entry-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
-.entry-sub { color: var(--text-3); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.01em; }
+.entry h3 { font-size: 1.32rem; letter-spacing: -0.028em; }
 
-.entry-target {
-  font-size: 0.78rem;
-  color: var(--accent);
-  font-weight: 700;
-  margin-top: 4px;
-  letter-spacing: -0.005em;
-}
-.entry-note {
-  font-size: 0.8rem;
+/* one meta line, not three stacked labels */
+.entry-meta {
+  font-size: 0.88rem;
   color: var(--text-2);
-  margin-top: 5px;
+  margin-top: 3px;
+}
+.entry-meta strong { color: var(--text); font-weight: 650; }
+
+.entry-note {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  margin-top: 7px;
   line-height: 1.4;
+  padding-left: 0.7rem;
   border-left: 2px solid var(--hairline);
-  padding-left: 0.55rem;
 }
 
-.entry-rest { display: flex; align-items: center; gap: 0.5rem; }
-.entry-rest > span {
-  font-size: 0.67rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: var(--text-3);
-}
+.entry-rest { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
 .rest-pill {
   background: var(--glass-sunken);
   border: 1px solid var(--hairline);
-  color: var(--text);
+  color: var(--text-2);
   border-radius: var(--r-capsule);
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  padding: 0 0.95rem;
+  gap: 0.4rem;
+  padding: 0 1rem;
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 650;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
 /* ------------------------------------------------------------- set rows */
 
-.sets { display: flex; flex-direction: column; gap: 0.4rem; }
+.sets { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .set-row {
   display: grid;
-  grid-template-columns: 44px minmax(44px, 0.7fr) 1fr 1fr 46px;
-  gap: 0.4rem;
+  grid-template-columns: 26px 1fr 1fr 52px;
+  gap: 0.5rem;
   align-items: center;
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  border-radius: 16px;
+  margin-inline: -0.15rem;
+  padding-left: 0.15rem;
 }
 
-.set-head { padding: 0 0.1rem 0.15rem; }
-.set-head span { text-align: center; }
-.set-head span:first-child, .set-head span:nth-child(2) { text-align: left; }
-
+/* the number is small by design; its hit area is not */
 .set-index {
-  background: var(--glass-sunken);
-  border: 1px solid var(--hairline);
-  color: var(--text-3);
-  border-radius: 10px;
-  height: 44px;
-  font: inherit;
-  font-size: 0.86rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.set-prev {
-  background: transparent;
+  position: relative;
+  background: none;
   border: none;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  /* the number you are trying to beat: --text-2, never the hint colour */
-  color: var(--text-2);
+  color: var(--text-3);
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-align: left;
-  padding: 0 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  height: 44px;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 0;
 }
-.set-prev:disabled { cursor: default; color: var(--text-3); }
+.set-index::after { content: ""; position: absolute; inset: 0 -9px; }
+
+/* number and unit are one object, so a set reads as a phrase */
+.set-field {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.28rem;
+  background: var(--glass-sunken);
+  border: 1.5px solid var(--hairline);
+  border-radius: 15px;
+  height: 54px;
+  padding: 0 0.55rem;
+  transition: border-color 0.16s, background 0.16s;
+}
+.set-field:focus-within {
+  border-color: var(--accent);
+  background: var(--ink-raise);
+}
 
 .set-input {
-  background: var(--glass-sunken);
-  border: 1px solid var(--hairline);
-  border-radius: 11px;
+  background: none;
+  border: none;
   color: var(--text);
   font: inherit;
-  font-size: 17px;           /* ≥16px or iOS zooms on focus */
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  height: 44px;
-  text-align: center;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: right;
   width: 100%;
   min-width: 0;
-  padding: 0 0.25rem;
-  transition: border-color 0.18s, background 0.18s;
+  padding: 0;
 }
-.set-input::placeholder { color: var(--text-3); font-weight: 500; }
-.set-input:focus {
-  outline: none;
-  border-color: var(--accent-edge);
-  background: var(--accent-wash);
+.set-input:focus { outline: none; }
+.set-input::placeholder { color: var(--text-3); font-weight: 600; opacity: 1; }
+
+.set-unit {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-3);
+  flex: none;
 }
 
 .set-check {
-  height: 44px;
-  border-radius: 11px;
-  border: 1px solid var(--hairline);
-  background: var(--glass-sunken);
+  height: 48px;
+  width: 48px;
+  justify-self: end;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--ink-raise);
   color: var(--text-3);
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-exp), background 0.2s, color 0.2s;
+  transition: transform 0.14s var(--ease-exp), background 0.18s, border-color 0.18s, color 0.18s;
 }
 .set-check:active { transform: scale(0.9); }
 .set-check.on {
-  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 120%);
-  color: var(--on-accent);
-  border-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: var(--done);
+  border-color: var(--done);
+  color: var(--on-done);
 }
 
-/* A logged set has to be unmistakable at arm's length, mid-set, so the whole
-   row fills rather than nudging a 1px border. */
+/* a completed set is a filled band you can read across the room */
 .set-row.set-done {
   background: var(--done-wash);
-  border-radius: 12px;
-  margin-inline: -0.4rem;
-  padding-inline: 0.4rem;
 }
-.set-done .set-input {
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--hairline));
-}
-.set-done .set-index { border-color: var(--accent-edge); }
-.set-warmup .set-index { color: var(--accent); border-color: var(--accent-edge); }
+.set-done .set-field { border-color: var(--done-edge); background: transparent; }
+.set-done .set-index { color: var(--done); }
+.set-warmup .set-index { color: var(--ember); }
 
-/* the one warm moment in the whole interface */
 .set-pr { animation: ember 1.5s var(--ease); }
 @keyframes ember {
-  0% { background: transparent; }
-  22% { background: var(--ember-wash); }
+  0% { background: var(--done-wash); }
+  25% { background: var(--ember-wash); }
   100% { background: var(--done-wash); }
 }
-.set-pr .set-check.on {
-  background: linear-gradient(180deg, var(--ember) 0%, var(--ember-hot) 120%);
-  color: var(--on-accent);
-}
+.set-pr .set-check.on { background: var(--ember); border-color: var(--ember); color: #fff; }
 
 /* --------------------------------------------------------------- rest bar
    The hero moment. Real glass, oversized clock, a fill that drains left to
@@ -646,8 +601,8 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   background: var(--chrome);
   backdrop-filter: blur(28px) saturate(190%);
   -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid var(--hairline-strong);
-  box-shadow: inset 0 1px 0 var(--specular), var(--lift);
+  border: 0;
+  box-shadow: var(--surface-shadow);
   max-width: 604px;
   margin: 0 auto;
   animation: rise 0.35s var(--ease-exp) both;
@@ -733,8 +688,8 @@ body.resting .main { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) +
   background: var(--chrome);
   backdrop-filter: blur(30px) saturate(200%);
   -webkit-backdrop-filter: blur(30px) saturate(200%);
-  border: 1px solid var(--hairline-strong);
-  box-shadow: inset 0 1px 0 var(--specular), var(--lift);
+  border: 0;
+  box-shadow: var(--surface-shadow);
   max-width: 604px;
   margin: 0 auto;
   padding: 0 0.3rem;
@@ -876,8 +831,8 @@ textarea.input { min-height: 96px; resize: vertical; }
   -webkit-backdrop-filter: blur(36px) saturate(190%);
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  border-top: 1px solid var(--hairline-strong);
-  box-shadow: inset 0 1px 0 var(--specular), var(--lift-sheet);
+  border-top: 0;
+  box-shadow: var(--lift-sheet);
   max-height: 88dvh;
   display: flex;
   flex-direction: column;
@@ -1173,13 +1128,13 @@ textarea.input { min-height: 96px; resize: vertical; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 1.5rem);
-  transform: translate(-50%, 1.2rem);
+  top: calc(var(--safe-top) + 3.6rem);
+  transform: translate(-50%, -0.8rem);
   z-index: 60;
   background: var(--chrome);
   backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid var(--hairline-strong);
+  border: 0;
   color: var(--text);
   padding: 0.7rem 1.15rem;
   border-radius: var(--r-capsule);
@@ -1193,7 +1148,6 @@ textarea.input { min-height: 96px; resize: vertical; }
   text-align: center;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 6rem); }
 .toast-success { border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
 .toast-error { border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
 
@@ -1244,3 +1198,55 @@ body.resting .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 6rem);
   font-variant-numeric: tabular-nums;
 }
 .sum-line:last-child { border-bottom: none; }
+
+/* ---------------------------------------------------------------- session */
+
+.entry-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-top: 0.15rem;
+}
+
+/* the session's own numbers, given weight rather than a caption */
+.session-totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.55rem;
+}
+.tile {
+  background: var(--ink-raise);
+  border: 0;
+  border-radius: 18px;
+  padding: 0.75rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.tile strong {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.tile span { font-size: 0.78rem; color: var(--text-3); font-weight: 550; }
+.tile.is-progress { background: var(--done-wash); }
+.tile.is-progress strong { color: var(--done); }
+.tile.is-time strong { font-variant-numeric: tabular-nums; }
+
+
+/* ------------------------------------------------------- depth per theme
+   On paper a soft shadow lifts a card. In the dark a shadow is invisible,
+   so a hairline does the work instead — never both, which is the stock
+   "generated card" signature. */
+@media (prefers-color-scheme: dark) {
+  .card, .entry, .tile, .stat-card {
+    border: 1px solid var(--hairline);
+    box-shadow: none;
+  }
+  .tile.is-progress { border-color: var(--done-edge); }
+  .tabbar, .restbar, .toast { border: 1px solid var(--hairline-strong); }
+  .sheet { border-top: 1px solid var(--hairline-strong); }
+}

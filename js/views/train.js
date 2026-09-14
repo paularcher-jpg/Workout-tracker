@@ -126,6 +126,14 @@ function stat(value, label) {
   return h('div', { class: 'stat' }, h('strong', {}, value), h('span', {}, label));
 }
 
+/** A tinted metric tile — the session's own numbers, given weight. */
+function tile(value, label, mod = '') {
+  return h('div', { class: `tile ${mod}`.trim() },
+    h('strong', {}, value),
+    h('span', {}, label),
+  );
+}
+
 /* ------------------------------------------------------------- active view */
 
 function activeView(workout, refresh) {
@@ -159,12 +167,14 @@ function activeView(workout, refresh) {
 
   const totals = h('div', { class: 'session-totals' });
   const drawTotals = () => {
-    const done = workout.entries.flatMap((e) => e.sets.filter((s) => s.done && !s.warmup));
+    const all = workout.entries.flatMap((e) => e.sets.filter((s) => !s.warmup));
+    const done = all.filter((s) => s.done);
     const volume = done.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0);
     clear(totals);
     totals.append(
-      h('span', {}, `${done.length} set${done.length === 1 ? '' : 's'}`),
-      h('span', {}, fmtVolume(volume)),
+      tile(`${done.length}/${all.length}`, 'sets done', 'is-progress'),
+      tile(fmtVolume(volume), 'lifted'),
+      tile(elapsed, 'elapsed', 'is-time'),
     );
   };
   drawTotals();
@@ -270,20 +280,22 @@ function entryCard(entry, workout, refresh, drawTotals) {
   const prev = W.lastPerformance(entry.exerciseId);
   const card = h('section', { class: 'entry' });
 
-  const target = entry.target;
-  const targetText = target
-    ? [
-      target.sets && target.reps ? `Target ${target.sets}×${target.reps}` : null,
-      target.rpe ? `RPE ${target.rpe}` : null,
-    ].filter(Boolean).join(' · ')
-    : '';
+  const t = entry.target;
+  // one line of meta rather than a stack of labelled rows
+  const meta = [
+    ex?.equipment,
+    t?.sets && t?.reps ? `${t.sets}×${t.reps}` : null,
+    t?.rpe ? `RPE ${t.rpe}` : null,
+  ].filter(Boolean);
 
   card.appendChild(h('header', { class: 'entry-head' },
     h('div', {},
       h('h3', {}, name),
-      h('p', { class: 'entry-sub' }, `${ex?.group || ''}${ex?.equipment ? ` · ${ex.equipment}` : ''}`),
-      targetText ? h('p', { class: 'entry-target' }, targetText) : null,
-      target?.notes ? h('p', { class: 'entry-note' }, target.notes) : null,
+      meta.length
+        ? h('p', { class: 'entry-meta' },
+          meta.map((part, i) => [i ? ' · ' : '', i === 1 ? h('strong', {}, part) : part]))
+        : null,
+      t?.notes ? h('p', { class: 'entry-note' }, t.notes) : null,
     ),
     h('button', {
       class: 'icon-btn',
@@ -293,68 +305,49 @@ function entryCard(entry, workout, refresh, drawTotals) {
     }, '⋯'),
   ));
 
-  const restRow = h('div', { class: 'entry-rest' },
-    h('span', {}, 'Rest'),
-    h('button', {
-      class: 'rest-pill',
-      type: 'button',
-      onclick: (e) => editRest(entry, e.currentTarget),
-    }, Timer.formatClock(entry.restSec)),
-  );
-  card.appendChild(restRow);
-
   const table = h('div', { class: 'sets' });
-  table.appendChild(h('div', { class: 'set-row set-head' },
-    h('span', {}, 'Set'),
-    h('span', {}, 'Prev'),
-    h('span', {}, units()),
-    h('span', {}, 'Reps'),
-    h('span', {}, ''),
-  ));
-
   entry.sets.forEach((set, i) => {
     table.appendChild(setRow(entry, set, i, prev, refresh, drawTotals));
   });
   card.appendChild(table);
 
-  card.appendChild(h('button', {
-    class: 'btn btn-quiet btn-block btn-sm',
-    type: 'button',
-    onclick: () => { W.addSet(entry.id); refresh(); },
-  }, '+ Add set'));
+  card.appendChild(h('div', { class: 'entry-foot' },
+    h('button', {
+      class: 'btn btn-quiet btn-sm',
+      type: 'button',
+      onclick: () => { W.addSet(entry.id); refresh(); },
+    }, 'Add set'),
+    h('button', {
+      class: 'rest-pill',
+      type: 'button',
+      'aria-label': 'Rest between sets',
+      onclick: (e) => editRest(entry, e.currentTarget),
+    }, `Rest ${Timer.formatClock(entry.restSec)}`),
+  ));
 
   return card;
 }
 
 function setRow(entry, set, index, prev, refresh, drawTotals) {
-  const working = entry.sets.filter((s) => !s.warmup);
+  const working = entry.sets.filter((x) => !x.warmup);
   const workingIndex = working.indexOf(set);
-  const priorSets = prev?.sets?.filter((s) => !s.warmup) || [];
+  const priorSets = prev?.sets?.filter((x) => !x.warmup) || [];
   const prior = workingIndex >= 0 ? priorSets[workingIndex] : null;
 
-  const row = h('div', { class: `set-row${set.done ? ' set-done' : ''}${set.warmup ? ' set-warmup' : ''}` });
+  const row = h('div', {
+    class: `set-row${set.done ? ' set-done' : ''}${set.warmup ? ' set-warmup' : ''}`,
+  });
 
   row.appendChild(h('button', {
     class: 'set-index',
     type: 'button',
+    'aria-label': set.warmup ? `Set ${index + 1}, warm-up` : `Set ${workingIndex + 1}`,
     title: 'Tap to mark as a warm-up set',
     onclick: () => { W.patchSet(entry.id, set.id, { warmup: !set.warmup }); refresh(); },
   }, set.warmup ? 'W' : String(workingIndex + 1)));
 
-  const priorLabel = prior ? `${fmtWeight(prior.weight, { withUnit: false })}×${prior.reps}` : '—';
-  row.appendChild(h('button', {
-    class: 'set-prev',
-    type: 'button',
-    disabled: !prior,
-    title: prior ? 'Tap to copy' : '',
-    onclick: () => {
-      if (!prior) return;
-      weightInput.value = prior.weight;
-      repsInput.value = prior.reps;
-      W.patchSet(entry.id, set.id, { weight: prior.weight, reps: prior.reps });
-    },
-  }, priorLabel));
-
+  // last time's numbers sit in the placeholders, so there is no Previous
+  // column to read — and completing a set with the box untouched accepts them
   const weightInput = h('input', {
     class: 'set-input',
     type: 'text',
@@ -362,7 +355,7 @@ function setRow(entry, set, index, prev, refresh, drawTotals) {
     enterkeyhint: 'next',
     value: set.weight === '' ? '' : String(set.weight),
     placeholder: prior ? String(prior.weight) : '0',
-    'aria-label': `Set ${workingIndex + 1} weight`,
+    'aria-label': `Set ${workingIndex + 1} weight in ${units()}`,
     oninput: (e) => { W.patchSet(entry.id, set.id, { weight: sanitiseNumber(e.target.value) }); },
     onfocus: (e) => e.target.select(),
   });
@@ -379,7 +372,10 @@ function setRow(entry, set, index, prev, refresh, drawTotals) {
     onfocus: (e) => e.target.select(),
   });
 
-  row.append(weightInput, repsInput);
+  row.appendChild(h('label', { class: 'set-field' },
+    weightInput, h('span', { class: 'set-unit' }, units())));
+  row.appendChild(h('label', { class: 'set-field' },
+    repsInput, h('span', { class: 'set-unit' }, 'reps')));
 
   row.appendChild(h('button', {
     class: `set-check${set.done ? ' on' : ''}`,
@@ -475,7 +471,7 @@ function keepVisible(row) {
 function carryForward(entry, set, row, weight, reps) {
   const container = row.parentElement;
   if (!container) return;
-  const rows = [...container.querySelectorAll('.set-row:not(.set-head)')];
+  const rows = [...container.querySelectorAll('.set-row')];
   const from = entry.sets.indexOf(set);
   if (from < 0) return;
 

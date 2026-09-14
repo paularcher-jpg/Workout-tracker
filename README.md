@@ -244,40 +244,35 @@ stand; you should never need to open the JSON file yourself.
 
 ## Design
 
-The interface is a single stylesheet driven by CSS custom properties, so the
-whole look can be retuned without touching a line of application code.
+The interface is one stylesheet driven by CSS custom properties, so the look
+can be retuned without touching application code.
 
-Two rules hold it together:
+**Paper, not a console.** The ground is light because the use scene is a
+brightly lit gym — not because fitness apps are usually dark. Dark mode is a
+full theme, not an afterthought.
 
-- **Numbers are the content.** Weights, reps and the clock get the largest type,
-  tabular figures and the tightest tracking. Everything else is quiet
-  supporting text.
-- **Cold by default, warm only for achievement.** The interface is arctic blue
-  throughout; ember appears exclusively when you beat a personal best, so
-  colour carries meaning rather than decoration.
+Two structural rules do most of the work:
 
-Measured floors, re-checked in both colour schemes after any change:
+- **No eyebrows.** A heading carries its own weight. There is no
+  `SET / PREVIOUS / KG / REPS` label row and no kicker above a title. Units
+  live inline with the number they belong to, so a logged set reads
+  `24 kg x 10 reps` rather than sitting under a spreadsheet header.
+- **Last session is this session's placeholders.** The number you are trying
+  to beat appears in the input itself; ticking an untouched set accepts it.
+  Recognition beats recall, and it removes a whole column from the densest
+  screen in the app.
 
-- **Every text/background pair clears WCAG AA** (4.5:1 body, 3:1 large and UI).
-- **Every interactive target is at least 44x44** (Apple HIG).
-- **A completed set is obvious without reading it** — the row fills, not just a
-  border shift, and the tick repaints on tap rather than on the next re-render.
+Colour carries meaning rather than decoration: ink for the primary action,
+green only for work completed, and one warm note when a set beats your best.
 
-Three constraints the stylesheet holds to, checked by a design detector:
+Measured floors, re-checked in both schemes after any change:
 
-- **No chromatic glow.** Coloured halo shadows and saturated radial-gradient
-  washes on a dark page are the default "cool" look of generated UI. Elevation
-  is neutral; depth comes from a quiet tonal gradient and layered material.
-- **No overshoot easing.** Real objects decelerate, they do not bounce past
-  their resting position, so motion uses ease-out-quint and ease-out-expo.
-- **Animate transform and opacity only.** The rest-timer fill scales on the
-  compositor rather than animating `width`, which would re-lay out the bar
-  every frame of a three-minute countdown.
-
-Translucency (`backdrop-filter`) is reserved for floating chrome — the tab bar,
-rest timer, sheets and toasts — and never applied to scrolling content, where
-it costs frames on iOS for no visual gain. Swapping the accent is a one-line
-change to `--accent` / `--accent-deep`.
+- Every text/background pair clears WCAG AA (4.5:1 body, 3:1 large and UI).
+- Every interactive target is at least 44x44 (Apple HIG).
+- Depth comes from a shadow on paper or a hairline in the dark, never both —
+  that combination is the stock generated-card signature.
+- No chromatic glow, no overshoot easing, and only `transform` and `opacity`
+  are animated.
 
 ## Development
 
