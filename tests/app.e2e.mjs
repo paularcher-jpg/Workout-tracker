@@ -551,6 +551,10 @@ await step('a hold logs seconds, never reps', async () => {
   if (!stored) throw new Error('no plank entry in state');
   if (stored.reps) throw new Error('a hold wrote reps: ' + JSON.stringify(stored));
   if (String(stored.secs) !== '30') throw new Error('secs not set: ' + JSON.stringify(stored));
+
+  // log it with a weight on the back, so Progress has a hold to chart later
+  await row.locator('.set-input').nth(0).fill('10');
+  await row.locator('.set-check').click();
 });
 await step('rest times come from the plan', async () => {
   const rest = (await page.locator('.rest-pill').allInnerTexts())[0];
@@ -579,6 +583,50 @@ await step('close the session the previous block left open', async () => {
   await page.locator('.tab[data-tab="train"]').click();
   await endSession(page);
 });
+
+console.log('\n== progress for a hold ==');
+await step('a hold charts its duration, never a 1-rep max', async () => {
+  await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    m.updateLocal({ trackedExerciseId: 'plank' });
+  });
+  await page.locator('.tab[data-tab="history"]').click();
+  await page.locator('.tab[data-tab="progress"]').click();
+  await page.waitForSelector('.card-head h3');
+
+  let card = null;
+  for (const c of await page.locator('.card').all()) {
+    const head = c.locator('.card-head h3');
+    if (await head.count() && (await head.innerText()).trim() === 'Plank') card = c;
+  }
+  if (!card) throw new Error('no Plank card on Progress');
+
+  const text = await card.innerText();
+  if (!/longest hold/i.test(text)) throw new Error('no hold stat: ' + text);
+  if (/est\. 1RM/i.test(text)) throw new Error('a hold is showing a 1-rep max: ' + text);
+  if (/Heaviest set/i.test(text)) throw new Error('a hold is showing a heaviest-set chart: ' + text);
+  if (!/30s/.test(text)) throw new Error('the 30s hold is not in the stats: ' + text);
+  // the weight on the back is a secondary measure, so it still has to show
+  if (!/10/.test(text)) throw new Error('added weight missing: ' + text);
+});
+await step('a hold stays out of the 1RM-ranked records table', async () => {
+  let records = null;
+  for (const c of await page.locator('.card').all()) {
+    const head = c.locator('h3');
+    if (await head.count() && (await head.first().innerText()).trim() === 'Personal bests') records = c;
+  }
+  if (records && /Plank/.test(await records.innerText())) {
+    throw new Error('Plank is being ranked by estimated 1RM');
+  }
+  let holds = null;
+  for (const c of await page.locator('.card').all()) {
+    const head = c.locator('h3');
+    if (await head.count() && (await head.first().innerText()).trim() === 'Longest holds') holds = c;
+  }
+  if (!holds) throw new Error('no Longest holds card');
+  if (!/Plank/.test(await holds.innerText())) throw new Error('Plank missing from holds');
+});
+
 await step('every scheduled session is startable, rest days are not', async () => {
   await page.locator('.tab[data-tab="plan"]').click();
   await page.waitForSelector('.sched-row');

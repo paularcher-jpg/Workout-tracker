@@ -64,7 +64,14 @@ export function render(root, { refresh }) {
       }, 'Change'),
     ));
 
-    if (pbs) {
+    const isTime = W.isTimeExercise(selected);
+
+    if (pbs && isTime) {
+      section.appendChild(h('div', { class: 'stat-row' },
+        smallStat(`${Math.round(pbs.secs || 0)}s`, 'longest hold'),
+        pbs.weight ? smallStat(fmtWeight(pbs.weight), 'heaviest') : null,
+      ));
+    } else if (pbs) {
       section.appendChild(h('div', { class: 'stat-row' },
         smallStat(fmtWeight(pbs.weight), 'best set'),
         smallStat(fmtWeight(pbs.est1RM), 'est. 1RM'),
@@ -72,20 +79,28 @@ export function render(root, { refresh }) {
       ));
     }
 
-    section.appendChild(h('p', { class: 'chart-caption' }, 'Estimated 1-rep max'));
-    section.appendChild(lineChart(series.map((p) => ({ t: p.t, value: p.est1RM })), { unit: ` ${getState().settings.units}` }));
+    if (isTime) {
+      // a hold has no 1-rep max; duration is the whole story
+      section.appendChild(h('p', { class: 'chart-caption' }, 'Longest hold'));
+      section.appendChild(lineChart(series.map((p) => ({ t: p.t, value: p.topSecs || 0 })), { unit: 's' }));
+    } else {
+      section.appendChild(h('p', { class: 'chart-caption' }, 'Estimated 1-rep max'));
+      section.appendChild(lineChart(series.map((p) => ({ t: p.t, value: p.est1RM })), { unit: ` ${getState().settings.units}` }));
 
-    section.appendChild(h('p', { class: 'chart-caption' }, 'Heaviest set'));
-    section.appendChild(lineChart(series.map((p) => ({ t: p.t, value: p.topWeight })), { unit: ` ${getState().settings.units}`, area: false }));
+      section.appendChild(h('p', { class: 'chart-caption' }, 'Heaviest set'));
+      section.appendChild(lineChart(series.map((p) => ({ t: p.t, value: p.topWeight })), { unit: ` ${getState().settings.units}`, area: false }));
+    }
 
     const recent = series.slice(-8).reverse();
     section.appendChild(h('div', { class: 'mini-table' },
       h('div', { class: 'mini-row mini-head' },
-        h('span', {}, 'Date'), h('span', {}, 'Top set'), h('span', {}, 'Volume')),
+        h('span', {}, 'Date'), h('span', {}, 'Top set'), h('span', {}, isTime ? 'Sets' : 'Volume')),
       recent.map((p) => h('div', { class: 'mini-row' },
         h('span', {}, p.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })),
-        h('span', {}, `${fmtWeight(p.topWeight, { withUnit: false })}×${p.topReps}`),
-        h('span', {}, fmtVolume(p.volume)),
+        h('span', {}, isTime
+          ? `${Math.round(p.topSecs || 0)}s${p.topWeight ? ` @ ${fmtWeight(p.topWeight, { withUnit: false })}` : ''}`
+          : `${fmtWeight(p.topWeight, { withUnit: false })}×${p.topReps}`),
+        h('span', {}, isTime ? String(p.sets) : fmtVolume(p.volume)),
       )),
     ));
 
@@ -93,7 +108,14 @@ export function render(root, { refresh }) {
   }
 
   // records table
+  const holds = candidates
+    .filter((id) => W.isTimeExercise(id))
+    .map((id) => ({ exercise: get('exercises', id), pbs: W.personalBests(id) }))
+    .filter((r) => r.pbs && r.pbs.secs > 0)
+    .sort((a, b) => b.pbs.secs - a.pbs.secs);
+
   const records = candidates
+    .filter((id) => !W.isTimeExercise(id))
     .map((id) => ({ exercise: get('exercises', id), pbs: W.personalBests(id) }))
     .filter((r) => r.pbs && r.pbs.weight > 0)
     .sort((a, b) => b.pbs.est1RM - a.pbs.est1RM)
@@ -109,6 +131,21 @@ export function render(root, { refresh }) {
           h('span', {}, r.exercise.name),
           h('span', {}, `${fmtWeight(r.pbs.weight, { withUnit: false })}×${r.pbs.reps}`),
           h('span', {}, fmtWeight(r.pbs.est1RM)),
+        )),
+      ),
+    ));
+  }
+
+  if (holds.length) {
+    wrap.appendChild(h('section', { class: 'card' },
+      h('h3', {}, 'Longest holds'),
+      h('div', { class: 'mini-table' },
+        h('div', { class: 'mini-row mini-head' },
+          h('span', {}, 'Exercise'), h('span', {}, 'Longest'), h('span', {}, 'Loaded')),
+        holds.map((r) => h('div', { class: 'mini-row' },
+          h('span', {}, r.exercise.name),
+          h('span', {}, `${Math.round(r.pbs.secs)}s`),
+          h('span', {}, r.pbs.weight ? fmtWeight(r.pbs.weight) : '—'),
         )),
       ),
     ));
