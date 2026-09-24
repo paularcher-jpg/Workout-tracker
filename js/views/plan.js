@@ -7,6 +7,7 @@ import * as P from '../program.js';
 import * as W from '../workout.js';
 import { libraryNode, editRoutine } from './routines.js';
 import { parsePlan, applyPlan, newExercisesIn, sessionList, looksLikeCSV } from '../planparse.js';
+import { openProgramLibrary } from './programs.js';
 import { field } from './train.js';
 
 export function destroy() {}
@@ -30,13 +31,17 @@ export function render(root, { refresh, navigate }) {
 
   if (!program) {
     wrap.appendChild(emptyState(icon('plan'), 'No plan yet',
-      'Paste a written plan and the app will lay it out across your week.'));
+      'Pick a program off the shelf, or paste one you already follow.'));
     wrap.appendChild(h('button', {
       class: 'btn btn-primary btn-lg btn-block', type: 'button',
+      onclick: () => openProgramLibrary(refresh),
+    }, 'Browse programs'));
+    wrap.appendChild(h('button', {
+      class: 'btn btn-secondary btn-block', type: 'button',
       onclick: () => openPasteSheet(refresh),
     }, 'Paste a plan'));
     wrap.appendChild(h('button', {
-      class: 'btn btn-secondary btn-block', type: 'button',
+      class: 'btn btn-quiet btn-block', type: 'button',
       onclick: () => { createEmptyPlan(); refresh(); },
     }, 'Build one by hand'));
   } else {
@@ -48,10 +53,14 @@ export function render(root, { refresh, navigate }) {
         onclick: () => openPlanEditor(program, refresh),
       }, 'Edit plan'),
       h('button', {
-        class: 'btn btn-quiet', type: 'button',
-        onclick: () => openPasteSheet(refresh),
-      }, 'Paste a new plan'),
+        class: 'btn btn-secondary', type: 'button',
+        onclick: () => openProgramLibrary(refresh),
+      }, 'Browse programs'),
     ));
+    wrap.appendChild(h('button', {
+      class: 'btn btn-quiet btn-block', type: 'button',
+      onclick: () => openPasteSheet(refresh),
+    }, 'Paste a new plan'));
   }
 
   wrap.appendChild(h('div', { class: 'section-title' }, h('h2', {}, 'Routines')));

@@ -72,6 +72,24 @@ function parseWeekRange(raw) {
   return [...weeks].sort((a, b) => a - b);
 }
 
+/**
+ * Read a weekday cell into day indexes. Several days are allowed, so a session
+ * can run more than once a week — "Squat on Monday and Friday" is how most
+ * three-day beginner plans are actually written, and spreading by count cannot
+ * express it.
+ */
+export function parseWeekdays(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return [];
+  const days = new Set();
+  for (const token of text.split(/[\s,;/|]+/)) {
+    if (!token) continue;
+    const index = matchDay(token);
+    if (index !== null) days.add(index);
+  }
+  return [...days].sort((a, b) => a - b);
+}
+
 // Where to put N sessions in a week when the plan does not name weekdays.
 const DAY_SPREAD = {
   1: [0], 2: [0, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4],
@@ -114,6 +132,9 @@ export function parseCSVRows(text) {
 const COLUMNS = [
   ['phase', /^(phase|block|mesocycle)/],
   ['weeks', /^weeks?\b/],
+  // claimed before `workout` so "Weekday" and "Day of week" land here, while a
+  // bare "Day" column still means the session's name
+  ['weekday', /^(weekdays?|days?\s*of\s*week|dow)/],
   ['workout', /^(workout|session|routine|day\b)/],
   ['order', /^(order|no\b|num|#)/],
   ['exercise', /^(exercise|movement|lift)/],
@@ -176,9 +197,12 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
     const key = `${phase}|${workout}`;
 
     if (!sessions[key]) {
-      sessions[key] = { key, name: workout, phase, exercises: [] };
+      sessions[key] = { key, name: workout, phase, exercises: [], weekdays: [] };
       if (!phaseOrder.find((p) => p.phase === phase)) phaseOrder.push({ phase, keys: [] });
       phaseOrder.find((p) => p.phase === phase).keys.push(key);
+    }
+    if (!sessions[key].weekdays.length) {
+      sessions[key].weekdays = parseWeekdays(cell(row, 'weekday'));
     }
 
     if (!phaseWeeks.has(phase)) {
@@ -226,11 +250,27 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
   const weeks = Array.from({ length: maxWeek }, () => ({ days: Array.from({ length: 7 }, () => null) }));
   for (const { phase, keys } of phaseOrder) {
     const weekNumbers = phaseWeeks.get(phase) || [];
-    const days = spreadDays(keys.length);
+    const named = keys.filter((key) => sessions[key].weekdays.length);
+    const unnamed = keys.filter((key) => !sessions[key].weekdays.length);
+
     for (const weekNumber of weekNumbers) {
       const week = weeks[weekNumber - 1];
       if (!week) continue;
-      keys.forEach((key, i) => { week.days[days[i]] = key; });
+
+      // sessions that name their days get them, and may claim more than one
+      for (const key of named) {
+        for (const day of sessions[key].weekdays) week.days[day] = key;
+      }
+      // anything left over falls back to spreading across the days still free
+      if (unnamed.length) {
+        const spread = spreadDays(named.length ? unnamed.length : keys.length);
+        const free = spread.filter((d) => week.days[d] === null);
+        const spare = [0, 1, 2, 3, 4, 5, 6].filter((d) => week.days[d] === null && !free.includes(d));
+        const slots = [...free, ...spare];
+        unnamed.forEach((key, i) => {
+          if (slots[i] !== undefined) week.days[slots[i]] = key;
+        });
+      }
     }
   }
 
@@ -458,27 +498,40 @@ export function applyPlan(parsed, { startDate } = {}) {
 
   // 2. one routine per distinct session
   const routineFor = new Map();
+  const bySignature = new Map();
   for (const session of Object.values(parsed.sessions)) {
+    const items = session.exercises.map((ex) => {
+      const key = normaliseName(ex.name);
+      const item = {
+        exerciseId: idFor.get(key),
+        sets: ex.sets,
+        reps: ex.reps,          // may be a range, a hold, or per-side
+        restSec: ex.restSec ?? defaultRest(),
+        rpe: ex.rpe || '',
+        notes: ex.notes || '',
+      };
+      if (ex.mode === 'time' || modeFor.get(key) === 'time') {
+        item.mode = 'time';
+      }
+      return item;
+    });
+
+    // A plan that alternates A/B/A across two weeks names the same session in
+    // more than one phase. That is one routine you do repeatedly, not two, so
+    // an identical name and identical items reuse the routine already made.
+    const signature = JSON.stringify([session.name, items]);
+    if (bySignature.has(signature)) {
+      routineFor.set(session.key, bySignature.get(signature));
+      continue;
+    }
+
     const routine = upsert('routines', {
       id: uid(),
       name: session.name,
-      items: session.exercises.map((ex) => {
-        const key = normaliseName(ex.name);
-        const item = {
-          exerciseId: idFor.get(key),
-          sets: ex.sets,
-          reps: ex.reps,          // may be a range, a hold, or per-side
-          restSec: ex.restSec ?? defaultRest(),
-          rpe: ex.rpe || '',
-          notes: ex.notes || '',
-        };
-        if (ex.mode === 'time' || modeFor.get(key) === 'time') {
-          item.mode = 'time';
-        }
-        return item;
-      }),
+      items,
       lastUsedAt: 0,
     });
+    bySignature.set(signature, routine.id);
     routineFor.set(session.key, routine.id);
     createdRoutines.push(routine);
   }

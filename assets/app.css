@@ -1073,6 +1073,23 @@ textarea.input { min-height: 96px; resize: vertical; }
 .plan-note { font-size: 0.8rem; color: var(--accent); margin-top: 0.35rem; }
 .plan-warn { font-size: 0.8rem; color: var(--danger); }
 
+/* ------------------------------------------------------- program library */
+
+.prog-browse { display: flex; flex-direction: column; gap: 0.55rem; }
+.prog-browse .picker-list { margin-top: 0.15rem; }
+.prog-summary {
+  font-size: 0.86rem;
+  color: var(--text-2);
+  line-height: 1.35;
+}
+.prog-detail { display: flex; flex-direction: column; gap: 0.7rem; }
+.prog-para {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.prog-detail .field-label { margin-top: 0.2rem; }
+
 /* ----------------------------------------------------------------- charts */
 
 .chart { width: 100%; }

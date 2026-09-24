@@ -195,3 +195,69 @@ test('sessions are spread sensibly across the week', () => {
   assert.deepEqual(spreadDays(1), [0]);
   assert.equal(spreadDays(7).length, 7);
 });
+
+/* --------------------------------------------------------------- weekdays */
+
+test('a named weekday beats spreading by count', () => {
+  const p = parseCSVPlan([
+    'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+    'Block,1,Tue,Session A,1,Back Squat,3,5',
+    'Block,1,Sat,Session B,1,Deadlift,1,5',
+  ].join('\n'));
+  assert.equal(p.weeks.length, 1);
+  assert.equal(dayOf(p, 0, 0), null, 'Monday should be free');
+  assert.equal(dayOf(p, 0, 1).name, 'Session A');
+  assert.equal(dayOf(p, 0, 5).name, 'Session B');
+});
+
+test('one session can run twice in a week', () => {
+  // the whole reason weekdays exist: "squat Monday and Friday" cannot be said
+  // by spreading sessions evenly across the week
+  const p = parseCSVPlan([
+    'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+    'Block,1,Mon Fri,Full Body A,1,Back Squat,3,5',
+    'Block,1,Wed,Full Body B,1,Deadlift,1,5',
+  ].join('\n'));
+  assert.equal(dayOf(p, 0, 0).name, 'Full Body A');
+  assert.equal(dayOf(p, 0, 2).name, 'Full Body B');
+  assert.equal(dayOf(p, 0, 4).name, 'Full Body A');
+  assert.equal(dayOf(p, 0, 0), dayOf(p, 0, 4), 'both days are the same session');
+  assert.equal(Object.keys(p.sessions).length, 2, 'not three sessions');
+});
+
+test('weekday separators', () => {
+  for (const cell of ['Mon Fri', 'Mon/Fri', 'Mon;Fri', 'Monday Friday', '"Mon,Fri"']) {
+    const p = parseCSVPlan([
+      'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+      `Block,1,${cell},A,1,Back Squat,3,5`,
+    ].join('\n'));
+    assert.equal(dayOf(p, 0, 0)?.name, 'A', `failed on "${cell}"`);
+    assert.equal(dayOf(p, 0, 4)?.name, 'A', `failed on "${cell}"`);
+  }
+});
+
+test('a bare "Day" column still names the session, not the weekday', () => {
+  // "Day" is how plenty of spreadsheets label the session column, and that
+  // reading must not change now that "Weekday" exists
+  const p = parseCSVPlan([
+    'Day,Exercise,Sets,Reps',
+    'Push,Barbell Bench Press,3,5',
+    'Pull,Barbell Row,3,5',
+  ].join('\n'));
+  assert.equal(dayOf(p, 0, 0).name, 'Push');
+  assert.equal(dayOf(p, 0, 3).name, 'Pull');
+});
+
+test('sessions without a weekday fill the days left over', () => {
+  const p = parseCSVPlan([
+    'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+    'Block,1,Wed,Fixed,1,Back Squat,3,5',
+    'Block,1,,Floating,1,Deadlift,1,5',
+  ].join('\n'));
+  assert.equal(dayOf(p, 0, 2).name, 'Fixed');
+  const floating = p.weeks[0].days
+    .map((k, i) => (k && p.sessions[k].name === 'Floating' ? i : null))
+    .filter((i) => i !== null);
+  assert.equal(floating.length, 1, 'the floating session lands exactly once');
+  assert.notEqual(floating[0], 2, 'and not on top of the fixed one');
+});

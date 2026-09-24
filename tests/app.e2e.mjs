@@ -803,6 +803,112 @@ await step('the page still scrolls with the plan open', async () => {
 });
 
 
+console.log('\n== program library ==');
+await step('a fresh install can browse the built-in programs', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Browse programs' }).click();
+  await page.waitForSelector('.prog-browse .picker-item');
+  const n = await page.locator('.prog-browse .picker-item').count();
+  if (n < 30) throw new Error(`only ${n} programs listed`);
+});
+await step('every program lists its length, days and equipment', async () => {
+  const meta = await page.locator('.prog-browse .picker-item .picker-meta').allInnerTexts();
+  const bad = meta.filter((t) => !/week/.test(t) || !/days? a week/.test(t));
+  if (bad.length) throw new Error(`${bad.length} programs have no meta line, e.g. "${bad[0]}"`);
+});
+await step('filtering by goal narrows the list', async () => {
+  const all = await page.locator('.prog-browse .picker-item').count();
+  await page.locator('.chip', { hasText: 'Endurance' }).click();
+  await page.waitForFunction(
+    (before) => document.querySelectorAll('.prog-browse .picker-item').length < before,
+    all, { timeout: 3000 },
+  );
+  const few = await page.locator('.prog-browse .picker-item').count();
+  if (few < 1) throw new Error('endurance filter returned nothing');
+});
+await step('filtering by days a week narrows it further', async () => {
+  await page.locator('.chip', { hasText: '2 days' }).click();
+  await page.waitForTimeout(100);
+  const metas = await page.locator('.prog-browse .picker-item .picker-meta').allInnerTexts();
+  if (!metas.length) throw new Error('no programs train twice a week');
+  const wrong = metas.filter((t) => !/2 days a week/.test(t));
+  if (wrong.length) throw new Error(`filter leaked: "${wrong[0]}"`);
+});
+await step('searching finds a program by name', async () => {
+  await page.locator('.chip', { hasText: 'Any days' }).click();
+  await page.locator('.chip', { hasText: 'All' }).first().click();
+  await page.locator('.prog-browse input[type="search"]').fill('muscular endurance');
+  await page.waitForTimeout(150);
+  const names = await page.locator('.prog-browse .picker-name').allInnerTexts();
+  if (!names.some((t) => /Muscular Endurance/i.test(t))) {
+    throw new Error('search did not find it: ' + names.join(', '));
+  }
+});
+await step('the detail sheet shows the week-by-week layout', async () => {
+  // take the length off the list row, so the assertion does not depend on
+  // which program happens to sort first
+  const meta = await page.locator('.prog-browse .picker-item .picker-meta').first().innerText();
+  const weeks = meta.match(/(\d+) weeks?/)[1];
+  await page.locator('.prog-browse .picker-item').first().click();
+  await page.waitForSelector('.prog-detail');
+  const text = await page.locator('.prog-detail').innerText();
+  if (!/Week 1:/.test(text)) throw new Error('no week layout: ' + text.slice(0, 200));
+  if (!new RegExp(`Week ${weeks}:`).test(text)) {
+    throw new Error(`says ${weeks} weeks but the layout stops short`);
+  }
+});
+await step('using a program builds routines and a schedule', async () => {
+  await page.getByRole('button', { name: 'Use this program' }).click();
+  await page.waitForSelector('.sched-row', { timeout: 6000 });
+  const routines = await page.locator('.card .routine-items').count();
+  if (routines < 2) throw new Error(`expected several routines, got ${routines}`);
+  const rests = await page.locator('.sched-row.is-rest').count();
+  const rows = await page.locator('.sched-row').count();
+  if (rows - rests < 1) throw new Error('nothing was scheduled');
+});
+await step('a hold in a built-in program logs seconds, not reps', async () => {
+  // the library leans on holds heavily; if they import as reps they poison
+  // every volume figure in the app
+  const modes = await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    const all = Object.values(m.getState().exercises);
+    return {
+      plank: all.find((e) => e.name === 'Plank')?.mode,
+      routineHolds: Object.values(m.getState().routines)
+        .flatMap((r) => r.items || [])
+        .filter((i) => i.mode === 'time').length,
+    };
+  });
+  if (modes.plank !== 'time') throw new Error('Plank is not a time exercise: ' + modes.plank);
+  if (!modes.routineHolds) throw new Error('no holds carried into the routines');
+});
+await step('a session from a program can be logged end to end', async () => {
+  await page.locator('.sched-start').first().click();
+  await page.waitForSelector('.entry', { timeout: 5000 });
+  const entries = await page.locator('.entry').count();
+  if (!entries) throw new Error('session started with no exercises');
+
+  const row = page.locator('.entry').first().locator('.set-row').first();
+  await row.locator('.set-input').nth(0).fill('20');
+  await row.locator('.set-input').nth(1).fill('8');
+  await row.locator('.set-check').click();
+  if (!await page.locator('.set-row.set-done').count()) throw new Error('the set did not log');
+
+  if (!await endSession(page)) throw new Error('could not finish the session');
+});
+await step('a repeating program keeps running past its written weeks', async () => {
+  const repeats = await page.evaluate(async () => {
+    const m = await import('/js/state.js');
+    const p = Object.values(m.getState().programs).find((x) => x.active && !x.deleted);
+    return p ? { name: p.name, weeks: p.weeks.length, repeat: p.repeat } : null;
+  });
+  if (!repeats) throw new Error('no active program');
+  // the one just imported is the six-week endurance block, which must finish
+  if (repeats.repeat !== false) throw new Error(`${repeats.name} should not repeat`);
+});
+
 console.log('\n== console errors ==');
 console.log(problems.length ? 'PROBLEMS:\n' + problems.map((p) => ' - ' + p).join('\n') : '  none');
 

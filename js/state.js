@@ -245,7 +245,7 @@ export function updateLocal(patch) {
 
 /* ------------------------------------------------------------ custom items */
 
-export function addCustomExercise({ name, group, equipment, restSec }) {
+export function addCustomExercise({ name, group, equipment, restSec, mode }) {
   const s = getState();
   let id = slugify(name);
   if (!id) id = uid();
@@ -256,6 +256,9 @@ export function addCustomExercise({ name, group, equipment, restSec }) {
     group: group || 'Other',
     equipment: equipment || 'Other',
     restSec: Number(restSec) || getState().settings.defaultRestSec,
+    // a hold imported from a plan has to stay a hold: isTimeExercise reads
+    // this, so dropping it turns "30s" back into "30 reps" everywhere
+    ...(mode && { mode }),
     custom: true,
   });
 }
