@@ -20,16 +20,31 @@ const TYPES = {
   '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png',
 };
 
+// Lets a test serve a changed file, so a real service worker update can be
+// exercised without touching the working tree.
+const OVERRIDES = new Map();
+
 function serve() {
   const server = http.createServer((req, res) => {
     let p = decodeURIComponent(req.url.split('?')[0]);
     if (p.endsWith('/')) p += 'index.html';
+
+    // GitHub Pages serves assets with a max-age, and that is precisely what
+    // makes a stale shell possible — so the test server has to do it too, or
+    // the update path passes here and fails on a real phone.
+    const headers = { 'Cache-Control': 'max-age=600' };
+
+    if (OVERRIDES.has(p)) {
+      res.writeHead(200, { ...headers, 'Content-Type': TYPES[path.extname(p)] || 'text/plain' });
+      return res.end(OVERRIDES.get(p));
+    }
+
     const file = path.join(ROOT, p);
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404);
       return res.end('not found');
     }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+    res.writeHead(200, { ...headers, 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
     fs.createReadStream(file).pipe(res);
   });
   return new Promise((resolve) => server.listen(PORT, () => resolve(server)));
@@ -907,6 +922,65 @@ await step('a repeating program keeps running past its written weeks', async () 
   if (!repeats) throw new Error('no active program');
   // the one just imported is the six-week endurance block, which must finish
   if (repeats.repeat !== false) throw new Error(`${repeats.name} should not repeat`);
+});
+
+console.log('\n== shipping an update ==');
+await step('a new version reaches an already-installed app', async () => {
+  // This is the path every future fix takes to the phone. It broke once by
+  // serving a new cache the old files, so it is worth testing for real.
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await page.evaluate(() => navigator.serviceWorker.ready);
+
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Browse programs' }).click();
+  await page.waitForSelector('.prog-browse .picker-item');
+  const before = await page.locator('.prog-browse .picker-item').count();
+
+  // ship a change: one more program, and the version bump that carries it
+  const minimal = fs.readFileSync(path.join(ROOT, 'js/programs/minimal.js'), 'utf8');
+  OVERRIDES.set('/js/programs/minimal.js', minimal + `
+MINIMAL.push({
+  id: 'update-probe', name: 'Update Probe', goal: 'strength', level: 'beginner',
+  days: 1, weeks: 1, repeat: true, equipment: 'None',
+  summary: 'Only exists to prove an update landed.', detail: 'Test only.',
+  csv: 'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s)\\nT,1,Mon,T,1,Push-Up,1,10,60',
+});
+`);
+  const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+  const bumped = sw.replace(/const VERSION = 'v[\d.]+'/, "const VERSION = 'v99.0.0'");
+  if (bumped === sw) throw new Error('could not bump the service worker version');
+  OVERRIDES.set('/sw.js', bumped);
+
+  try {
+    // coming back to the foreground is what triggers the check
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForFunction(async () => {
+      const m = await import('/js/programs/index.js');
+      return m.PROGRAMS.some((p) => p.id === 'update-probe');
+    }, null, { timeout: 20000 });
+  } finally {
+    OVERRIDES.delete('/js/programs/minimal.js');
+    OVERRIDES.delete('/sw.js');
+  }
+
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Browse programs' }).click();
+  await page.waitForSelector('.prog-browse .picker-item');
+  const after = await page.locator('.prog-browse .picker-item').count();
+  if (after !== before + 1) throw new Error(`expected ${before + 1} programs after the update, got ${after}`);
+});
+await step('the update check runs when the app comes back to the foreground', async () => {
+  // an installed app can go days without a navigation, so a version check that
+  // only happens on load never happens at all
+  const wired = await page.evaluate(() => {
+    const reg = navigator.serviceWorker.controller !== null;
+    return { controlled: reg };
+  });
+  if (!wired.controlled) throw new Error('the page is not controlled by a service worker');
+  const src = await (await fetch(`http://localhost:${PORT}/js/app.js`)).text();
+  if (!/visibilitychange/.test(src)) throw new Error('no foreground update check');
+  if (!/controllerchange/.test(src)) throw new Error('nothing reloads the page when the worker changes');
 });
 
 console.log('\n== console errors ==');

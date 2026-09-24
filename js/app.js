@@ -231,10 +231,62 @@ function wireSafetyNets() {
   window.addEventListener('unhandledrejection', (e) => console.error('Unhandled rejection', e.reason));
 }
 
+/**
+ * Offer the new version rather than yanking the page out from under someone.
+ * Only used when a workout is in progress; otherwise the reload is automatic.
+ */
+function showUpdateBar() {
+  if (document.getElementById('update-bar')) return;
+  const bar = h('div', { class: 'update-bar', id: 'update-bar', role: 'status' },
+    h('span', {}, 'A new version is ready'),
+    h('button', {
+      class: 'btn btn-sm btn-primary', type: 'button',
+      onclick: () => window.location.reload(),
+    }, 'Reload'),
+  );
+  document.body.appendChild(bar);
+  requestAnimationFrame(() => bar.classList.add('show'));
+}
+
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+
+  // On the very first visit the worker claims this page and the controller
+  // changes, but nothing is stale — only a later change means the code running
+  // here has been superseded.
+  const hadController = !!navigator.serviceWorker.controller;
+  let handled = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || handled) return;
+    handled = true;
+    // The modules already evaluated in this page are the old ones, so the new
+    // worker's cache means nothing until the page is reloaded.
+    if (W.activeWorkout()) { showUpdateBar(); return; }
+    window.location.reload();
+  });
+
   const go = () => {
     navigator.serviceWorker.register(new URL('../sw.js', import.meta.url), { scope: './' })
+      .then((reg) => {
+        // An installed app can run for days without a navigation — resuming it
+        // from the app switcher is not one — so nothing would ever check for a
+        // new version. Check whenever the app comes back to the foreground.
+        const check = () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        };
+        check();
+        document.addEventListener('visibilitychange', check);
+
+        reg.addEventListener('updatefound', () => {
+          const installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              if (W.activeWorkout()) showUpdateBar();
+            }
+          });
+        });
+      })
       .catch((err) => console.warn('Service worker registration failed', err));
   };
   // boot() is async, so the load event may already have fired by now.

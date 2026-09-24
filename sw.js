@@ -1,7 +1,7 @@
 // Offline shell cache. The app's data never goes through here — that lives in
 // IndexedDB — so a stale cache can only ever affect the code, not your logs.
 
-const VERSION = 'v3.2.0';
+const VERSION = 'v3.3.0';
 const CACHE = `workout-tracker-${VERSION}`;
 
 const SHELL = [
@@ -39,7 +39,10 @@ const SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
+      // addAll goes through the browser's HTTP cache by default, so a host that
+      // sends max-age can hand a brand new cache the files it is replacing.
+      // Forcing a revalidated fetch is what makes a version bump mean anything.
+      .then((cache) => cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting()),
   );
 });

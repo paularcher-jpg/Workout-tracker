@@ -1089,6 +1089,26 @@ textarea.input { min-height: 96px; resize: vertical; }
   color: var(--text-2);
 }
 .prog-detail .field-label { margin-top: 0.2rem; }
+.update-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  background: var(--ink-raise);
+  border-top: 1px solid var(--hairline-strong);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transform: translateY(100%);
+  transition: transform 0.28s var(--ease-exp);
+}
+.update-bar.show { transform: translateY(0); }
+
 .prog-source {
   font-size: 0.78rem;
   line-height: 1.45;
