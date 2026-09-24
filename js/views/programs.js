@@ -7,7 +7,8 @@
 import { h, clear, toast, openSheet } from '../ui.js';
 import { upsert } from '../state.js';
 import * as P from '../program.js';
-import { parseCSVPlan, applyPlan, sessionList } from '../planparse.js';
+import { parseCSVPlan, applyPlan, sessionList, resolveExerciseName } from '../planparse.js';
+import { howToUrl } from '../exercises.js';
 import { PROGRAMS, GOALS } from '../programs/index.js';
 
 const DAY_FILTERS = [0, 2, 3, 4, 5, 6];
@@ -20,6 +21,20 @@ function planOf(def) {
 }
 
 const sentenceCase = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** The first few movements of week one, as a hint of what the block is. */
+function exampleLifts(def, limit = 3) {
+  const plan = planOf(def);
+  const seen = [];
+  for (const key of plan.weeks[0].days) {
+    if (!key) continue;
+    for (const ex of plan.sessions[key].exercises) {
+      if (!seen.includes(ex.name)) seen.push(ex.name);
+      if (seen.length >= limit) return `${seen.join(' · ')} …`;
+    }
+  }
+  return seen.join(' · ');
+}
 
 function metaLine(def, { full = false } = {}) {
   // the list rows stay on one line on a phone; "repeating" is explained in the
@@ -100,6 +115,7 @@ export function openProgramLibrary(refresh) {
           },
             h('span', { class: 'picker-name' }, def.name),
             h('span', { class: 'prog-summary' }, def.summary),
+            h('span', { class: 'prog-taste' }, exampleLifts(def)),
             h('span', { class: 'picker-meta' }, metaLine(def)),
           ));
         }
@@ -149,21 +165,48 @@ export function openProgramDetail(def, refresh, closeParent) {
         + `${sessions.length} session${sessions.length === 1 ? '' : 's'} · `
         + `${plan.totalExercises} exercises`));
 
-      for (const session of sessions) {
-        preview.appendChild(h('p', { class: 'plan-session' },
+      // Week one in full. A list of session names says nothing about whether
+      // you want to do this block — the exercises are the thing you are
+      // actually choosing between.
+      preview.appendChild(h('p', { class: 'field-label' }, 'Week 1'));
+      plan.weeks[0].days.forEach((key, day) => {
+        if (!key) return;
+        const session = plan.sessions[key];
+        const box = h('div', { class: 'prog-session' });
+        box.appendChild(h('p', { class: 'prog-session-head' },
           h('strong', {}, session.name),
-          ` — ${session.exercises.length} exercise${session.exercises.length === 1 ? '' : 's'}`));
-      }
-
-      const weeksBox = h('div', { class: 'plan-weeks' });
-      plan.weeks.forEach((week, i) => {
-        const named = week.days
-          .map((key, day) => (key ? `${P.DAY_SHORT[day]} ${plan.sessions[key].name}` : null))
-          .filter(Boolean);
-        weeksBox.appendChild(h('p', { class: 'plan-session' },
-          h('strong', {}, `Week ${i + 1}: `), named.join(' · ') || 'Rest'));
+          h('span', { class: 'prog-day' }, P.DAY_SHORT[day])));
+        for (const ex of session.exercises) {
+          const exercise = resolveExerciseName(ex.name).exercise;
+          box.appendChild(h('p', { class: 'prog-ex' },
+            h('span', { class: 'prog-ex-sets' }, `${ex.sets}×${ex.reps}`),
+            exercise
+              ? h('a', {
+                class: 'prog-ex-name',
+                href: howToUrl(exercise),
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                'aria-label': `How to perform ${ex.name}`,
+              }, ex.name)
+              : h('span', { class: 'prog-ex-name' }, ex.name)));
+        }
+        preview.appendChild(box);
       });
-      preview.appendChild(weeksBox);
+
+      if (plan.weeks.length > 1) {
+        preview.appendChild(h('p', { class: 'field-label' }, 'The rest of the block'));
+        const weeksBox = h('div', { class: 'plan-weeks' });
+        plan.weeks.slice(1).forEach((week, i) => {
+          const named = week.days
+            .map((key, day) => (key ? `${P.DAY_SHORT[day]} ${plan.sessions[key].name}` : null))
+            .filter(Boolean);
+          weeksBox.appendChild(h('p', { class: 'plan-session' },
+            h('strong', {}, `Week ${i + 2}: `), named.join(' · ') || 'Rest'));
+        });
+        preview.appendChild(weeksBox);
+      }
+      preview.appendChild(h('p', { class: 'muted small' },
+        'Tap any exercise to see how it is performed.'));
       wrap.appendChild(preview);
 
       wrap.appendChild(h('button', {

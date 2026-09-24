@@ -861,6 +861,41 @@ await step('searching finds a program by name', async () => {
     throw new Error('search did not find it: ' + names.join(', '));
   }
 });
+await step('a program row shows what you would actually be lifting', async () => {
+  await page.locator('.prog-browse input[type="search"]').fill('');
+  await page.waitForTimeout(150);
+  const tastes = await page.locator('.prog-browse .prog-taste').allInnerTexts();
+  if (tastes.length < 30) throw new Error(`only ${tastes.length} rows show example lifts`);
+  const empty = tastes.filter((t) => !t.trim());
+  if (empty.length) throw new Error(`${empty.length} rows have no example lifts`);
+});
+await step('the detail sheet lists week one exercise by exercise', async () => {
+  await page.locator('.prog-browse .picker-item').first().click();
+  await page.waitForSelector('.prog-detail');
+  const sessions = await page.locator('.prog-session').count();
+  if (!sessions) throw new Error('week one is not broken out into sessions');
+  const rows = await page.locator('.prog-ex').count();
+  if (rows < 3) throw new Error(`week one shows only ${rows} exercises`);
+  const first = await page.locator('.prog-ex').first().innerText();
+  if (!/\d+×/.test(first)) throw new Error('no sets and reps against the exercise: ' + first);
+});
+await step('each exercise links out to how it is performed', async () => {
+  const link = page.locator('a.prog-ex-name').first();
+  if (!await link.count()) throw new Error('no how-to links');
+  const href = await link.getAttribute('href');
+  const target = await link.getAttribute('target');
+  const rel = await link.getAttribute('rel');
+  if (!/^https:\/\//.test(href)) throw new Error('bad href: ' + href);
+  if (target !== '_blank') throw new Error('should open away from the session');
+  if (!/noopener/.test(rel || '')) throw new Error('missing rel=noopener: ' + rel);
+  const name = (await link.innerText()).trim().toLowerCase();
+  if (!decodeURIComponent(href).toLowerCase().includes(name)) {
+    throw new Error(`the link does not search for the exercise: ${href}`);
+  }
+  // Escape closes only the topmost sheet, leaving the browse list underneath
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.prog-detail', { state: 'detached', timeout: 5000 });
+});
 await step('the detail sheet shows the week-by-week layout', async () => {
   // take the length off the list row, so the assertion does not depend on
   // which program happens to sort first
@@ -869,8 +904,9 @@ await step('the detail sheet shows the week-by-week layout', async () => {
   await page.locator('.prog-browse .picker-item').first().click();
   await page.waitForSelector('.prog-detail');
   const text = await page.locator('.prog-detail').innerText();
-  if (!/Week 1:/.test(text)) throw new Error('no week layout: ' + text.slice(0, 200));
-  if (!new RegExp(`Week ${weeks}:`).test(text)) {
+  // week one is broken out exercise by exercise; the rest are listed after it
+  if (!/Week 1\b/.test(text)) throw new Error('week one is not shown: ' + text.slice(0, 200));
+  if (Number(weeks) > 1 && !new RegExp(`Week ${weeks}:`).test(text)) {
     throw new Error(`says ${weeks} weeks but the layout stops short`);
   }
 });

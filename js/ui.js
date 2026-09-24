@@ -1,7 +1,7 @@
 // DOM helpers, sheets, toasts and formatting shared by all views.
 
 import { list, getState } from './state.js';
-import { MUSCLE_GROUPS } from './exercises.js';
+import { MUSCLE_GROUPS, howToUrl } from './exercises.js';
 
 /* -------------------------------------------------------------- dom helper */
 
@@ -93,6 +93,26 @@ export function toast(message, kind = 'info', { pr = false } = {}) {
   host.className = `toast toast-${kind}${pr ? ' is-pr' : ''} show`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { host.className = 'toast'; }, kind === 'error' ? 4800 : 2600);
+}
+
+/**
+ * A link out to see the movement performed. Returns null when there is no
+ * exercise, so callers can drop it straight into a child list.
+ *
+ * It is an anchor rather than a button: on a phone that means the browser's
+ * own "open in new tab" and long-press behaviours work, and a standalone PWA
+ * hands it to the in-app browser instead of navigating away from your session.
+ */
+export function howTo(exercise, className = 'btn btn-quiet btn-sm') {
+  const url = howToUrl(exercise);
+  if (!url) return null;
+  return h('a', {
+    class: className,
+    href: url,
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    'aria-label': `How to perform ${exercise.name}`,
+  }, 'How to perform this');
 }
 
 /* ------------------------------------------------------------------ sheet */

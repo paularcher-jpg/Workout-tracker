@@ -175,6 +175,23 @@ export function slugify(str) {
     .slice(0, 60);
 }
 
+/**
+ * Where to go to see a movement performed.
+ *
+ * A curated `video` on the exercise wins. Otherwise this returns a search
+ * rather than a single hand-picked clip: a search never rots, covers the
+ * exercises you add yourself, and does not quietly send you to a video that
+ * was taken down a year ago. Nothing is embedded — the link opens in the
+ * browser, so no third-party player loads inside the app.
+ */
+export function howToUrl(exercise) {
+  if (exercise?.video) return exercise.video;
+  const name = String(exercise?.name || '').trim();
+  if (!name) return null;
+  const q = encodeURIComponent(`how to ${name} proper form technique`);
+  return `https://www.youtube.com/results?search_query=${q}`;
+}
+
 export const SEED_EXERCISES = SEED.map(([name, group, equipment, restSec, mode]) => ({
   id: slugify(name),
   name,

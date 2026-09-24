@@ -1109,6 +1109,41 @@ textarea.input { min-height: 96px; resize: vertical; }
 }
 .update-bar.show { transform: translateY(0); }
 
+.prog-session {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.prog-session:last-of-type { border-bottom: none; }
+.prog-session-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.15rem;
+}
+.prog-day { font-size: 0.72rem; color: var(--text-3); font-weight: 700; }
+.prog-ex {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.prog-ex-sets { color: var(--text-3); font-variant-numeric: tabular-nums; }
+.prog-ex-name { color: var(--text-2); }
+a.prog-ex-name { color: var(--text); text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 2px; }
+.prog-taste {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .prog-source {
   font-size: 0.78rem;
   line-height: 1.45;

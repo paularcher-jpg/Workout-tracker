@@ -1,7 +1,7 @@
 // The screen you actually use in the gym. Big tap targets, no full re-render
 // while typing, every change written to disk immediately.
 
-import { h, clear, toast, pickExercise, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, units, emptyState, icon } from '../ui.js';
+import { h, clear, toast, pickExercise, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, units, emptyState, icon, howTo } from '../ui.js';
 import { getState, list, get, addCustomExercise, commit } from '../state.js';
 import { MUSCLE_GROUPS } from '../exercises.js';
 import * as P from '../program.js';
@@ -578,6 +578,7 @@ function entryMenu(entry, workout, refresh) {
         class: 'menu-item', type: 'button', disabled: entry.sets.length <= 1,
         onclick: () => { W.removeSet(entry.id, entry.sets.at(-1)?.id); close(); refresh(); },
       }, 'Remove last set'),
+      howTo(get('exercises', entry.exerciseId), 'menu-item'),
       h('button', {
         class: 'menu-item menu-danger', type: 'button',
         onclick: () => { W.removeEntry(entry.id); close(); refresh(); },
