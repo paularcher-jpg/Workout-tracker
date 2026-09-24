@@ -83,34 +83,63 @@ test('a repeating program is short enough to be worth repeating', () => {
   }
 });
 
-test('the gym muscular endurance block follows its published progression', () => {
+test('the gym muscular endurance block matches the published progression', () => {
   const def = getProgram('gym-muscular-endurance');
   assert.ok(def, 'program is missing');
   assert.ok(def.source, 'a program taken from a published protocol has to credit it');
+  assert.equal(def.weeks, 14, 'the progression is fourteen workouts');
+  assert.equal(def.days, 1, 'one session a week, on top of your own aerobic volume');
 
   const plan = parsed.get(def.id);
-  const me = plan.weeks.map((week) => {
-    const key = week.days.find((k) => k && plan.sessions[k].name.startsWith('ME Workout'));
-    return plan.sessions[key];
+  const workouts = plan.weeks.map((week) => plan.sessions[week.days.find(Boolean)]);
+  const find = (w, name) => w.exercises.find((e) => e.name === name);
+
+  // the published table: sets, rest per set, and rest on the single-leg work
+  const table = [
+    [6, 60, 30], [6, 60, 30], [6, 45, 30], [5, 60, 60], [6, 45, 30],
+    [6, 40, 30], [6, 30, 30], [8, 45, 30], [6, 40, 30], [8, 45, 30],
+    [8, 30, 20], [8, 15, 15], [8, 10, 10], [8, 10, 10],
+  ];
+  workouts.forEach((w, i) => {
+    const [sets, rest, legRest] = table[i];
+    const jump = find(w, 'Squat Jump');
+    const step = find(w, 'Box Step-Up');
+    const lunge = find(w, 'Front Lunge');
+    assert.equal(jump.sets, sets, `workout ${i + 1} sets`);
+    assert.equal(jump.restSec, rest, `workout ${i + 1} rest per set`);
+    assert.equal(step.restSec, legRest, `workout ${i + 1} step-up rest`);
+    assert.equal(lunge.restSec, legRest, `workout ${i + 1} lunge rest`);
+    assert.match(step.reps, /each/, 'step-ups are done a leg at a time');
+    assert.match(lunge.reps, /each/, 'lunges are done a leg at a time');
+    assert.match(find(w, 'Split Jump Squat').reps, /each/);
   });
-  assert.equal(me.length, 6, 'six workouts');
 
-  // sets rise across the block, and the first three weeks stay bodyweight
-  const setsPerWeek = me.map((s) => s.exercises[0].sets);
-  assert.deepEqual(setsPerWeek, [4, 5, 7, 5, 6, 7]);
-  for (const week of me.slice(0, 3)) {
-    for (const ex of week.exercises) {
-      assert.ok(!/vest/i.test(ex.notes), `week is meant to be bodyweight: "${ex.notes}"`);
-    }
+  // bodyweight for the first three, then a vest that gets heavier at workout nine
+  for (const w of workouts.slice(0, 3)) {
+    assert.ok(!w.exercises.some((e) => /vest/i.test(e.notes)), 'first three are bodyweight');
   }
-  assert.ok(me.slice(3).every((w) => w.exercises.some((e) => /vest/i.test(e.notes))),
-    'the vest has to appear from workout four');
+  for (const [i, w] of workouts.entries()) {
+    if (i < 3) continue;
+    const want = i < 8 ? '10% bodyweight' : '15% bodyweight';
+    assert.ok(w.exercises.some((e) => e.notes.includes(want)),
+      `workout ${i + 1} should carry ${want}`);
+  }
 
-  // single-leg work rests less than the rest of the session, which is the
-  // whole shape of the protocol
-  for (const week of me) {
-    const stepUp = week.exercises.find((e) => e.name === 'Box Step-Up');
-    assert.ok(stepUp.restSec <= 60, `step-up rest is ${stepUp.restSec}s`);
-    assert.match(stepUp.reps, /each/, 'step-ups are done a leg at a time');
+  // two exercises join from workout four and stay
+  for (const [i, w] of workouts.entries()) {
+    const added = ['Goblet Squat to Press', 'Kettlebell Swing'].filter((n) => find(w, n));
+    assert.equal(added.length, i < 3 ? 0 : 2, `workout ${i + 1} added exercises`);
   }
+
+  // every session is warmed up and cooled down
+  for (const w of workouts) {
+    assert.ok(find(w, 'Floor Get-Up') && find(w, 'Burpee'), 'warm-up is part of the session');
+    assert.equal(w.exercises.filter((e) => e.name === 'Easy Aerobic').length, 2,
+      'an aerobic warm-up and an aerobic cool-down');
+    assert.equal(w.exercises.at(-1).name, 'Easy Aerobic', 'cool-down comes last');
+  }
+});
+
+test('the invented mountain block is gone now the real protocol is in', () => {
+  assert.equal(getProgram('muscular-endurance-mountain'), null);
 });

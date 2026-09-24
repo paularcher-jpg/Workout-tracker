@@ -9,97 +9,211 @@
 
 export const ENDURANCE = [
   {
+    id: 'weighted-carry-endurance',
+    name: 'Weighted Carry Endurance',
+    goal: 'endurance',
+    level: 'intermediate',
+    days: 1,
+    weeks: 8,
+    repeat: false,
+    equipment: 'Steep hill or stairs and a loaded pack',
+    source: 'The weighted carry method for muscular endurance as described by Scott Johnston at Evoke Endurance.',
+    summary: 'Load a pack and go uphill. The simplest way to build fatigue resistance.',
+    detail: 'The simplest muscular endurance session there is: put weight on your back and climb. '
+      + 'Five-minute laps building from thirty minutes of climbing to an hour over eight weeks, once '
+      + 'a week, on top of your normal easy aerobic volume.\n\n'
+      + 'You need real steepness — thirty per cent grade or more, which rules out most graded trails. '
+      + 'Fire stairs in a tall building work well, and a stair machine will do the job if that is what '
+      + 'you have. Water jugs in a pack are the classic load because you can tip them out at the top; '
+      + 'a vest works too.\n\n'
+      + 'The load has to be heavy enough that your legs are the limit and not your breathing. You want '
+      + 'a low-grade burn in the quads and glutes for the whole climb. Ignore your heart rate entirely '
+      + 'on these — it will read lower than you expect, and that is the session working as intended. '
+      + 'Finding the right weight takes a bit of experimenting.\n\n'
+      + 'Start at thirty minutes of climbing even if that feels easy. An hour is plenty for anyone, '
+      + 'including athletes at the sharp end.',
+    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
+Week 1,1,Wed,Weighted Carry,1,Weighted Uphill Carry,6,300s,120,8,Steep hill, fire stairs or a stair machine. Heavy enough that your legs are the limit, not your breathing. Ignore your heart rate.
+Week 1,1,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 2,2,Wed,Weighted Carry,1,Weighted Uphill Carry,7,300s,120,8,Same load. One more lap than last week.
+Week 2,2,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 3,3,Wed,Weighted Carry,1,Weighted Uphill Carry,8,300s,120,8,Same load. One more lap than last week.
+Week 3,3,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 4,4,Wed,Weighted Carry,1,Weighted Uphill Carry,9,300s,120,8,Same load. One more lap than last week.
+Week 4,4,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 5,5,Wed,Weighted Carry,1,Weighted Uphill Carry,10,300s,120,8,Same load. One more lap than last week.
+Week 5,5,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 6,6,Wed,Weighted Carry,1,Weighted Uphill Carry,11,300s,120,8,Same load. One more lap than last week.
+Week 6,6,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 7,7,Wed,Weighted Carry,1,Weighted Uphill Carry,12,300s,120,8,Same load. One more lap than last week.
+Week 7,7,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.
+Week 8,8,Wed,Weighted Carry,1,Weighted Uphill Carry,12,300s,120,8,Same as last week. Hold the quality.
+Week 8,8,Wed,Weighted Carry,2,Easy Aerobic,1,600s,60,4,Cool down.`,
+  },
+  {
     id: 'gym-muscular-endurance',
     name: 'Gym Muscular Endurance',
     goal: 'endurance',
     level: 'advanced',
-    days: 2,
-    weeks: 6,
+    days: 1,
+    weeks: 14,
     repeat: false,
-    equipment: 'Box and weight vest',
-    source: 'Follows the gym muscular endurance progression published by Evoke Endurance and Uphill Athlete (Steve House and Scott Johnston).',
-    summary: 'Six workouts of step-ups and lunges. Bodyweight first, vest later.',
-    detail: 'The gym version of the session mountain and ultra athletes use to stop their legs '
-      + 'giving out late in a long day. Six workouts over six weeks, each one harder than the '
-      + 'last, done on top of your own aerobic volume.\n\n'
-      + 'Work through it station by station, not as a circuit: every set of an exercise before you '
-      + 'move to the next one. Step-ups and front lunges are done all one leg then all the other, '
-      + 'with only thirty seconds between sets. Keep a steady tempo of about a rep a second. The '
-      + 'burn is the point, and it should get genuinely unpleasant by the last couple of sets.\n\n'
-      + 'The first three workouts are bodyweight only, and progress by adding sets and cutting '
-      + 'rest rather than by adding load. Only from workout four does a vest come on, at no more '
-      + 'than ten per cent of bodyweight. Going heavier earlier is the usual way people wreck '
-      + 'themselves on this.\n\n'
-      + 'One prerequisite worth taking seriously: this is a sharpening block, not a foundation. '
-      + 'You want an established aerobic base and a general strength block behind you before you '
-      + 'start, or it will just make you sore and slow. Six weeks, then stop.',
+    equipment: 'Box, weight vest and kettlebell',
+    source: 'The gym muscular endurance progression as published by Scott Johnston at Evoke Endurance, '
+      + 'built on Yuri Verkhoshansky\u2019s muscular endurance work.',
+    summary: 'Fourteen workouts, once a week. Jumps, step-ups and lunges against a shrinking clock.',
+    detail: 'One session a week for fourteen weeks, done on top of your own easy aerobic volume. '
+      + 'Split jump squats, squat jumps, box step-ups and front lunges, all for sets of ten, until the '
+      + 'working muscle burns. It builds legs that hold their pace late in a long day, and it builds '
+      + 'them fast.\n\n'
+      + 'Work station by station, not as a circuit: every set of an exercise before you move to the '
+      + 'next. Step-ups and front lunges are done all one leg then all the other. Keep to the tempos '
+      + 'and do not rush.\n\n'
+      + 'The progression is mostly about rest, not load. The first three workouts are bodyweight only. '
+      + 'A vest comes on at workout four at ten per cent of bodyweight, rising to fifteen per cent by '
+      + 'workout nine, and two more exercises join from workout four. From there the rest between sets '
+      + 'falls from sixty seconds to ten, which is what makes the last few genuinely hard.\n\n'
+      + 'Three things to take seriously. This goes on top of your Zone 1 and 2 volume, not instead of '
+      + 'it — trading easy aerobic hours for these will give you a quick gain, then a plateau, then a '
+      + 'decline. If you are not improving week to week you are recovering too little, not doing too '
+      + 'little. And if you are new to this, use bodyweight for the first two or three workouts and cut '
+      + 'to four sets; these feel easy while you do them and find you two days later.\n\n'
+      + 'You need at least eight sessions for the benefit. Miss one and drop back two workouts.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Workout 1 bodyweight,1,Tue,ME Workout 1,1,Box Step-Up,4,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
-Workout 1 bodyweight,1,Tue,ME Workout 1,2,Front Lunge,4,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
-Workout 1 bodyweight,1,Tue,ME Workout 1,3,Split Jump,4,10 each,60,8.5,Land soft. Bodyweight throughout.
-Workout 1 bodyweight,1,Tue,ME Workout 1,4,Box Step-Down,4,10 each,60,8.5,Lower under control. This is the descent. Bodyweight only.
-Workout 1 bodyweight,1,Tue,ME Workout 1,5,Hanging Leg Raise,3,12,45,8,
-Workout 1 bodyweight,1,Tue,ME Workout 1,6,Copenhagen Plank,3,25s each,45,8,
-Workout 1 bodyweight,1,Tue,ME Workout 1,7,Hollow Body Hold,3,40s,45,8,
-Workout 1 bodyweight,1,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
-Workout 1 bodyweight,1,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
-Workout 1 bodyweight,1,Sat,General Strength,3,Pull-Up,3,6,120,7,
-Workout 1 bodyweight,1,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
-Workout 2 bodyweight,2,Tue,ME Workout 2,1,Box Step-Up,5,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
-Workout 2 bodyweight,2,Tue,ME Workout 2,2,Front Lunge,5,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
-Workout 2 bodyweight,2,Tue,ME Workout 2,3,Split Jump,5,10 each,60,8.5,Land soft. Bodyweight throughout.
-Workout 2 bodyweight,2,Tue,ME Workout 2,4,Box Step-Down,5,10 each,60,8.5,Lower under control. This is the descent. Bodyweight only.
-Workout 2 bodyweight,2,Tue,ME Workout 2,5,Hanging Leg Raise,3,12,45,8,
-Workout 2 bodyweight,2,Tue,ME Workout 2,6,Copenhagen Plank,3,25s each,45,8,
-Workout 2 bodyweight,2,Tue,ME Workout 2,7,Hollow Body Hold,3,40s,45,8,
-Workout 2 bodyweight,2,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
-Workout 2 bodyweight,2,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
-Workout 2 bodyweight,2,Sat,General Strength,3,Pull-Up,3,6,120,7,
-Workout 2 bodyweight,2,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
-Workout 3 shrink the rest,3,Tue,ME Workout 3,1,Box Step-Up,7,10 each,30,8.5,All right leg then all left leg. Still bodyweight. The rest is what changed.
-Workout 3 shrink the rest,3,Tue,ME Workout 3,2,Front Lunge,7,10 each,30,8.5,All right leg then all left leg. Still bodyweight. The rest is what changed.
-Workout 3 shrink the rest,3,Tue,ME Workout 3,3,Split Jump,7,10 each,45,8.5,Land soft. Bodyweight throughout.
-Workout 3 shrink the rest,3,Tue,ME Workout 3,4,Box Step-Down,7,10 each,45,8.5,Lower under control. This is the descent. Still bodyweight. The rest is what changed.
-Workout 3 shrink the rest,3,Tue,ME Workout 3,5,Hanging Leg Raise,3,12,45,8,
-Workout 3 shrink the rest,3,Tue,ME Workout 3,6,Copenhagen Plank,3,25s each,45,8,
-Workout 3 shrink the rest,3,Tue,ME Workout 3,7,Hollow Body Hold,3,40s,45,8,
-Workout 3 shrink the rest,3,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
-Workout 3 shrink the rest,3,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
-Workout 3 shrink the rest,3,Sat,General Strength,3,Pull-Up,3,6,120,7,
-Workout 3 shrink the rest,3,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
-Workout 4 vest on,4,Tue,ME Workout 4,1,Box Step-Up,5,10 each,60,8.5,All right leg then all left leg. Vest at ten per cent of bodyweight.
-Workout 4 vest on,4,Tue,ME Workout 4,2,Front Lunge,5,10 each,60,8.5,All right leg then all left leg. Vest at ten per cent of bodyweight.
-Workout 4 vest on,4,Tue,ME Workout 4,3,Split Jump,5,10 each,60,8.5,Bodyweight. No vest for jumps.
-Workout 4 vest on,4,Tue,ME Workout 4,4,Box Step-Down,5,10 each,60,8.5,Lower under control. This is the descent. Vest at ten per cent of bodyweight.
-Workout 4 vest on,4,Tue,ME Workout 4,5,Hanging Leg Raise,3,12,45,8,
-Workout 4 vest on,4,Tue,ME Workout 4,6,Copenhagen Plank,3,25s each,45,8,
-Workout 4 vest on,4,Tue,ME Workout 4,7,Hollow Body Hold,3,40s,45,8,
-Workout 4 vest on,4,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
-Workout 4 vest on,4,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
-Workout 4 vest on,4,Sat,General Strength,3,Pull-Up,3,6,120,7,
-Workout 4 vest on,4,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
-Workout 5 more sets,5,Tue,ME Workout 5,1,Box Step-Up,6,10 each,30,8.5,All right leg then all left leg. Vest on.
-Workout 5 more sets,5,Tue,ME Workout 5,2,Front Lunge,6,10 each,30,8.5,All right leg then all left leg. Vest on.
-Workout 5 more sets,5,Tue,ME Workout 5,3,Split Jump,6,10 each,45,8.5,Bodyweight. No vest for jumps.
-Workout 5 more sets,5,Tue,ME Workout 5,4,Box Step-Down,6,10 each,45,8.5,Lower under control. This is the descent. Vest on.
-Workout 5 more sets,5,Tue,ME Workout 5,5,Hanging Leg Raise,3,12,45,8,
-Workout 5 more sets,5,Tue,ME Workout 5,6,Copenhagen Plank,3,25s each,45,8,
-Workout 5 more sets,5,Tue,ME Workout 5,7,Hollow Body Hold,3,40s,45,8,
-Workout 5 more sets,5,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
-Workout 5 more sets,5,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
-Workout 5 more sets,5,Sat,General Strength,3,Pull-Up,3,6,120,7,
-Workout 5 more sets,5,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
-Workout 6 the peak,6,Tue,ME Workout 6,1,Box Step-Up,7,10 each,30,8.5,All right leg then all left leg. Vest on. The hardest session of the block.
-Workout 6 the peak,6,Tue,ME Workout 6,2,Front Lunge,7,10 each,30,8.5,All right leg then all left leg. Vest on. The hardest session of the block.
-Workout 6 the peak,6,Tue,ME Workout 6,3,Split Jump,7,10 each,45,8.5,Bodyweight. No vest for jumps.
-Workout 6 the peak,6,Tue,ME Workout 6,4,Box Step-Down,7,10 each,45,8.5,Lower under control. This is the descent. Vest on. The hardest session of the block.
-Workout 6 the peak,6,Tue,ME Workout 6,5,Hanging Leg Raise,3,12,45,8,
-Workout 6 the peak,6,Tue,ME Workout 6,6,Copenhagen Plank,3,25s each,45,8,
-Workout 6 the peak,6,Tue,ME Workout 6,7,Hollow Body Hold,3,40s,45,8,
-Workout 6 the peak,6,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
-Workout 6 the peak,6,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
-Workout 6 the peak,6,Sat,General Strength,3,Pull-Up,3,6,120,7,
-Workout 6 the peak,6,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.`,
+Workout 1,1,Wed,Workout 1,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 1,1,Wed,Workout 1,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 1,1,Wed,Workout 1,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 1,1,Wed,Workout 1,4,Split Jump Squat,6,10 each,60,8.5,About one jump a second.
+Workout 1,1,Wed,Workout 1,5,Squat Jump,6,10,60,8.5,About one jump every half to one second.
+Workout 1,1,Wed,Workout 1,6,Box Step-Up,6,10 each,30,8.5,Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 1,1,Wed,Workout 1,7,Front Lunge,6,10 each,30,8.5,All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 1,1,Wed,Workout 1,8,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 2,2,Wed,Workout 2,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 2,2,Wed,Workout 2,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 2,2,Wed,Workout 2,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 2,2,Wed,Workout 2,4,Split Jump Squat,6,10 each,60,8.5,About one jump a second.
+Workout 2,2,Wed,Workout 2,5,Squat Jump,6,10,60,8.5,About one jump every half to one second.
+Workout 2,2,Wed,Workout 2,6,Box Step-Up,6,10 each,30,8.5,Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 2,2,Wed,Workout 2,7,Front Lunge,6,10 each,30,8.5,All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 2,2,Wed,Workout 2,8,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 3,3,Wed,Workout 3,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 3,3,Wed,Workout 3,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 3,3,Wed,Workout 3,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 3,3,Wed,Workout 3,4,Split Jump Squat,6,10 each,45,8.5,About one jump a second.
+Workout 3,3,Wed,Workout 3,5,Squat Jump,6,10,45,8.5,About one jump every half to one second.
+Workout 3,3,Wed,Workout 3,6,Box Step-Up,6,10 each,30,8.5,Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 3,3,Wed,Workout 3,7,Front Lunge,6,10 each,30,8.5,All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 3,3,Wed,Workout 3,8,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 4,4,Wed,Workout 4,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 4,4,Wed,Workout 4,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 4,4,Wed,Workout 4,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 4,4,Wed,Workout 4,4,Split Jump Squat,5,10 each,60,8.5,Vest at 10% bodyweight. About one jump a second.
+Workout 4,4,Wed,Workout 4,5,Squat Jump,5,10,60,8.5,Vest at 10% bodyweight. About one jump every half to one second.
+Workout 4,4,Wed,Workout 4,6,Box Step-Up,5,10 each,60,8.5,Vest at 10% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 4,4,Wed,Workout 4,7,Front Lunge,5,10 each,60,8.5,Vest at 10% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 4,4,Wed,Workout 4,8,Goblet Squat to Press,5,10,60,8.5,Vest at 10% bodyweight.
+Workout 4,4,Wed,Workout 4,9,Kettlebell Swing,5,10,60,8.5,Two handed.
+Workout 4,4,Wed,Workout 4,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 5,5,Wed,Workout 5,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 90s between exercises.
+Workout 5,5,Wed,Workout 5,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 5,5,Wed,Workout 5,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 5,5,Wed,Workout 5,4,Split Jump Squat,6,10 each,45,8.5,Vest at 10% bodyweight. About one jump a second.
+Workout 5,5,Wed,Workout 5,5,Squat Jump,6,10,45,8.5,Vest at 10% bodyweight. About one jump every half to one second.
+Workout 5,5,Wed,Workout 5,6,Box Step-Up,6,10 each,30,8.5,Vest at 10% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 5,5,Wed,Workout 5,7,Front Lunge,6,10 each,30,8.5,Vest at 10% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 5,5,Wed,Workout 5,8,Goblet Squat to Press,6,10,45,8.5,Vest at 10% bodyweight.
+Workout 5,5,Wed,Workout 5,9,Kettlebell Swing,6,10,45,8.5,Two handed.
+Workout 5,5,Wed,Workout 5,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 6,6,Wed,Workout 6,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 6,6,Wed,Workout 6,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 6,6,Wed,Workout 6,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 6,6,Wed,Workout 6,4,Split Jump Squat,6,10 each,40,8.5,Vest at 10% bodyweight. About one jump a second.
+Workout 6,6,Wed,Workout 6,5,Squat Jump,6,10,40,8.5,Vest at 10% bodyweight. About one jump every half to one second.
+Workout 6,6,Wed,Workout 6,6,Box Step-Up,6,10 each,30,8.5,Vest at 10% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 6,6,Wed,Workout 6,7,Front Lunge,6,10 each,30,8.5,Vest at 10% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 6,6,Wed,Workout 6,8,Goblet Squat to Press,6,10,40,8.5,Vest at 10% bodyweight.
+Workout 6,6,Wed,Workout 6,9,Kettlebell Swing,6,10,40,8.5,Two handed.
+Workout 6,6,Wed,Workout 6,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 7,7,Wed,Workout 7,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 7,7,Wed,Workout 7,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 7,7,Wed,Workout 7,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 7,7,Wed,Workout 7,4,Split Jump Squat,6,10 each,30,8.5,Vest at 10% bodyweight. About one jump a second.
+Workout 7,7,Wed,Workout 7,5,Squat Jump,6,10,30,8.5,Vest at 10% bodyweight. About one jump every half to one second.
+Workout 7,7,Wed,Workout 7,6,Box Step-Up,6,10 each,30,8.5,Vest at 10% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 7,7,Wed,Workout 7,7,Front Lunge,6,10 each,30,8.5,Vest at 10% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 7,7,Wed,Workout 7,8,Goblet Squat to Press,6,10,30,8.5,Vest at 10% bodyweight.
+Workout 7,7,Wed,Workout 7,9,Kettlebell Swing,6,10,30,8.5,Two handed.
+Workout 7,7,Wed,Workout 7,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 8,8,Wed,Workout 8,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 60s between exercises.
+Workout 8,8,Wed,Workout 8,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 8,8,Wed,Workout 8,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 8,8,Wed,Workout 8,4,Split Jump Squat,8,10 each,45,8.5,Vest at 10% bodyweight. About one jump a second.
+Workout 8,8,Wed,Workout 8,5,Squat Jump,8,10,45,8.5,Vest at 10% bodyweight. About one jump every half to one second.
+Workout 8,8,Wed,Workout 8,6,Box Step-Up,8,10 each,30,8.5,Vest at 10% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 8,8,Wed,Workout 8,7,Front Lunge,8,10 each,30,8.5,Vest at 10% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 8,8,Wed,Workout 8,8,Goblet Squat to Press,8,10,45,8.5,Vest at 10% bodyweight.
+Workout 8,8,Wed,Workout 8,9,Kettlebell Swing,8,10,45,8.5,Two handed.
+Workout 8,8,Wed,Workout 8,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 9,9,Wed,Workout 9,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 45s between exercises.
+Workout 9,9,Wed,Workout 9,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 9,9,Wed,Workout 9,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 9,9,Wed,Workout 9,4,Split Jump Squat,6,10 each,40,8.5,Vest at 15% bodyweight. About one jump a second.
+Workout 9,9,Wed,Workout 9,5,Squat Jump,6,10,40,8.5,Vest at 15% bodyweight. About one jump every half to one second.
+Workout 9,9,Wed,Workout 9,6,Box Step-Up,6,10 each,30,8.5,Vest at 15% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 9,9,Wed,Workout 9,7,Front Lunge,6,10 each,30,8.5,Vest at 15% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 9,9,Wed,Workout 9,8,Goblet Squat to Press,6,10,40,8.5,Vest at 15% bodyweight.
+Workout 9,9,Wed,Workout 9,9,Kettlebell Swing,6,10,40,8.5,Two handed.
+Workout 9,9,Wed,Workout 9,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 10,10,Wed,Workout 10,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 30s between exercises.
+Workout 10,10,Wed,Workout 10,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 10,10,Wed,Workout 10,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 10,10,Wed,Workout 10,4,Split Jump Squat,8,10 each,45,8.5,Vest at 15% bodyweight. About one jump a second.
+Workout 10,10,Wed,Workout 10,5,Squat Jump,8,10,45,8.5,Vest at 15% bodyweight. About one jump every half to one second.
+Workout 10,10,Wed,Workout 10,6,Box Step-Up,8,10 each,30,8.5,Vest at 15% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 10,10,Wed,Workout 10,7,Front Lunge,8,10 each,30,8.5,Vest at 15% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 10,10,Wed,Workout 10,8,Goblet Squat to Press,8,10,45,8.5,Vest at 15% bodyweight.
+Workout 10,10,Wed,Workout 10,9,Kettlebell Swing,8,10,45,8.5,Two handed.
+Workout 10,10,Wed,Workout 10,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 11,11,Wed,Workout 11,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 30s between exercises.
+Workout 11,11,Wed,Workout 11,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 11,11,Wed,Workout 11,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 11,11,Wed,Workout 11,4,Split Jump Squat,8,10 each,30,8.5,Vest at 15% bodyweight. About one jump a second.
+Workout 11,11,Wed,Workout 11,5,Squat Jump,8,10,30,8.5,Vest at 15% bodyweight. About one jump every half to one second.
+Workout 11,11,Wed,Workout 11,6,Box Step-Up,8,10 each,20,8.5,Vest at 15% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 11,11,Wed,Workout 11,7,Front Lunge,8,10 each,20,8.5,Vest at 15% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 11,11,Wed,Workout 11,8,Goblet Squat to Press,8,10,30,8.5,Vest at 15% bodyweight.
+Workout 11,11,Wed,Workout 11,9,Kettlebell Swing,8,10,30,8.5,Two handed.
+Workout 11,11,Wed,Workout 11,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 12,12,Wed,Workout 12,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 20s between exercises.
+Workout 12,12,Wed,Workout 12,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 12,12,Wed,Workout 12,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 12,12,Wed,Workout 12,4,Split Jump Squat,8,10 each,15,8.5,Vest at 15% bodyweight. About one jump a second.
+Workout 12,12,Wed,Workout 12,5,Squat Jump,8,10,15,8.5,Vest at 15% bodyweight. About one jump every half to one second.
+Workout 12,12,Wed,Workout 12,6,Box Step-Up,8,10 each,15,8.5,Vest at 15% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 12,12,Wed,Workout 12,7,Front Lunge,8,10 each,15,8.5,Vest at 15% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 12,12,Wed,Workout 12,8,Goblet Squat to Press,8,10,15,8.5,Vest at 15% bodyweight.
+Workout 12,12,Wed,Workout 12,9,Kettlebell Swing,8,10,15,8.5,Two handed.
+Workout 12,12,Wed,Workout 12,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 13,13,Wed,Workout 13,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 10s between exercises.
+Workout 13,13,Wed,Workout 13,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 13,13,Wed,Workout 13,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 13,13,Wed,Workout 13,4,Split Jump Squat,8,10 each,10,8.5,Vest at 15% bodyweight. About one jump a second.
+Workout 13,13,Wed,Workout 13,5,Squat Jump,8,10,10,8.5,Vest at 15% bodyweight. About one jump every half to one second.
+Workout 13,13,Wed,Workout 13,6,Box Step-Up,8,10 each,10,8.5,Vest at 15% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 13,13,Wed,Workout 13,7,Front Lunge,8,10 each,10,8.5,Vest at 15% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 13,13,Wed,Workout 13,8,Goblet Squat to Press,8,10,10,8.5,Vest at 15% bodyweight.
+Workout 13,13,Wed,Workout 13,9,Kettlebell Swing,8,10,10,8.5,Two handed.
+Workout 13,13,Wed,Workout 13,10,Easy Aerobic,1,600s,60,4,Cool down.
+Workout 14,14,Wed,Workout 14,1,Easy Aerobic,1,780s,60,5,Warm up. Build to a hard effort for the last two minutes. Rest 10s between exercises.
+Workout 14,14,Wed,Workout 14,2,Floor Get-Up,1,10,30,5,Up off the floor from lying down. Any way you like.
+Workout 14,14,Wed,Workout 14,3,Burpee,1,10,60,6,Finishes the warm up.
+Workout 14,14,Wed,Workout 14,4,Split Jump Squat,8,10 each,10,8.5,Vest at 15% bodyweight. About one jump a second.
+Workout 14,14,Wed,Workout 14,5,Squat Jump,8,10,10,8.5,Vest at 15% bodyweight. About one jump every half to one second.
+Workout 14,14,Wed,Workout 14,6,Box Step-Up,8,10 each,10,8.5,Vest at 15% bodyweight. Box about three quarters of the way to your kneecap. All right leg then all left.
+Workout 14,14,Wed,Workout 14,7,Front Lunge,8,10 each,10,8.5,Vest at 15% bodyweight. All right leg then all left. Start with a gentle 40 to 60cm step. This one hits the glutes hardest.
+Workout 14,14,Wed,Workout 14,8,Goblet Squat to Press,8,10,10,8.5,Vest at 15% bodyweight.
+Workout 14,14,Wed,Workout 14,9,Kettlebell Swing,8,10,10,8.5,Two handed.
+Workout 14,14,Wed,Workout 14,10,Easy Aerobic,1,600s,60,4,Cool down.`,
   },
   {
     id: 'runner-strength-base',
@@ -155,64 +269,6 @@ In Season,1,Fri,Maintain B,3,Hip Thrust,2,8,90,7,
 In Season,1,Fri,Maintain B,4,Dead Bug,3,10 each,45,,`,
   },
 
-  {
-    id: 'muscular-endurance-mountain',
-    name: 'Muscular Endurance — Mountain',
-    goal: 'endurance',
-    level: 'advanced',
-    days: 3,
-    weeks: 6,
-    repeat: false,
-    equipment: 'Box and weight vest',
-    summary: 'High-rep loaded step-ups. Builds legs that do not fail on hour six.',
-    detail: 'The block mountain and ultra athletes use to stop their legs giving out late in a '
-      + 'long day. High-rep step-ups and lunges, done to a deep local burn, with rest shrinking '
-      + 'week by week before any load is added. Bodyweight for the first four weeks — this is '
-      + 'much harder than it reads — then a vest at around ten per cent of bodyweight.\n\n'
-      + 'Only run this on top of an existing aerobic base and a general strength block. Doing it '
-      + 'too early is the classic mistake: it is a sharpening tool, not a foundation. Six weeks, '
-      + 'then stop.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Base 4 sets,1-2,Tue,ME Circuit A,1,Box Step-Up,4,10 each,60,8,Bodyweight. Knee-height box. Drive through the whole foot.
-Base 4 sets,1-2,Tue,ME Circuit A,2,Walking Lunge,4,10 each,60,8,Bodyweight.
-Base 4 sets,1-2,Tue,ME Circuit A,3,Box Step-Down,4,10 each,60,8,Lower under control. This is the downhill.
-Base 4 sets,1-2,Tue,ME Circuit A,4,Single-Leg Calf Raise,4,15 each,45,8,
-Base 4 sets,1-2,Tue,ME Circuit A,5,Plank,3,60s,45,,
-Base 4 sets,1-2,Fri,ME Circuit B,1,Box Step-Up,4,10 each,60,8,Bodyweight. Same box as Tuesday.
-Base 4 sets,1-2,Fri,ME Circuit B,2,Split Jump,4,10 each,60,8,Land quietly.
-Base 4 sets,1-2,Fri,ME Circuit B,3,Reverse Lunge,4,10 each,60,8,
-Base 4 sets,1-2,Fri,ME Circuit B,4,Copenhagen Plank,3,20s each,45,,
-Base 4 sets,1-2,Sun,General Strength,1,Back Squat,3,6,180,7,Keep general strength ticking over.
-Base 4 sets,1-2,Sun,General Strength,2,Romanian Deadlift,3,8,150,7,
-Base 4 sets,1-2,Sun,General Strength,3,Pull-Up,3,6,120,7,
-Base 4 sets,1-2,Sun,General Strength,4,Dead Bug,3,10 each,45,,
-Build 6 sets,3-4,Tue,ME Circuit A,1,Box Step-Up,6,10 each,45,8.5,Still bodyweight. Rest is the thing that changes.
-Build 6 sets,3-4,Tue,ME Circuit A,2,Walking Lunge,6,10 each,45,8.5,
-Build 6 sets,3-4,Tue,ME Circuit A,3,Box Step-Down,6,10 each,45,8.5,
-Build 6 sets,3-4,Tue,ME Circuit A,4,Single-Leg Calf Raise,5,15 each,30,8.5,
-Build 6 sets,3-4,Tue,ME Circuit A,5,Plank,3,60s,45,,
-Build 6 sets,3-4,Fri,ME Circuit B,1,Box Step-Up,6,10 each,45,8.5,
-Build 6 sets,3-4,Fri,ME Circuit B,2,Split Jump,5,10 each,45,8.5,
-Build 6 sets,3-4,Fri,ME Circuit B,3,Reverse Lunge,6,10 each,45,8.5,
-Build 6 sets,3-4,Fri,ME Circuit B,4,Copenhagen Plank,3,25s each,45,,
-Build 6 sets,3-4,Sun,General Strength,1,Back Squat,3,6,180,7,
-Build 6 sets,3-4,Sun,General Strength,2,Romanian Deadlift,3,8,150,7,
-Build 6 sets,3-4,Sun,General Strength,3,Pull-Up,3,6,120,7,
-Build 6 sets,3-4,Sun,General Strength,4,Dead Bug,3,10 each,45,,
-Loaded,5-6,Tue,ME Circuit A,1,Box Step-Up,6,10 each,45,9,Weight vest at ten per cent of bodyweight. No more.
-Loaded,5-6,Tue,ME Circuit A,2,Walking Lunge,5,10 each,45,9,Vest on.
-Loaded,5-6,Tue,ME Circuit A,3,Box Step-Down,5,10 each,45,9,Vest on. Control the lowering.
-Loaded,5-6,Tue,ME Circuit A,4,Single-Leg Calf Raise,5,15 each,30,9,
-Loaded,5-6,Tue,ME Circuit A,5,Plank,3,60s,45,,
-Loaded,5-6,Fri,ME Circuit B,1,Box Step-Up,6,10 each,45,9,Vest on.
-Loaded,5-6,Fri,ME Circuit B,2,Split Jump,4,10 each,60,8,No vest for jumps.
-Loaded,5-6,Fri,ME Circuit B,3,Reverse Lunge,5,10 each,45,9,Vest on.
-Loaded,5-6,Fri,ME Circuit B,4,Copenhagen Plank,3,30s each,45,,
-Loaded,5-6,Sun,General Strength,1,Back Squat,3,5,180,7,Keep it light. The circuits are the work now.
-Loaded,5-6,Sun,General Strength,2,Romanian Deadlift,3,6,150,7,
-Loaded,5-6,Sun,General Strength,3,Pull-Up,3,6,120,7,
-Loaded,5-6,Sun,General Strength,4,Dead Bug,3,10 each,45,,`,
-  },
 
   {
     id: 'mountain-general-strength',
