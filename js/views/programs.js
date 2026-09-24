@@ -133,6 +133,10 @@ export function openProgramDetail(def, refresh, closeParent) {
         wrap.appendChild(h('p', { class: 'prog-para' }, para));
       }
 
+      if (def.source) {
+        wrap.appendChild(h('p', { class: 'prog-source' }, def.source));
+      }
+
       const startInput = h('input', {
         class: 'input', type: 'date', value: P.toISODate(P.mondayOf(new Date())),
       });

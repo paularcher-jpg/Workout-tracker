@@ -82,3 +82,35 @@ test('a repeating program is short enough to be worth repeating', () => {
     if (def.repeat) assert.ok(def.weeks <= 6, `${def.id} repeats a ${def.weeks} week cycle`);
   }
 });
+
+test('the gym muscular endurance block follows its published progression', () => {
+  const def = getProgram('gym-muscular-endurance');
+  assert.ok(def, 'program is missing');
+  assert.ok(def.source, 'a program taken from a published protocol has to credit it');
+
+  const plan = parsed.get(def.id);
+  const me = plan.weeks.map((week) => {
+    const key = week.days.find((k) => k && plan.sessions[k].name.startsWith('ME Workout'));
+    return plan.sessions[key];
+  });
+  assert.equal(me.length, 6, 'six workouts');
+
+  // sets rise across the block, and the first three weeks stay bodyweight
+  const setsPerWeek = me.map((s) => s.exercises[0].sets);
+  assert.deepEqual(setsPerWeek, [4, 5, 7, 5, 6, 7]);
+  for (const week of me.slice(0, 3)) {
+    for (const ex of week.exercises) {
+      assert.ok(!/vest/i.test(ex.notes), `week is meant to be bodyweight: "${ex.notes}"`);
+    }
+  }
+  assert.ok(me.slice(3).every((w) => w.exercises.some((e) => /vest/i.test(e.notes))),
+    'the vest has to appear from workout four');
+
+  // single-leg work rests less than the rest of the session, which is the
+  // whole shape of the protocol
+  for (const week of me) {
+    const stepUp = week.exercises.find((e) => e.name === 'Box Step-Up');
+    assert.ok(stepUp.restSec <= 60, `step-up rest is ${stepUp.restSec}s`);
+    assert.match(stepUp.reps, /each/, 'step-ups are done a leg at a time');
+  }
+});

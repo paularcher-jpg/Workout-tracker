@@ -1089,6 +1089,13 @@ textarea.input { min-height: 96px; resize: vertical; }
   color: var(--text-2);
 }
 .prog-detail .field-label { margin-top: 0.2rem; }
+.prog-source {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-3);
+  border-left: 2px solid var(--hairline-strong);
+  padding-left: 0.6rem;
+}
 
 /* ----------------------------------------------------------------- charts */
 

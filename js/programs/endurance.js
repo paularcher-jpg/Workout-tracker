@@ -9,6 +9,99 @@
 
 export const ENDURANCE = [
   {
+    id: 'gym-muscular-endurance',
+    name: 'Gym Muscular Endurance',
+    goal: 'endurance',
+    level: 'advanced',
+    days: 2,
+    weeks: 6,
+    repeat: false,
+    equipment: 'Box and weight vest',
+    source: 'Follows the gym muscular endurance progression published by Evoke Endurance and Uphill Athlete (Steve House and Scott Johnston).',
+    summary: 'Six workouts of step-ups and lunges. Bodyweight first, vest later.',
+    detail: 'The gym version of the session mountain and ultra athletes use to stop their legs '
+      + 'giving out late in a long day. Six workouts over six weeks, each one harder than the '
+      + 'last, done on top of your own aerobic volume.\n\n'
+      + 'Work through it station by station, not as a circuit: every set of an exercise before you '
+      + 'move to the next one. Step-ups and front lunges are done all one leg then all the other, '
+      + 'with only thirty seconds between sets. Keep a steady tempo of about a rep a second. The '
+      + 'burn is the point, and it should get genuinely unpleasant by the last couple of sets.\n\n'
+      + 'The first three workouts are bodyweight only, and progress by adding sets and cutting '
+      + 'rest rather than by adding load. Only from workout four does a vest come on, at no more '
+      + 'than ten per cent of bodyweight. Going heavier earlier is the usual way people wreck '
+      + 'themselves on this.\n\n'
+      + 'One prerequisite worth taking seriously: this is a sharpening block, not a foundation. '
+      + 'You want an established aerobic base and a general strength block behind you before you '
+      + 'start, or it will just make you sore and slow. Six weeks, then stop.',
+    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
+Workout 1 bodyweight,1,Tue,ME Workout 1,1,Box Step-Up,4,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
+Workout 1 bodyweight,1,Tue,ME Workout 1,2,Front Lunge,4,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
+Workout 1 bodyweight,1,Tue,ME Workout 1,3,Split Jump,4,10 each,60,8.5,Land soft. Bodyweight throughout.
+Workout 1 bodyweight,1,Tue,ME Workout 1,4,Box Step-Down,4,10 each,60,8.5,Lower under control. This is the descent. Bodyweight only.
+Workout 1 bodyweight,1,Tue,ME Workout 1,5,Hanging Leg Raise,3,12,45,8,
+Workout 1 bodyweight,1,Tue,ME Workout 1,6,Copenhagen Plank,3,25s each,45,8,
+Workout 1 bodyweight,1,Tue,ME Workout 1,7,Hollow Body Hold,3,40s,45,8,
+Workout 1 bodyweight,1,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
+Workout 1 bodyweight,1,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
+Workout 1 bodyweight,1,Sat,General Strength,3,Pull-Up,3,6,120,7,
+Workout 1 bodyweight,1,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
+Workout 2 bodyweight,2,Tue,ME Workout 2,1,Box Step-Up,5,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
+Workout 2 bodyweight,2,Tue,ME Workout 2,2,Front Lunge,5,10 each,30,8.5,All right leg then all left leg. Bodyweight only.
+Workout 2 bodyweight,2,Tue,ME Workout 2,3,Split Jump,5,10 each,60,8.5,Land soft. Bodyweight throughout.
+Workout 2 bodyweight,2,Tue,ME Workout 2,4,Box Step-Down,5,10 each,60,8.5,Lower under control. This is the descent. Bodyweight only.
+Workout 2 bodyweight,2,Tue,ME Workout 2,5,Hanging Leg Raise,3,12,45,8,
+Workout 2 bodyweight,2,Tue,ME Workout 2,6,Copenhagen Plank,3,25s each,45,8,
+Workout 2 bodyweight,2,Tue,ME Workout 2,7,Hollow Body Hold,3,40s,45,8,
+Workout 2 bodyweight,2,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
+Workout 2 bodyweight,2,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
+Workout 2 bodyweight,2,Sat,General Strength,3,Pull-Up,3,6,120,7,
+Workout 2 bodyweight,2,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
+Workout 3 shrink the rest,3,Tue,ME Workout 3,1,Box Step-Up,7,10 each,30,8.5,All right leg then all left leg. Still bodyweight. The rest is what changed.
+Workout 3 shrink the rest,3,Tue,ME Workout 3,2,Front Lunge,7,10 each,30,8.5,All right leg then all left leg. Still bodyweight. The rest is what changed.
+Workout 3 shrink the rest,3,Tue,ME Workout 3,3,Split Jump,7,10 each,45,8.5,Land soft. Bodyweight throughout.
+Workout 3 shrink the rest,3,Tue,ME Workout 3,4,Box Step-Down,7,10 each,45,8.5,Lower under control. This is the descent. Still bodyweight. The rest is what changed.
+Workout 3 shrink the rest,3,Tue,ME Workout 3,5,Hanging Leg Raise,3,12,45,8,
+Workout 3 shrink the rest,3,Tue,ME Workout 3,6,Copenhagen Plank,3,25s each,45,8,
+Workout 3 shrink the rest,3,Tue,ME Workout 3,7,Hollow Body Hold,3,40s,45,8,
+Workout 3 shrink the rest,3,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
+Workout 3 shrink the rest,3,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
+Workout 3 shrink the rest,3,Sat,General Strength,3,Pull-Up,3,6,120,7,
+Workout 3 shrink the rest,3,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
+Workout 4 vest on,4,Tue,ME Workout 4,1,Box Step-Up,5,10 each,60,8.5,All right leg then all left leg. Vest at ten per cent of bodyweight.
+Workout 4 vest on,4,Tue,ME Workout 4,2,Front Lunge,5,10 each,60,8.5,All right leg then all left leg. Vest at ten per cent of bodyweight.
+Workout 4 vest on,4,Tue,ME Workout 4,3,Split Jump,5,10 each,60,8.5,Bodyweight. No vest for jumps.
+Workout 4 vest on,4,Tue,ME Workout 4,4,Box Step-Down,5,10 each,60,8.5,Lower under control. This is the descent. Vest at ten per cent of bodyweight.
+Workout 4 vest on,4,Tue,ME Workout 4,5,Hanging Leg Raise,3,12,45,8,
+Workout 4 vest on,4,Tue,ME Workout 4,6,Copenhagen Plank,3,25s each,45,8,
+Workout 4 vest on,4,Tue,ME Workout 4,7,Hollow Body Hold,3,40s,45,8,
+Workout 4 vest on,4,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
+Workout 4 vest on,4,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
+Workout 4 vest on,4,Sat,General Strength,3,Pull-Up,3,6,120,7,
+Workout 4 vest on,4,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
+Workout 5 more sets,5,Tue,ME Workout 5,1,Box Step-Up,6,10 each,30,8.5,All right leg then all left leg. Vest on.
+Workout 5 more sets,5,Tue,ME Workout 5,2,Front Lunge,6,10 each,30,8.5,All right leg then all left leg. Vest on.
+Workout 5 more sets,5,Tue,ME Workout 5,3,Split Jump,6,10 each,45,8.5,Bodyweight. No vest for jumps.
+Workout 5 more sets,5,Tue,ME Workout 5,4,Box Step-Down,6,10 each,45,8.5,Lower under control. This is the descent. Vest on.
+Workout 5 more sets,5,Tue,ME Workout 5,5,Hanging Leg Raise,3,12,45,8,
+Workout 5 more sets,5,Tue,ME Workout 5,6,Copenhagen Plank,3,25s each,45,8,
+Workout 5 more sets,5,Tue,ME Workout 5,7,Hollow Body Hold,3,40s,45,8,
+Workout 5 more sets,5,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
+Workout 5 more sets,5,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
+Workout 5 more sets,5,Sat,General Strength,3,Pull-Up,3,6,120,7,
+Workout 5 more sets,5,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.
+Workout 6 the peak,6,Tue,ME Workout 6,1,Box Step-Up,7,10 each,30,8.5,All right leg then all left leg. Vest on. The hardest session of the block.
+Workout 6 the peak,6,Tue,ME Workout 6,2,Front Lunge,7,10 each,30,8.5,All right leg then all left leg. Vest on. The hardest session of the block.
+Workout 6 the peak,6,Tue,ME Workout 6,3,Split Jump,7,10 each,45,8.5,Bodyweight. No vest for jumps.
+Workout 6 the peak,6,Tue,ME Workout 6,4,Box Step-Down,7,10 each,45,8.5,Lower under control. This is the descent. Vest on. The hardest session of the block.
+Workout 6 the peak,6,Tue,ME Workout 6,5,Hanging Leg Raise,3,12,45,8,
+Workout 6 the peak,6,Tue,ME Workout 6,6,Copenhagen Plank,3,25s each,45,8,
+Workout 6 the peak,6,Tue,ME Workout 6,7,Hollow Body Hold,3,40s,45,8,
+Workout 6 the peak,6,Sat,General Strength,1,Back Squat,3,5,180,7,Hold onto max strength. Never grind.
+Workout 6 the peak,6,Sat,General Strength,2,Trap Bar Deadlift,3,5,180,7,
+Workout 6 the peak,6,Sat,General Strength,3,Pull-Up,3,6,120,7,
+Workout 6 the peak,6,Sat,General Strength,4,Farmer Carry,3,45s,90,7,Pack-carrying strength.`,
+  },
+  {
     id: 'runner-strength-base',
     name: "Runner's Strength — Base",
     goal: 'endurance',

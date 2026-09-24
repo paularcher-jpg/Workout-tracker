@@ -127,6 +127,7 @@ const SEED = [
   ['Single-Leg Calf Raise', 'Calves', 'Bodyweight', 75],
   ['Single-Leg Glute Bridge', 'Glutes', 'Bodyweight', 60],
   ['Reverse Lunge', 'Quads', 'Dumbbell', 90],
+  ['Front Lunge', 'Quads', 'Bodyweight', 60],
   ['Lateral Lunge', 'Quads', 'Dumbbell', 90],
   ['Box Step-Up', 'Quads', 'Other', 60],
   ['Box Step-Down', 'Quads', 'Bodyweight', 60],
