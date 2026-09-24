@@ -9,30 +9,42 @@ export const MINIMAL = [
     goal: 'bodyweight',
     level: 'beginner',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Pull-up bar',
-    summary: 'A push, a pull, a squat and a hinge. Nothing but a bar to hang from.',
-    detail: 'Bodyweight training works as long as you keep making it harder. Each movement here '
-      + 'has somewhere to go: push-ups become diamond push-ups become one-arm work, squats become '
-      + 'pistols, rows become chin-ups. Progress by adding reps until the top of the range is '
-      + 'comfortable across every set, then move to the harder version and start again lower.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Bodyweight,1,Mon,Full Body A,1,Pull-Up,4,5-8,120,8,Assist with a band if you need to.
-Bodyweight,1,Mon,Full Body A,2,Push-Up,4,8-15,90,8,Slow and full range beats fast and short.
-Bodyweight,1,Mon,Full Body A,3,Bulgarian Split Squat,3,10 each,90,8,
-Bodyweight,1,Mon,Full Body A,4,Nordic Curl,3,5,120,8,Partner or a sofa edge.
-Bodyweight,1,Mon,Full Body A,5,Hollow Body Hold,3,30s,45,,
-Bodyweight,1,Wed,Full Body B,1,Inverted Row,4,8-12,90,8,Lower the bar to make it harder.
-Bodyweight,1,Wed,Full Body B,2,Pike Push-Up,4,6-10,90,8,Feet higher as you get stronger.
-Bodyweight,1,Wed,Full Body B,3,Pistol Squat,3,5 each,120,8,Hold a doorframe until you can balance.
-Bodyweight,1,Wed,Full Body B,4,Single-Leg Glute Bridge,3,12 each,60,8,
-Bodyweight,1,Wed,Full Body B,5,Side Plank,3,30s each,45,,
-Bodyweight,1,Fri,Full Body C,1,Chin-Up,4,5-8,120,8,
-Bodyweight,1,Fri,Full Body C,2,Diamond Push-Up,3,8-12,90,8,
-Bodyweight,1,Fri,Full Body C,3,Walking Lunge,3,15 each,90,8,
-Bodyweight,1,Fri,Full Body C,4,Single-Leg Calf Raise,3,15 each,60,8,
-Bodyweight,1,Fri,Full Body C,5,L-Sit,3,20s,60,,Tuck the knees if you must.`,
+    summary: 'Twelve weeks of push, pull, squat and hinge. Nothing but a bar to hang from.',
+    detail: 'Bodyweight training works as long as you keep making it harder, so this is a block '
+      + 'rather than a week on a loop. Volume rises across the phases and the deloads keep the '
+      + 'joints happy.\n\n'
+      + 'You cannot put 2.5kg on a press-up, so the other half of the progression is yours: when '
+      + 'you clear the top of the rep range on every set, move to the harder version of the '
+      + 'movement and start again at the bottom. Push-ups become diamond push-ups become one-arm '
+      + 'work; squats become pistols; rows become chin-ups.',
+    spec: {
+      length: 12,
+      roleset: 'bodyweight',
+      sessions: [
+        { name: 'Full Body A', day: 'Mon', exercises: [
+          ['Pull-Up', 'main', 120],
+          ['Push-Up', 'main', 90],
+          ['Bulgarian Split Squat', 'secondary', 90],
+          ['Nordic Curl', 'power', 120],
+          ['Hollow Body Hold', 'hold', 45, '30s'],
+        ] },
+        { name: 'Full Body B', day: 'Wed', exercises: [
+          ['Inverted Row', 'main', 90],
+          ['Pike Push-Up', 'main', 90],
+          ['Pistol Squat', 'power', 120],
+          ['Single-Leg Glute Bridge', 'accessory', 60],
+          ['Side Plank', 'hold', 45, '30s each'],
+        ] },
+        { name: 'Full Body C', day: 'Fri', exercises: [
+          ['Chin-Up', 'main', 120],
+          ['Diamond Push-Up', 'secondary', 90],
+          ['Walking Lunge', 'accessory', 90],
+          ['Single-Leg Calf Raise', 'isolation', 60],
+          ['L-Sit', 'hold', 60, '20s'],
+        ] },
+      ],
+    },
   },
 
   {
@@ -41,19 +53,35 @@ Bodyweight,1,Fri,Full Body C,5,L-Sit,3,20s,60,,Tuck the knees if you must.`,
     goal: 'conditioning',
     level: 'beginner',
     days: 5,
-    weeks: 1,
-    repeat: true,
+    weeks: 8,
+    repeat: false,
     equipment: 'One kettlebell',
-    summary: 'Swings and get-ups, most days, for about twenty minutes.',
-    detail: 'Two movements, done most days, for as long as you care to keep doing them. The swing '
-      + 'trains the hip hinge hard and builds a serious engine; the get-up trains everything else '
-      + 'slowly and carefully. It is not a hypertrophy plan and does not pretend to be — it is '
-      + 'about being durably fit with one bell and twenty minutes. Add weight only once the whole '
-      + 'session feels genuinely easy.',
+    summary: 'Swings and get-ups most days, building to a hundred swings over eight weeks.',
+    detail: 'Two movements, done most days, for about twenty minutes. The swing trains the hip '
+      + 'hinge hard and builds a serious engine; the get-up trains everything else slowly and '
+      + 'carefully.\n\n'
+      + 'The block builds from sixty swings a session to a hundred across six weeks, deloads, then '
+      + 'repeats the hundred with the next bell up. That last week is the test: if a hundred '
+      + 'swings with the heavier bell feels like the first week did, start the block again from '
+      + 'there.\n\n'
+      + 'It is not a hypertrophy plan and does not pretend to be. It is about being durably fit '
+      + 'with one bell and twenty minutes.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Kettlebell,1,Mon Tue Wed Thu Fri,Swing and Get-Up,1,Kettlebell Swing,10,10,60,8,Hard hip snap. Arms are rope.
-Kettlebell,1,Mon Tue Wed Thu Fri,Swing and Get-Up,2,Turkish Get-Up,5,1 each,60,7,Slow. Every position under control.
-Kettlebell,1,Mon Tue Wed Thu Fri,Swing and Get-Up,3,Side Plank,2,30s each,45,,`,
+Weeks 1-2,1-2,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 1-2,1,Kettlebell Swing,6,10,60,8,Same bell throughout. Learn the groove.
+Weeks 1-2,1-2,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 1-2,2,Turkish Get-Up,5,1 each,60,7,Slow. Every position under control.
+Weeks 1-2,1-2,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 1-2,3,Side Plank,2,30s each,45,,
+Weeks 3-4,3-4,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 3-4,1,Kettlebell Swing,8,10,60,8,Two more sets of swings. Same bell.
+Weeks 3-4,3-4,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 3-4,2,Turkish Get-Up,5,1 each,60,7,Slow. Every position under control.
+Weeks 3-4,3-4,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 3-4,3,Side Plank,2,30s each,45,,
+Weeks 5-6,5-6,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 5-6,1,Kettlebell Swing,10,10,60,8,A hundred swings. This is the target volume.
+Weeks 5-6,5-6,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 5-6,2,Turkish Get-Up,5,1 each,60,7,Slow. Every position under control.
+Weeks 5-6,5-6,Mon Tue Wed Thu Fri,Swing and Get-Up — Weeks 5-6,3,Side Plank,2,30s each,45,,
+Week 7 deload,7,Mon Tue Wed Thu Fri,Swing and Get-Up — deload,1,Kettlebell Swing,5,10,60,8,Deload. Half the swings and take your time.
+Week 7 deload,7,Mon Tue Wed Thu Fri,Swing and Get-Up — deload,2,Turkish Get-Up,3,1 each,60,7,Slow. Every position under control.
+Week 7 deload,7,Mon Tue Wed Thu Fri,Swing and Get-Up — deload,3,Side Plank,2,30s each,45,,
+Week 8 heavier,8,Mon Tue Wed Thu Fri,Swing and Get-Up — heavier,1,Kettlebell Swing,10,10,60,8,Back to a hundred swings with the next bell up.
+Week 8 heavier,8,Mon Tue Wed Thu Fri,Swing and Get-Up — heavier,2,Turkish Get-Up,5,1 each,60,7,Slow. Every position under control.
+Week 8 heavier,8,Mon Tue Wed Thu Fri,Swing and Get-Up — heavier,3,Side Plank,2,30s each,45,,`,
   },
 
   {
@@ -62,27 +90,36 @@ Kettlebell,1,Mon Tue Wed Thu Fri,Swing and Get-Up,3,Side Plank,2,30s each,45,,`,
     goal: 'conditioning',
     level: 'intermediate',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Kettlebells',
-    summary: 'Three full-body kettlebell sessions. Strength and conditioning at once.',
-    detail: 'A fuller kettlebell week: pressing, squatting, hinging and carrying, with enough '
-      + 'density that your heart rate never really settles. Kettlebells make loading jumps large, '
-      + 'so progress by adding reps and sets before you add a bell. Three sessions a week with a '
-      + 'day between each.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Kettlebell,1,Mon,Press and Swing,1,Kettlebell Clean and Press,5,5 each,90,8,
-Kettlebell,1,Mon,Press and Swing,2,Kettlebell Swing,5,15,75,8,
-Kettlebell,1,Mon,Press and Swing,3,Kettlebell Row,4,10 each,75,8,
-Kettlebell,1,Mon,Press and Swing,4,Suitcase Carry,3,45s each,60,8,
-Kettlebell,1,Wed,Squat and Carry,1,Kettlebell Front Squat,5,8,120,8,Two bells in the rack if you have them.
-Kettlebell,1,Wed,Squat and Carry,2,Turkish Get-Up,5,1 each,90,7,
-Kettlebell,1,Wed,Squat and Carry,3,Goblet Squat,3,15,90,8,
-Kettlebell,1,Wed,Squat and Carry,4,Farmer Carry,3,60s,60,8,
-Kettlebell,1,Fri,Power,1,Kettlebell Snatch,6,6 each,90,8,
-Kettlebell,1,Fri,Power,2,Kettlebell Swing,6,15,60,8.5,
-Kettlebell,1,Fri,Power,3,Push-Up,4,15,60,8,
-Kettlebell,1,Fri,Power,4,Hollow Body Hold,3,30s,45,,`,
+    summary: 'Eight weeks of full-body kettlebell work. Strength and conditioning at once.',
+    detail: 'A fuller kettlebell block: pressing, squatting, hinging and carrying, with enough '
+      + 'density that your heart rate never really settles.\n\n'
+      + 'Eight weeks rather than twelve, because kettlebells make loading jumps large and you will '
+      + 'run out of bells before you run out of weeks. Progress by adding reps and sets within a '
+      + 'phase, and take the next bell up when the block ends.',
+    spec: {
+      length: 8,
+      sessions: [
+        { name: 'Press and Swing', day: 'Mon', exercises: [
+          ['Kettlebell Clean and Press', 'main', 90],
+          ['Kettlebell Swing', 'secondary', 75],
+          ['Kettlebell Row', 'accessory', 75],
+          ['Suitcase Carry', 'hold', 60, '45s each'],
+        ] },
+        { name: 'Squat and Carry', day: 'Wed', exercises: [
+          ['Kettlebell Front Squat', 'main', 120],
+          ['Turkish Get-Up', 'power', 90],
+          ['Goblet Squat', 'accessory', 90],
+          ['Farmer Carry', 'hold', 60, '60s'],
+        ] },
+        { name: 'Power', day: 'Fri', exercises: [
+          ['Kettlebell Snatch', 'main', 90],
+          ['Kettlebell Swing', 'secondary', 60],
+          ['Push-Up', 'accessory', 60],
+          ['Hollow Body Hold', 'hold', 45, '30s'],
+        ] },
+      ],
+    },
   },
 
   {
@@ -94,11 +131,13 @@ Kettlebell,1,Fri,Power,4,Hollow Body Hold,3,30s,45,,`,
     weeks: 1,
     repeat: true,
     equipment: 'None',
-    summary: 'A hotel room, a floor, and twenty-five minutes.',
+    summary: 'A hotel room, a floor, and twenty-five minutes. Deliberately a single week.',
     detail: 'No bar, no bands, no bench. Three short full-body sessions that hold onto what you '
-      + 'have built while you are away from your gym. It will not add much, and it is not supposed '
-      + 'to — a fortnight of this and you come back close to where you left off rather than three '
-      + 'weeks behind.',
+      + 'have built while you are away from your gym.\n\n'
+      + 'This is the one plan here that is meant to repeat, because it is a stopgap rather than a '
+      + 'block: you run it for the week or two you are away and then go back to whatever you were '
+      + 'doing. It will not add much, and it is not supposed to — a fortnight of this and you come '
+      + 'back close to where you left off rather than three weeks behind.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
 Travel,1,Mon,Room A,1,Push-Up,4,12-20,60,8,Feet on the bed to make it harder.
 Travel,1,Mon,Room A,2,Bulgarian Split Squat,4,12 each,60,8,Back foot on a chair.
@@ -123,49 +162,160 @@ Travel,1,Fri,Room C,4,Hollow Body Hold,3,30s,45,,`,
     weeks: 6,
     repeat: false,
     equipment: 'Dumbbells',
-    summary: 'Six exercises, six rounds, six days, six weeks. Short and relentless.',
+    summary: 'Six exercises, six rounds, six days, six weeks. The clock shrinks.',
     detail: 'A simple format that is much harder than it looks: six movements, six rounds of '
-      + 'each, six days a week, for six weeks. Sessions run about thirty minutes because rest is '
-      + 'short by design — the conditioning effect comes from the density, not the load. Pick '
-      + 'weights you could manage for twelve reps and stop at eight. Weeks five and six drop the '
-      + 'rest again rather than adding weight.',
+      + 'each, six days a week, for six weeks. Sessions run about thirty minutes.\n\n'
+      + 'The progression is the rest, not the load: the gap between rounds falls from sixty '
+      + 'seconds to forty-five to thirty. Pick weights you could manage for twelve reps and stop '
+      + 'at eight, then let the shrinking clock do the work.\n\n'
+      + 'Week four is the exception to the sixes — it drops to three rounds. Six days a week '
+      + 'catches up with everyone by then, and the back-off week is what lets you finish the '
+      + 'block instead of abandoning it.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Six by Six,1-6,Mon,Push Circuit,1,Dumbbell Bench Press,6,8,45,8,Keep moving. Forty-five seconds between rounds.
-Six by Six,1-6,Mon,Push Circuit,2,Seated Dumbbell Shoulder Press,6,8,45,8,
-Six by Six,1-6,Mon,Push Circuit,3,Push-Up,6,12,45,8,
-Six by Six,1-6,Mon,Push Circuit,4,Lateral Raise,6,12,45,8,
-Six by Six,1-6,Mon,Push Circuit,5,Dumbbell Kickback,6,12,45,8,
-Six by Six,1-6,Mon,Push Circuit,6,Plank,6,30s,45,,
-Six by Six,1-6,Tue,Pull Circuit,1,Dumbbell Row,6,8 each,45,8,
-Six by Six,1-6,Tue,Pull Circuit,2,Inverted Row,6,10,45,8,
-Six by Six,1-6,Tue,Pull Circuit,3,Rear Delt Fly,6,12,45,8,
-Six by Six,1-6,Tue,Pull Circuit,4,Dumbbell Curl,6,12,45,8,
-Six by Six,1-6,Tue,Pull Circuit,5,Hammer Curl,6,12,45,8,
-Six by Six,1-6,Tue,Pull Circuit,6,Hollow Body Hold,6,30s,45,,
-Six by Six,1-6,Wed,Leg Circuit,1,Goblet Squat,6,10,45,8,
-Six by Six,1-6,Wed,Leg Circuit,2,Romanian Deadlift,6,10,45,8,
-Six by Six,1-6,Wed,Leg Circuit,3,Reverse Lunge,6,10 each,45,8,
-Six by Six,1-6,Wed,Leg Circuit,4,Step-Up,6,10 each,45,8,
-Six by Six,1-6,Wed,Leg Circuit,5,Single-Leg Calf Raise,6,15 each,45,8,
-Six by Six,1-6,Wed,Leg Circuit,6,Side Plank,6,25s each,45,,
-Six by Six,1-6,Thu,Conditioning,1,Burpee,6,12,45,9,
-Six by Six,1-6,Thu,Conditioning,2,Kettlebell Swing,6,15,45,8,
-Six by Six,1-6,Thu,Conditioning,3,Mountain Climber,6,30s,45,,
-Six by Six,1-6,Thu,Conditioning,4,Jump Rope,6,45s,45,,
-Six by Six,1-6,Thu,Conditioning,5,Medicine Ball Slam,6,12,45,8,
-Six by Six,1-6,Thu,Conditioning,6,Dead Bug,6,10 each,45,,
-Six by Six,1-6,Fri,Full Body,1,Thruster,6,8,45,8,
-Six by Six,1-6,Fri,Full Body,2,Dumbbell Row,6,10 each,45,8,
-Six by Six,1-6,Fri,Full Body,3,Walking Lunge,6,10 each,45,8,
-Six by Six,1-6,Fri,Full Body,4,Push-Up,6,12,45,8,
-Six by Six,1-6,Fri,Full Body,5,Farmer Carry,6,30s,45,8,
-Six by Six,1-6,Fri,Full Body,6,Plank,6,30s,45,,
-Six by Six,1-6,Sat,Core and Carry,1,Turkish Get-Up,6,1 each,45,7,
-Six by Six,1-6,Sat,Core and Carry,2,Suitcase Carry,6,30s each,45,8,
-Six by Six,1-6,Sat,Core and Carry,3,Hanging Leg Raise,6,10,45,8,
-Six by Six,1-6,Sat,Core and Carry,4,Russian Twist,6,20,45,8,
-Six by Six,1-6,Sat,Core and Carry,5,Bear Crawl,6,30s,45,,
-Six by Six,1-6,Sat,Core and Carry,6,Copenhagen Plank,6,20s each,45,,`,
+Settle in,1-2,Mon,Push Circuit — Settle in,1,Dumbbell Bench Press,6,8,60,8,Six rounds with a full minute between them. Learn the sessions.
+Settle in,1-2,Mon,Push Circuit — Settle in,2,Seated Dumbbell Shoulder Press,6,8,60,8,
+Settle in,1-2,Mon,Push Circuit — Settle in,3,Push-Up,6,12,60,8,
+Settle in,1-2,Mon,Push Circuit — Settle in,4,Lateral Raise,6,12,60,8,
+Settle in,1-2,Mon,Push Circuit — Settle in,5,Dumbbell Kickback,6,12,60,8,
+Settle in,1-2,Mon,Push Circuit — Settle in,6,Plank,6,30s,60,,
+Settle in,1-2,Tue,Pull Circuit — Settle in,1,Dumbbell Row,6,8 each,60,8,Six rounds with a full minute between them. Learn the sessions.
+Settle in,1-2,Tue,Pull Circuit — Settle in,2,Inverted Row,6,10,60,8,
+Settle in,1-2,Tue,Pull Circuit — Settle in,3,Rear Delt Fly,6,12,60,8,
+Settle in,1-2,Tue,Pull Circuit — Settle in,4,Dumbbell Curl,6,12,60,8,
+Settle in,1-2,Tue,Pull Circuit — Settle in,5,Hammer Curl,6,12,60,8,
+Settle in,1-2,Tue,Pull Circuit — Settle in,6,Hollow Body Hold,6,30s,60,,
+Settle in,1-2,Wed,Leg Circuit — Settle in,1,Goblet Squat,6,10,60,8,Six rounds with a full minute between them. Learn the sessions.
+Settle in,1-2,Wed,Leg Circuit — Settle in,2,Romanian Deadlift,6,10,60,8,
+Settle in,1-2,Wed,Leg Circuit — Settle in,3,Reverse Lunge,6,10 each,60,8,
+Settle in,1-2,Wed,Leg Circuit — Settle in,4,Step-Up,6,10 each,60,8,
+Settle in,1-2,Wed,Leg Circuit — Settle in,5,Single-Leg Calf Raise,6,15 each,60,8,
+Settle in,1-2,Wed,Leg Circuit — Settle in,6,Side Plank,6,25s each,60,,
+Settle in,1-2,Thu,Conditioning — Settle in,1,Burpee,6,12,60,8,Six rounds with a full minute between them. Learn the sessions.
+Settle in,1-2,Thu,Conditioning — Settle in,2,Kettlebell Swing,6,15,60,8,
+Settle in,1-2,Thu,Conditioning — Settle in,3,Mountain Climber,6,30s,60,,
+Settle in,1-2,Thu,Conditioning — Settle in,4,Jump Rope,6,45s,60,,
+Settle in,1-2,Thu,Conditioning — Settle in,5,Medicine Ball Slam,6,12,60,8,
+Settle in,1-2,Thu,Conditioning — Settle in,6,Dead Bug,6,10 each,60,8,
+Settle in,1-2,Fri,Full Body — Settle in,1,Thruster,6,8,60,8,Six rounds with a full minute between them. Learn the sessions.
+Settle in,1-2,Fri,Full Body — Settle in,2,Dumbbell Row,6,10 each,60,8,
+Settle in,1-2,Fri,Full Body — Settle in,3,Walking Lunge,6,10 each,60,8,
+Settle in,1-2,Fri,Full Body — Settle in,4,Push-Up,6,12,60,8,
+Settle in,1-2,Fri,Full Body — Settle in,5,Farmer Carry,6,30s,60,,
+Settle in,1-2,Fri,Full Body — Settle in,6,Plank,6,30s,60,,
+Settle in,1-2,Sat,Core and Carry — Settle in,1,Turkish Get-Up,6,1 each,60,8,Six rounds with a full minute between them. Learn the sessions.
+Settle in,1-2,Sat,Core and Carry — Settle in,2,Suitcase Carry,6,30s each,60,,
+Settle in,1-2,Sat,Core and Carry — Settle in,3,Hanging Leg Raise,6,10,60,8,
+Settle in,1-2,Sat,Core and Carry — Settle in,4,Russian Twist,6,20,60,8,
+Settle in,1-2,Sat,Core and Carry — Settle in,5,Bear Crawl,6,30s,60,,
+Settle in,1-2,Sat,Core and Carry — Settle in,6,Copenhagen Plank,6,20s each,60,,
+Tighten up,3,Mon,Push Circuit — Tighten up,1,Dumbbell Bench Press,6,8,45,8,Same work. Fifteen seconds less rest. The density is the progression.
+Tighten up,3,Mon,Push Circuit — Tighten up,2,Seated Dumbbell Shoulder Press,6,8,45,8,
+Tighten up,3,Mon,Push Circuit — Tighten up,3,Push-Up,6,12,45,8,
+Tighten up,3,Mon,Push Circuit — Tighten up,4,Lateral Raise,6,12,45,8,
+Tighten up,3,Mon,Push Circuit — Tighten up,5,Dumbbell Kickback,6,12,45,8,
+Tighten up,3,Mon,Push Circuit — Tighten up,6,Plank,6,30s,45,,
+Tighten up,3,Tue,Pull Circuit — Tighten up,1,Dumbbell Row,6,8 each,45,8,Same work. Fifteen seconds less rest. The density is the progression.
+Tighten up,3,Tue,Pull Circuit — Tighten up,2,Inverted Row,6,10,45,8,
+Tighten up,3,Tue,Pull Circuit — Tighten up,3,Rear Delt Fly,6,12,45,8,
+Tighten up,3,Tue,Pull Circuit — Tighten up,4,Dumbbell Curl,6,12,45,8,
+Tighten up,3,Tue,Pull Circuit — Tighten up,5,Hammer Curl,6,12,45,8,
+Tighten up,3,Tue,Pull Circuit — Tighten up,6,Hollow Body Hold,6,30s,45,,
+Tighten up,3,Wed,Leg Circuit — Tighten up,1,Goblet Squat,6,10,45,8,Same work. Fifteen seconds less rest. The density is the progression.
+Tighten up,3,Wed,Leg Circuit — Tighten up,2,Romanian Deadlift,6,10,45,8,
+Tighten up,3,Wed,Leg Circuit — Tighten up,3,Reverse Lunge,6,10 each,45,8,
+Tighten up,3,Wed,Leg Circuit — Tighten up,4,Step-Up,6,10 each,45,8,
+Tighten up,3,Wed,Leg Circuit — Tighten up,5,Single-Leg Calf Raise,6,15 each,45,8,
+Tighten up,3,Wed,Leg Circuit — Tighten up,6,Side Plank,6,25s each,45,,
+Tighten up,3,Thu,Conditioning — Tighten up,1,Burpee,6,12,45,8,Same work. Fifteen seconds less rest. The density is the progression.
+Tighten up,3,Thu,Conditioning — Tighten up,2,Kettlebell Swing,6,15,45,8,
+Tighten up,3,Thu,Conditioning — Tighten up,3,Mountain Climber,6,30s,45,,
+Tighten up,3,Thu,Conditioning — Tighten up,4,Jump Rope,6,45s,45,,
+Tighten up,3,Thu,Conditioning — Tighten up,5,Medicine Ball Slam,6,12,45,8,
+Tighten up,3,Thu,Conditioning — Tighten up,6,Dead Bug,6,10 each,45,8,
+Tighten up,3,Fri,Full Body — Tighten up,1,Thruster,6,8,45,8,Same work. Fifteen seconds less rest. The density is the progression.
+Tighten up,3,Fri,Full Body — Tighten up,2,Dumbbell Row,6,10 each,45,8,
+Tighten up,3,Fri,Full Body — Tighten up,3,Walking Lunge,6,10 each,45,8,
+Tighten up,3,Fri,Full Body — Tighten up,4,Push-Up,6,12,45,8,
+Tighten up,3,Fri,Full Body — Tighten up,5,Farmer Carry,6,30s,45,,
+Tighten up,3,Fri,Full Body — Tighten up,6,Plank,6,30s,45,,
+Tighten up,3,Sat,Core and Carry — Tighten up,1,Turkish Get-Up,6,1 each,45,8,Same work. Fifteen seconds less rest. The density is the progression.
+Tighten up,3,Sat,Core and Carry — Tighten up,2,Suitcase Carry,6,30s each,45,,
+Tighten up,3,Sat,Core and Carry — Tighten up,3,Hanging Leg Raise,6,10,45,8,
+Tighten up,3,Sat,Core and Carry — Tighten up,4,Russian Twist,6,20,45,8,
+Tighten up,3,Sat,Core and Carry — Tighten up,5,Bear Crawl,6,30s,45,,
+Tighten up,3,Sat,Core and Carry — Tighten up,6,Copenhagen Plank,6,20s each,45,,
+Back off,4,Mon,Push Circuit — Back off,1,Dumbbell Bench Press,3,8,60,8,Half the rounds. Six days a week catches up with everyone by now.
+Back off,4,Mon,Push Circuit — Back off,2,Seated Dumbbell Shoulder Press,3,8,60,8,
+Back off,4,Mon,Push Circuit — Back off,3,Push-Up,3,12,60,8,
+Back off,4,Mon,Push Circuit — Back off,4,Lateral Raise,3,12,60,8,
+Back off,4,Mon,Push Circuit — Back off,5,Dumbbell Kickback,3,12,60,8,
+Back off,4,Mon,Push Circuit — Back off,6,Plank,3,30s,60,,
+Back off,4,Tue,Pull Circuit — Back off,1,Dumbbell Row,3,8 each,60,8,Half the rounds. Six days a week catches up with everyone by now.
+Back off,4,Tue,Pull Circuit — Back off,2,Inverted Row,3,10,60,8,
+Back off,4,Tue,Pull Circuit — Back off,3,Rear Delt Fly,3,12,60,8,
+Back off,4,Tue,Pull Circuit — Back off,4,Dumbbell Curl,3,12,60,8,
+Back off,4,Tue,Pull Circuit — Back off,5,Hammer Curl,3,12,60,8,
+Back off,4,Tue,Pull Circuit — Back off,6,Hollow Body Hold,3,30s,60,,
+Back off,4,Wed,Leg Circuit — Back off,1,Goblet Squat,3,10,60,8,Half the rounds. Six days a week catches up with everyone by now.
+Back off,4,Wed,Leg Circuit — Back off,2,Romanian Deadlift,3,10,60,8,
+Back off,4,Wed,Leg Circuit — Back off,3,Reverse Lunge,3,10 each,60,8,
+Back off,4,Wed,Leg Circuit — Back off,4,Step-Up,3,10 each,60,8,
+Back off,4,Wed,Leg Circuit — Back off,5,Single-Leg Calf Raise,3,15 each,60,8,
+Back off,4,Wed,Leg Circuit — Back off,6,Side Plank,3,25s each,60,,
+Back off,4,Thu,Conditioning — Back off,1,Burpee,3,12,60,8,Half the rounds. Six days a week catches up with everyone by now.
+Back off,4,Thu,Conditioning — Back off,2,Kettlebell Swing,3,15,60,8,
+Back off,4,Thu,Conditioning — Back off,3,Mountain Climber,3,30s,60,,
+Back off,4,Thu,Conditioning — Back off,4,Jump Rope,3,45s,60,,
+Back off,4,Thu,Conditioning — Back off,5,Medicine Ball Slam,3,12,60,8,
+Back off,4,Thu,Conditioning — Back off,6,Dead Bug,3,10 each,60,8,
+Back off,4,Fri,Full Body — Back off,1,Thruster,3,8,60,8,Half the rounds. Six days a week catches up with everyone by now.
+Back off,4,Fri,Full Body — Back off,2,Dumbbell Row,3,10 each,60,8,
+Back off,4,Fri,Full Body — Back off,3,Walking Lunge,3,10 each,60,8,
+Back off,4,Fri,Full Body — Back off,4,Push-Up,3,12,60,8,
+Back off,4,Fri,Full Body — Back off,5,Farmer Carry,3,30s,60,,
+Back off,4,Fri,Full Body — Back off,6,Plank,3,30s,60,,
+Back off,4,Sat,Core and Carry — Back off,1,Turkish Get-Up,3,1 each,60,8,Half the rounds. Six days a week catches up with everyone by now.
+Back off,4,Sat,Core and Carry — Back off,2,Suitcase Carry,3,30s each,60,,
+Back off,4,Sat,Core and Carry — Back off,3,Hanging Leg Raise,3,10,60,8,
+Back off,4,Sat,Core and Carry — Back off,4,Russian Twist,3,20,60,8,
+Back off,4,Sat,Core and Carry — Back off,5,Bear Crawl,3,30s,60,,
+Back off,4,Sat,Core and Carry — Back off,6,Copenhagen Plank,3,20s each,60,,
+The squeeze,5-6,Mon,Push Circuit — The squeeze,1,Dumbbell Bench Press,6,8,30,8,Thirty seconds between rounds. The same session is a different animal now.
+The squeeze,5-6,Mon,Push Circuit — The squeeze,2,Seated Dumbbell Shoulder Press,6,8,30,8,
+The squeeze,5-6,Mon,Push Circuit — The squeeze,3,Push-Up,6,12,30,8,
+The squeeze,5-6,Mon,Push Circuit — The squeeze,4,Lateral Raise,6,12,30,8,
+The squeeze,5-6,Mon,Push Circuit — The squeeze,5,Dumbbell Kickback,6,12,30,8,
+The squeeze,5-6,Mon,Push Circuit — The squeeze,6,Plank,6,30s,30,,
+The squeeze,5-6,Tue,Pull Circuit — The squeeze,1,Dumbbell Row,6,8 each,30,8,Thirty seconds between rounds. The same session is a different animal now.
+The squeeze,5-6,Tue,Pull Circuit — The squeeze,2,Inverted Row,6,10,30,8,
+The squeeze,5-6,Tue,Pull Circuit — The squeeze,3,Rear Delt Fly,6,12,30,8,
+The squeeze,5-6,Tue,Pull Circuit — The squeeze,4,Dumbbell Curl,6,12,30,8,
+The squeeze,5-6,Tue,Pull Circuit — The squeeze,5,Hammer Curl,6,12,30,8,
+The squeeze,5-6,Tue,Pull Circuit — The squeeze,6,Hollow Body Hold,6,30s,30,,
+The squeeze,5-6,Wed,Leg Circuit — The squeeze,1,Goblet Squat,6,10,30,8,Thirty seconds between rounds. The same session is a different animal now.
+The squeeze,5-6,Wed,Leg Circuit — The squeeze,2,Romanian Deadlift,6,10,30,8,
+The squeeze,5-6,Wed,Leg Circuit — The squeeze,3,Reverse Lunge,6,10 each,30,8,
+The squeeze,5-6,Wed,Leg Circuit — The squeeze,4,Step-Up,6,10 each,30,8,
+The squeeze,5-6,Wed,Leg Circuit — The squeeze,5,Single-Leg Calf Raise,6,15 each,30,8,
+The squeeze,5-6,Wed,Leg Circuit — The squeeze,6,Side Plank,6,25s each,30,,
+The squeeze,5-6,Thu,Conditioning — The squeeze,1,Burpee,6,12,30,8,Thirty seconds between rounds. The same session is a different animal now.
+The squeeze,5-6,Thu,Conditioning — The squeeze,2,Kettlebell Swing,6,15,30,8,
+The squeeze,5-6,Thu,Conditioning — The squeeze,3,Mountain Climber,6,30s,30,,
+The squeeze,5-6,Thu,Conditioning — The squeeze,4,Jump Rope,6,45s,30,,
+The squeeze,5-6,Thu,Conditioning — The squeeze,5,Medicine Ball Slam,6,12,30,8,
+The squeeze,5-6,Thu,Conditioning — The squeeze,6,Dead Bug,6,10 each,30,8,
+The squeeze,5-6,Fri,Full Body — The squeeze,1,Thruster,6,8,30,8,Thirty seconds between rounds. The same session is a different animal now.
+The squeeze,5-6,Fri,Full Body — The squeeze,2,Dumbbell Row,6,10 each,30,8,
+The squeeze,5-6,Fri,Full Body — The squeeze,3,Walking Lunge,6,10 each,30,8,
+The squeeze,5-6,Fri,Full Body — The squeeze,4,Push-Up,6,12,30,8,
+The squeeze,5-6,Fri,Full Body — The squeeze,5,Farmer Carry,6,30s,30,,
+The squeeze,5-6,Fri,Full Body — The squeeze,6,Plank,6,30s,30,,
+The squeeze,5-6,Sat,Core and Carry — The squeeze,1,Turkish Get-Up,6,1 each,30,8,Thirty seconds between rounds. The same session is a different animal now.
+The squeeze,5-6,Sat,Core and Carry — The squeeze,2,Suitcase Carry,6,30s each,30,,
+The squeeze,5-6,Sat,Core and Carry — The squeeze,3,Hanging Leg Raise,6,10,30,8,
+The squeeze,5-6,Sat,Core and Carry — The squeeze,4,Russian Twist,6,20,30,8,
+The squeeze,5-6,Sat,Core and Carry — The squeeze,5,Bear Crawl,6,30s,30,,
+The squeeze,5-6,Sat,Core and Carry — The squeeze,6,Copenhagen Plank,6,20s each,30,,`,
   },
 
   {
@@ -174,63 +324,42 @@ Six by Six,1-6,Sat,Core and Carry,6,Copenhagen Plank,6,20s each,45,,`,
     goal: 'conditioning',
     level: 'beginner',
     days: 4,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Four half-hour sessions. Real strength work with the fat trimmed off.',
+    summary: 'Twelve weeks of half-hour sessions. Real strength work with the fat trimmed off.',
     detail: 'Four sessions a week that genuinely fit in half an hour: one main lift taken '
-      + 'seriously, then two pairs of exercises alternated so you are always working while '
-      + 'something recovers. You lose the last ten per cent of what a longer session would give '
-      + 'you and save an hour a week, which for most people is the better deal.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Thirty,1,Mon,Squat Focus,1,Back Squat,4,6,150,8,The one lift that matters today.
-Thirty,1,Mon,Squat Focus,2,Romanian Deadlift,3,10,60,8,Alternate with the next exercise.
-Thirty,1,Mon,Squat Focus,3,Lat Pulldown,3,12,60,8,
-Thirty,1,Mon,Squat Focus,4,Plank,2,45s,45,,
-Thirty,1,Tue,Bench Focus,1,Barbell Bench Press,4,6,150,8,
-Thirty,1,Tue,Bench Focus,2,Dumbbell Row,3,10 each,60,8,
-Thirty,1,Tue,Bench Focus,3,Lateral Raise,3,15,60,8,
-Thirty,1,Tue,Bench Focus,4,Rope Pushdown,2,15,45,8,
-Thirty,1,Thu,Deadlift Focus,1,Trap Bar Deadlift,4,5,180,8,
-Thirty,1,Thu,Deadlift Focus,2,Walking Lunge,3,10 each,60,8,
-Thirty,1,Thu,Deadlift Focus,3,Seated Cable Row,3,12,60,8,
-Thirty,1,Thu,Deadlift Focus,4,Hanging Leg Raise,2,12,45,8,
-Thirty,1,Fri,Press Focus,1,Overhead Press,4,6,150,8,
-Thirty,1,Fri,Press Focus,2,Chin-Up,3,8,60,8,
-Thirty,1,Fri,Press Focus,3,Incline Dumbbell Press,3,10,60,8,
-Thirty,1,Fri,Press Focus,4,Face Pull,2,15,45,8,`,
+      + 'seriously, then a short tail of supporting work.\n\n'
+      + 'You lose the last ten per cent of what a longer session would give you and save an hour a '
+      + 'week, which for most people is the better deal. The block still periodises properly, so '
+      + 'short does not mean aimless.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Squat Focus', day: 'Mon', exercises: [
+          ['Back Squat', 'main', 150],
+          ['Romanian Deadlift', 'accessory', 60],
+          ['Lat Pulldown', 'accessory', 60],
+          ['Plank', 'hold', 45, '45s'],
+        ] },
+        { name: 'Bench Focus', day: 'Tue', exercises: [
+          ['Barbell Bench Press', 'main', 150],
+          ['Dumbbell Row', 'accessory', 60],
+          ['Lateral Raise', 'isolation', 60],
+          ['Rope Pushdown', 'isolation', 45],
+        ] },
+        { name: 'Deadlift Focus', day: 'Thu', exercises: [
+          ['Trap Bar Deadlift', 'main', 180],
+          ['Walking Lunge', 'accessory', 60],
+          ['Seated Cable Row', 'accessory', 60],
+          ['Hanging Leg Raise', 'isolation', 45],
+        ] },
+        { name: 'Press Focus', day: 'Fri', exercises: [
+          ['Overhead Press', 'main', 150],
+          ['Chin-Up', 'secondary', 60],
+          ['Incline Dumbbell Press', 'accessory', 60],
+          ['Face Pull', 'isolation', 45],
+        ] },
+      ],
+    },
   },
 
-  {
-    id: 'first-gym-plan',
-    name: 'Your First Gym Plan',
-    goal: 'muscle',
-    level: 'beginner',
-    days: 3,
-    weeks: 4,
-    repeat: true,
-    equipment: 'Machines and dumbbells',
-    summary: 'Machines and dumbbells only. For a first month in a gym.',
-    detail: 'Written for someone who has just joined a gym and does not yet want to be the person '
-      + 'figuring out a squat rack in front of everyone. Machines and dumbbells only, three '
-      + 'sessions a week, the same exercises every time so you get to practise them. Four weeks '
-      + 'of this and barbells will feel a lot less intimidating. Start lighter than you think and '
-      + 'add a little every week.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-First Month,1-4,Mon,Full Body A,1,Leg Press,3,12,120,7,Start light. Learn the range of motion.
-First Month,1-4,Mon,Full Body A,2,Machine Chest Press,3,12,90,7,
-First Month,1-4,Mon,Full Body A,3,Lat Pulldown,3,12,90,7,
-First Month,1-4,Mon,Full Body A,4,Seated Leg Curl,3,12,75,7,
-First Month,1-4,Mon,Full Body A,5,Plank,3,30s,45,,
-First Month,1-4,Wed,Full Body B,1,Goblet Squat,3,12,120,7,
-First Month,1-4,Wed,Full Body B,2,Seated Cable Row,3,12,90,7,
-First Month,1-4,Wed,Full Body B,3,Machine Shoulder Press,3,12,90,7,
-First Month,1-4,Wed,Full Body B,4,Leg Extension,3,15,75,7,
-First Month,1-4,Wed,Full Body B,5,Dead Bug,3,10 each,45,,
-First Month,1-4,Fri,Full Body C,1,Leg Press,3,15,120,7,
-First Month,1-4,Fri,Full Body C,2,Incline Dumbbell Press,3,12,90,7,
-First Month,1-4,Fri,Full Body C,3,Chest-Supported Row,3,12,90,7,
-First Month,1-4,Fri,Full Body C,4,Dumbbell Curl,3,12,60,7,
-First Month,1-4,Fri,Full Body C,5,Standing Calf Raise,3,15,60,7,`,
-  },
 ];

@@ -1,5 +1,10 @@
-// Hypertrophy and powerbuilding programs — training organised around adding
-// muscle, either on its own or alongside a strength lift.
+// Hypertrophy and powerbuilding blocks.
+//
+// Every one of these is a finite block with a shape: a build phase at higher
+// reps, a heavy phase, real deload weeks, and a peak. Exercises are tagged by
+// the job they do and the phase decides the sets, reps and effort — see
+// periodise.js. When a block ends, run a different one rather than the same
+// one again.
 
 export const MUSCLE = [
   {
@@ -8,46 +13,61 @@ export const MUSCLE = [
     goal: 'muscle',
     level: 'intermediate',
     days: 6,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Six days, every muscle twice a week. The high-volume standard.',
-    detail: 'Pushing muscles, pulling muscles, then legs — run through twice a week. '
-      + 'Six sessions sounds like a lot but each one is short, and hitting everything twice '
-      + 'a week beats once for growth. The second run through the week uses different angles '
-      + 'and slightly higher reps. Add a rep or a little weight whenever you hit the top of '
-      + 'the range on every set.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-PPL,1,Mon,Push A,1,Barbell Bench Press,4,6-8,180,8,Heavy press of the week.
-PPL,1,Mon,Push A,2,Seated Dumbbell Shoulder Press,3,8-10,120,8,
-PPL,1,Mon,Push A,3,Incline Dumbbell Press,3,10-12,120,8,
-PPL,1,Mon,Push A,4,Lateral Raise,4,12-15,60,9,Light. Let the delts burn.
-PPL,1,Mon,Push A,5,Rope Pushdown,3,12-15,60,9,
-PPL,1,Tue,Pull A,1,Barbell Row,4,6-8,180,8,Heavy row of the week.
-PPL,1,Tue,Pull A,2,Lat Pulldown,3,10-12,90,8,
-PPL,1,Tue,Pull A,3,Seated Cable Row,3,10-12,90,8,
-PPL,1,Tue,Pull A,4,Face Pull,3,15-20,60,8,
-PPL,1,Tue,Pull A,5,Barbell Curl,3,10-12,75,9,
-PPL,1,Wed,Legs A,1,Back Squat,4,6-8,210,8,Heavy squat of the week.
-PPL,1,Wed,Legs A,2,Romanian Deadlift,3,8-10,150,8,
-PPL,1,Wed,Legs A,3,Leg Press,3,12-15,120,8,
-PPL,1,Wed,Legs A,4,Lying Leg Curl,3,12-15,75,9,
-PPL,1,Wed,Legs A,5,Standing Calf Raise,4,12-15,60,9,
-PPL,1,Thu,Push B,1,Overhead Press,4,6-8,180,8,
-PPL,1,Thu,Push B,2,Incline Barbell Bench Press,3,8-10,150,8,
-PPL,1,Thu,Push B,3,Machine Chest Press,3,12-15,90,8,
-PPL,1,Thu,Push B,4,Cable Lateral Raise,4,15-20,60,9,
-PPL,1,Thu,Push B,5,Overhead Cable Extension,3,12-15,60,9,
-PPL,1,Fri,Pull B,1,Deadlift,3,5,240,8,
-PPL,1,Fri,Pull B,2,Chin-Up,3,8-10,120,8,
-PPL,1,Fri,Pull B,3,Chest-Supported Row,3,12-15,90,8,
-PPL,1,Fri,Pull B,4,Straight-Arm Pulldown,3,15,60,8,
-PPL,1,Fri,Pull B,5,Hammer Curl,3,12-15,60,9,
-PPL,1,Sat,Legs B,1,Front Squat,4,8-10,180,8,
-PPL,1,Sat,Legs B,2,Bulgarian Split Squat,3,10 each,120,8,
-PPL,1,Sat,Legs B,3,Seated Leg Curl,3,12-15,75,9,
-PPL,1,Sat,Legs B,4,Leg Extension,3,15-20,60,9,
-PPL,1,Sat,Legs B,5,Seated Calf Raise,4,15-20,60,9,`,
+    summary: 'Twelve weeks, six days, every muscle twice a week.',
+    detail: 'Pushing muscles, pulling muscles, then legs, run through twice a week — organised '
+      + 'as a twelve-week block rather than a week you repeat forever.\n\n'
+      + 'Weeks one to four build at eight to twelve reps and moderate effort. Week five is a '
+      + 'deload. Weeks six to nine move heavier and lower in reps. Week ten deloads again. Weeks '
+      + 'eleven and twelve are the heaviest work of the block. Six sessions sounds like a lot but '
+      + 'each is short, and hitting everything twice a week beats once for growth.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Push A', day: 'Mon', exercises: [
+          ['Barbell Bench Press', 'main', 180],
+          ['Seated Dumbbell Shoulder Press', 'secondary', 120],
+          ['Incline Dumbbell Press', 'accessory', 120],
+          ['Lateral Raise', 'isolation', 60],
+          ['Rope Pushdown', 'isolation', 60],
+        ] },
+        { name: 'Pull A', day: 'Tue', exercises: [
+          ['Barbell Row', 'main', 180],
+          ['Lat Pulldown', 'secondary', 90],
+          ['Seated Cable Row', 'accessory', 90],
+          ['Face Pull', 'isolation', 60],
+          ['Barbell Curl', 'isolation', 75],
+        ] },
+        { name: 'Legs A', day: 'Wed', exercises: [
+          ['Back Squat', 'main', 210],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Leg Press', 'accessory', 120],
+          ['Lying Leg Curl', 'isolation', 75],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+        { name: 'Push B', day: 'Thu', exercises: [
+          ['Overhead Press', 'main', 180],
+          ['Incline Barbell Bench Press', 'secondary', 150],
+          ['Machine Chest Press', 'accessory', 90],
+          ['Cable Lateral Raise', 'isolation', 60],
+          ['Overhead Cable Extension', 'isolation', 60],
+        ] },
+        { name: 'Pull B', day: 'Fri', exercises: [
+          ['Deadlift', 'main', 240],
+          ['Chin-Up', 'secondary', 120],
+          ['Chest-Supported Row', 'accessory', 90],
+          ['Straight-Arm Pulldown', 'isolation', 60],
+          ['Hammer Curl', 'isolation', 60],
+        ] },
+        { name: 'Legs B', day: 'Sat', exercises: [
+          ['Front Squat', 'main', 180],
+          ['Bulgarian Split Squat', 'secondary', 120],
+          ['Seated Leg Curl', 'accessory', 75],
+          ['Leg Extension', 'isolation', 60],
+          ['Seated Calf Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -56,32 +76,43 @@ PPL,1,Sat,Legs B,5,Seated Calf Raise,4,15-20,60,9,`,
     goal: 'muscle',
     level: 'beginner',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'The same split once through. Three sessions, plenty of recovery.',
-    detail: 'Push, pull, legs across three sessions a week. Less total volume than the six-day '
-      + 'version, so each session carries more work per muscle and you get two full rest days. '
-      + 'A good first hypertrophy plan, and the right version to drop to when life gets busy.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-PPL3,1,Mon,Push,1,Barbell Bench Press,4,6-8,180,8,
-PPL3,1,Mon,Push,2,Overhead Press,3,8-10,150,8,
-PPL3,1,Mon,Push,3,Incline Dumbbell Press,3,10-12,120,8,
-PPL3,1,Mon,Push,4,Lateral Raise,4,12-15,60,9,
-PPL3,1,Mon,Push,5,Rope Pushdown,3,12-15,60,9,
-PPL3,1,Mon,Push,6,Cable Fly,2,15,60,9,
-PPL3,1,Wed,Pull,1,Barbell Row,4,6-8,180,8,
-PPL3,1,Wed,Pull,2,Lat Pulldown,3,10-12,90,8,
-PPL3,1,Wed,Pull,3,Seated Cable Row,3,10-12,90,8,
-PPL3,1,Wed,Pull,4,Face Pull,3,15-20,60,8,
-PPL3,1,Wed,Pull,5,Barbell Curl,3,10-12,75,9,
-PPL3,1,Wed,Pull,6,Hammer Curl,2,12-15,60,9,
-PPL3,1,Fri,Legs,1,Back Squat,4,6-8,210,8,
-PPL3,1,Fri,Legs,2,Romanian Deadlift,3,8-10,150,8,
-PPL3,1,Fri,Legs,3,Leg Press,3,12-15,120,8,
-PPL3,1,Fri,Legs,4,Lying Leg Curl,3,12-15,75,9,
-PPL3,1,Fri,Legs,5,Standing Calf Raise,4,12-15,60,9,
-PPL3,1,Fri,Legs,6,Hanging Leg Raise,3,12,60,8,`,
+    summary: 'The same split once through. Twelve weeks, plenty of recovery.',
+    detail: 'Push, pull and legs across three sessions a week, laid out as a twelve-week block. '
+      + 'Less total volume than the six-day version, so each session carries more work per muscle '
+      + 'and you get two full rest days.\n\n'
+      + 'The block builds at higher reps for four weeks, deloads, moves heavier for four more, '
+      + 'deloads again, and finishes with two weeks of the heaviest work. A good first '
+      + 'hypertrophy block, and the right one to drop to when life gets busy.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Push', day: 'Mon', exercises: [
+          ['Barbell Bench Press', 'main', 180],
+          ['Overhead Press', 'secondary', 150],
+          ['Incline Dumbbell Press', 'accessory', 120],
+          ['Lateral Raise', 'isolation', 60],
+          ['Rope Pushdown', 'isolation', 60],
+          ['Cable Fly', 'isolation', 60],
+        ] },
+        { name: 'Pull', day: 'Wed', exercises: [
+          ['Barbell Row', 'main', 180],
+          ['Lat Pulldown', 'secondary', 90],
+          ['Seated Cable Row', 'accessory', 90],
+          ['Face Pull', 'isolation', 60],
+          ['Barbell Curl', 'isolation', 75],
+          ['Hammer Curl', 'isolation', 60],
+        ] },
+        { name: 'Legs', day: 'Fri', exercises: [
+          ['Back Squat', 'main', 210],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Leg Press', 'accessory', 120],
+          ['Lying Leg Curl', 'isolation', 75],
+          ['Standing Calf Raise', 'isolation', 60],
+          ['Hanging Leg Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -90,38 +121,49 @@ PPL3,1,Fri,Legs,6,Hanging Leg Raise,3,12,60,8,`,
     goal: 'muscle',
     level: 'beginner',
     days: 4,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Four sessions, everything twice a week. The best value split there is.',
-    detail: 'Two upper body days and two lower body days. It hits the sweet spot most people '
-      + 'want: enough frequency to grow, enough rest to recover, and it fits round a normal week. '
-      + 'The first upper and lower days are heavier, the second pair lighter and higher rep. '
-      + 'If you only ever run one split, this is a defensible choice.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Upper Lower,1,Mon,Upper Heavy,1,Barbell Bench Press,4,5-6,180,8,
-Upper Lower,1,Mon,Upper Heavy,2,Barbell Row,4,5-6,180,8,
-Upper Lower,1,Mon,Upper Heavy,3,Overhead Press,3,8-10,150,8,
-Upper Lower,1,Mon,Upper Heavy,4,Lat Pulldown,3,10-12,90,8,
-Upper Lower,1,Mon,Upper Heavy,5,Barbell Curl,3,10-12,75,9,
-Upper Lower,1,Mon,Upper Heavy,6,Rope Pushdown,3,12-15,60,9,
-Upper Lower,1,Tue,Lower Heavy,1,Back Squat,4,5-6,210,8,
-Upper Lower,1,Tue,Lower Heavy,2,Romanian Deadlift,3,8-10,150,8,
-Upper Lower,1,Tue,Lower Heavy,3,Leg Press,3,10-12,120,8,
-Upper Lower,1,Tue,Lower Heavy,4,Lying Leg Curl,3,12-15,75,9,
-Upper Lower,1,Tue,Lower Heavy,5,Standing Calf Raise,4,12-15,60,9,
-Upper Lower,1,Thu,Upper Volume,1,Incline Dumbbell Press,4,8-12,120,8,
-Upper Lower,1,Thu,Upper Volume,2,Chest-Supported Row,4,10-12,120,8,
-Upper Lower,1,Thu,Upper Volume,3,Seated Dumbbell Shoulder Press,3,10-12,90,8,
-Upper Lower,1,Thu,Upper Volume,4,Chin-Up,3,8-10,120,8,
-Upper Lower,1,Thu,Upper Volume,5,Lateral Raise,4,15-20,60,9,
-Upper Lower,1,Thu,Upper Volume,6,Hammer Curl,3,12-15,60,9,
-Upper Lower,1,Fri,Lower Volume,1,Front Squat,4,8-10,180,8,
-Upper Lower,1,Fri,Lower Volume,2,Hip Thrust,3,10-12,120,8,
-Upper Lower,1,Fri,Lower Volume,3,Walking Lunge,3,12 each,120,8,
-Upper Lower,1,Fri,Lower Volume,4,Seated Leg Curl,3,12-15,75,9,
-Upper Lower,1,Fri,Lower Volume,5,Seated Calf Raise,4,15-20,60,9,
-Upper Lower,1,Fri,Lower Volume,6,Hanging Leg Raise,3,12,60,8,`,
+    summary: 'Twelve weeks, four days, everything twice a week.',
+    detail: 'Two upper body days and two lower body days, periodised across twelve weeks. It hits '
+      + 'the sweet spot most people want: enough frequency to grow, enough rest to recover, and it '
+      + 'fits round a normal week.\n\n'
+      + 'The first upper and lower days of each week lead with the heaviest compound work; the '
+      + 'second pair use different movements at the same phase prescription. If you only ever run '
+      + 'one block shape, this is a defensible choice.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Upper A', day: 'Mon', exercises: [
+          ['Barbell Bench Press', 'main', 180],
+          ['Barbell Row', 'main', 180],
+          ['Overhead Press', 'secondary', 150],
+          ['Lat Pulldown', 'accessory', 90],
+          ['Barbell Curl', 'isolation', 75],
+          ['Rope Pushdown', 'isolation', 60],
+        ] },
+        { name: 'Lower A', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 210],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Leg Press', 'accessory', 120],
+          ['Lying Leg Curl', 'isolation', 75],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+        { name: 'Upper B', day: 'Thu', exercises: [
+          ['Incline Dumbbell Press', 'main', 150],
+          ['Chest-Supported Row', 'secondary', 120],
+          ['Seated Dumbbell Shoulder Press', 'accessory', 90],
+          ['Chin-Up', 'accessory', 120],
+          ['Lateral Raise', 'isolation', 60],
+          ['Hammer Curl', 'isolation', 60],
+        ] },
+        { name: 'Lower B', day: 'Fri', exercises: [
+          ['Front Squat', 'main', 180],
+          ['Hip Thrust', 'secondary', 120],
+          ['Walking Lunge', 'accessory', 120],
+          ['Seated Leg Curl', 'isolation', 75],
+          ['Seated Calf Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -130,37 +172,47 @@ Upper Lower,1,Fri,Lower Volume,6,Hanging Leg Raise,3,12,60,8,`,
     goal: 'powerbuilding',
     level: 'intermediate',
     days: 4,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Two heavy days and two pump days. Get strong and get bigger.',
-    detail: 'The classic powerbuilding compromise: Monday and Tuesday you lift heavy for low '
-      + 'reps on the big four, Thursday and Friday you chase reps and blood flow. You end up '
-      + 'stronger than a pure bodybuilding plan and bigger than a pure strength plan, which is '
-      + 'what most people actually want. Progress the heavy days by weight and the volume days '
-      + 'by reps.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Power Hypertrophy,1,Mon,Upper Power,1,Barbell Bench Press,4,3-5,210,8.5,
-Power Hypertrophy,1,Mon,Upper Power,2,Barbell Row,4,3-5,210,8.5,
-Power Hypertrophy,1,Mon,Upper Power,3,Overhead Press,3,5-8,150,8,
-Power Hypertrophy,1,Mon,Upper Power,4,Chin-Up,3,5-8,150,8,
-Power Hypertrophy,1,Mon,Upper Power,5,Close-Grip Bench Press,3,8,120,8,
-Power Hypertrophy,1,Tue,Lower Power,1,Back Squat,4,3-5,240,8.5,
-Power Hypertrophy,1,Tue,Lower Power,2,Deadlift,3,3-5,240,8.5,
-Power Hypertrophy,1,Tue,Lower Power,3,Leg Press,3,8-10,150,8,
-Power Hypertrophy,1,Tue,Lower Power,4,Lying Leg Curl,3,10-12,75,8,
-Power Hypertrophy,1,Tue,Lower Power,5,Standing Calf Raise,4,10-12,60,9,
-Power Hypertrophy,1,Thu,Upper Pump,1,Incline Dumbbell Press,4,10-12,90,8,
-Power Hypertrophy,1,Thu,Upper Pump,2,Seated Cable Row,4,10-12,90,8,
-Power Hypertrophy,1,Thu,Upper Pump,3,Cable Fly,3,12-15,60,9,
-Power Hypertrophy,1,Thu,Upper Pump,4,Lat Pulldown,3,12-15,75,9,
-Power Hypertrophy,1,Thu,Upper Pump,5,Lateral Raise,4,15-20,60,9,
-Power Hypertrophy,1,Thu,Upper Pump,6,Cable Curl,3,12-15,60,9,
-Power Hypertrophy,1,Fri,Lower Pump,1,Front Squat,4,10-12,120,8,
-Power Hypertrophy,1,Fri,Lower Pump,2,Romanian Deadlift,3,10-12,120,8,
-Power Hypertrophy,1,Fri,Lower Pump,3,Walking Lunge,3,12 each,90,8,
-Power Hypertrophy,1,Fri,Lower Pump,4,Leg Extension,3,15-20,60,9,
-Power Hypertrophy,1,Fri,Lower Pump,5,Seated Calf Raise,4,15-20,60,9,`,
+    summary: 'Twelve weeks of two heavy days and two pump days.',
+    detail: 'The classic powerbuilding compromise, given a block structure. Monday and Tuesday you '
+      + 'lift heavy on the big four; Thursday and Friday you chase reps and blood flow.\n\n'
+      + 'You end up stronger than a pure bodybuilding block and bigger than a pure strength one, '
+      + 'which is what most people actually want. The phases move both halves together, so the '
+      + 'heavy days get heavier as the pump days get denser.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Upper Power', day: 'Mon', exercises: [
+          ['Barbell Bench Press', 'main', 210],
+          ['Barbell Row', 'main', 210],
+          ['Overhead Press', 'secondary', 150],
+          ['Chin-Up', 'secondary', 150],
+          ['Close-Grip Bench Press', 'accessory', 120],
+        ] },
+        { name: 'Lower Power', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 240],
+          ['Deadlift', 'main', 240],
+          ['Leg Press', 'accessory', 150],
+          ['Lying Leg Curl', 'isolation', 75],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+        { name: 'Upper Pump', day: 'Thu', exercises: [
+          ['Incline Dumbbell Press', 'secondary', 90],
+          ['Seated Cable Row', 'secondary', 90],
+          ['Cable Fly', 'isolation', 60],
+          ['Lat Pulldown', 'accessory', 75],
+          ['Lateral Raise', 'isolation', 60],
+          ['Cable Curl', 'isolation', 60],
+        ] },
+        { name: 'Lower Pump', day: 'Fri', exercises: [
+          ['Front Squat', 'secondary', 120],
+          ['Romanian Deadlift', 'secondary', 120],
+          ['Walking Lunge', 'accessory', 90],
+          ['Leg Extension', 'isolation', 60],
+          ['Seated Calf Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -169,41 +221,54 @@ Power Hypertrophy,1,Fri,Lower Pump,5,Seated Calf Raise,4,15-20,60,9,`,
     goal: 'powerbuilding',
     level: 'advanced',
     days: 5,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Two heavy days then three body-part days. High volume, high commitment.',
-    detail: 'A five-day powerbuilding week: two explosive strength days on the big lifts, then '
-      + 'three hypertrophy days split by body part. Total volume is high and so is the time cost '
-      + '— budget an hour or more per session. Worth running only if you can eat and sleep to '
-      + 'match it. The speed work on the heavy days is deliberately submaximal; the bar should '
-      + 'move fast or the weight is wrong.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Power Hypertrophy 5,1,Mon,Upper Power,1,Barbell Bench Press,5,3-5,210,8.5,
-Power Hypertrophy 5,1,Mon,Upper Power,2,Barbell Row,4,4-6,180,8.5,
-Power Hypertrophy 5,1,Mon,Upper Power,3,Overhead Press,3,6-8,150,8,
-Power Hypertrophy 5,1,Mon,Upper Power,4,Chin-Up,3,6-8,120,8,
-Power Hypertrophy 5,1,Mon,Upper Power,5,Skullcrusher,3,8-10,90,8,
-Power Hypertrophy 5,1,Tue,Lower Power,1,Back Squat,5,3-5,240,8.5,
-Power Hypertrophy 5,1,Tue,Lower Power,2,Deadlift,3,3-5,300,8.5,
-Power Hypertrophy 5,1,Tue,Lower Power,3,Hack Squat,3,8-10,150,8,
-Power Hypertrophy 5,1,Tue,Lower Power,4,Seated Leg Curl,3,10-12,75,8,
-Power Hypertrophy 5,1,Tue,Lower Power,5,Standing Calf Raise,4,10-12,60,9,
-Power Hypertrophy 5,1,Thu,Back and Shoulders,1,Pendlay Row,4,8-10,120,8,
-Power Hypertrophy 5,1,Thu,Back and Shoulders,2,Lat Pulldown,4,10-12,90,8,
-Power Hypertrophy 5,1,Thu,Back and Shoulders,3,Seated Cable Row,3,12-15,75,9,
-Power Hypertrophy 5,1,Thu,Back and Shoulders,4,Lateral Raise,4,15-20,60,9,
-Power Hypertrophy 5,1,Thu,Back and Shoulders,5,Rear Delt Fly,3,15-20,60,9,
-Power Hypertrophy 5,1,Fri,Chest and Arms,1,Incline Barbell Bench Press,4,8-10,120,8,
-Power Hypertrophy 5,1,Fri,Chest and Arms,2,Machine Chest Press,3,12-15,90,8,
-Power Hypertrophy 5,1,Fri,Chest and Arms,3,Cable Fly,3,15,60,9,
-Power Hypertrophy 5,1,Fri,Chest and Arms,4,EZ-Bar Curl,4,10-12,75,9,
-Power Hypertrophy 5,1,Fri,Chest and Arms,5,Rope Pushdown,4,12-15,60,9,
-Power Hypertrophy 5,1,Sat,Legs,1,Front Squat,4,10-12,150,8,
-Power Hypertrophy 5,1,Sat,Legs,2,Romanian Deadlift,4,10-12,120,8,
-Power Hypertrophy 5,1,Sat,Legs,3,Leg Press,3,15-20,120,9,
-Power Hypertrophy 5,1,Sat,Legs,4,Leg Extension,3,15-20,60,9,
-Power Hypertrophy 5,1,Sat,Legs,5,Seated Calf Raise,4,15-20,60,9,`,
+    summary: 'Twelve weeks, five days. High volume, high commitment.',
+    detail: 'Two strength days on the big lifts, then three hypertrophy days split by body part, '
+      + 'across a twelve-week block. Total volume is high and so is the time cost — budget an hour '
+      + 'or more per session.\n\n'
+      + 'Worth running only if you can eat and sleep to match it. Take the deload weeks seriously; '
+      + 'at this volume they are the difference between finishing the block and abandoning it in '
+      + 'week eight.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Upper Power', day: 'Mon', exercises: [
+          ['Barbell Bench Press', 'main', 210],
+          ['Barbell Row', 'main', 180],
+          ['Overhead Press', 'secondary', 150],
+          ['Chin-Up', 'secondary', 120],
+          ['Skullcrusher', 'isolation', 90],
+        ] },
+        { name: 'Lower Power', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 240],
+          ['Deadlift', 'main', 300],
+          ['Hack Squat', 'accessory', 150],
+          ['Seated Leg Curl', 'isolation', 75],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+        { name: 'Back and Shoulders', day: 'Thu', exercises: [
+          ['Pendlay Row', 'secondary', 120],
+          ['Lat Pulldown', 'accessory', 90],
+          ['Seated Cable Row', 'accessory', 75],
+          ['Lateral Raise', 'isolation', 60],
+          ['Rear Delt Fly', 'isolation', 60],
+        ] },
+        { name: 'Chest and Arms', day: 'Fri', exercises: [
+          ['Incline Barbell Bench Press', 'secondary', 120],
+          ['Machine Chest Press', 'accessory', 90],
+          ['Cable Fly', 'isolation', 60],
+          ['EZ-Bar Curl', 'isolation', 75],
+          ['Rope Pushdown', 'isolation', 60],
+        ] },
+        { name: 'Legs', day: 'Sat', exercises: [
+          ['Front Squat', 'secondary', 150],
+          ['Romanian Deadlift', 'secondary', 120],
+          ['Leg Press', 'accessory', 120],
+          ['Leg Extension', 'isolation', 60],
+          ['Seated Calf Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -212,41 +277,54 @@ Power Hypertrophy 5,1,Sat,Legs,5,Seated Calf Raise,4,15-20,60,9,`,
     goal: 'muscle',
     level: 'intermediate',
     days: 5,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'One body part a day, trained hard. The old-school bodybuilding week.',
+    summary: 'One body part a day for twelve weeks, trained hard.',
     detail: 'Chest, back, legs, shoulders, arms — one a day, each battered thoroughly and then '
-      + 'left alone for a week. Frequency is lower than modern research prefers, but the volume '
-      + 'per session is high and plenty of people have built plenty of muscle on exactly this. '
-      + 'It also has the practical advantage of being easy to remember and hard to rush.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Body Part,1,Mon,Chest,1,Barbell Bench Press,4,6-8,180,8,
-Body Part,1,Mon,Chest,2,Incline Dumbbell Press,4,8-10,120,8,
-Body Part,1,Mon,Chest,3,Machine Chest Press,3,10-12,90,8,
-Body Part,1,Mon,Chest,4,Cable Fly,3,12-15,60,9,
-Body Part,1,Mon,Chest,5,Push-Up,2,15,60,9,Finish to failure.
-Body Part,1,Tue,Back,1,Deadlift,4,5-6,240,8,
-Body Part,1,Tue,Back,2,Barbell Row,4,8-10,150,8,
-Body Part,1,Tue,Back,3,Lat Pulldown,4,10-12,90,8,
-Body Part,1,Tue,Back,4,Seated Cable Row,3,12-15,75,9,
-Body Part,1,Tue,Back,5,Straight-Arm Pulldown,3,15,60,9,
-Body Part,1,Wed,Legs,1,Back Squat,5,6-8,210,8,
-Body Part,1,Wed,Legs,2,Leg Press,4,10-12,150,8,
-Body Part,1,Wed,Legs,3,Romanian Deadlift,3,10-12,120,8,
-Body Part,1,Wed,Legs,4,Lying Leg Curl,3,12-15,75,9,
-Body Part,1,Wed,Legs,5,Standing Calf Raise,5,12-15,60,9,
-Body Part,1,Thu,Shoulders,1,Overhead Press,4,6-8,180,8,
-Body Part,1,Thu,Shoulders,2,Seated Dumbbell Shoulder Press,3,10-12,90,8,
-Body Part,1,Thu,Shoulders,3,Lateral Raise,5,15-20,60,9,
-Body Part,1,Thu,Shoulders,4,Rear Delt Fly,4,15-20,60,9,
-Body Part,1,Thu,Shoulders,5,Shrug,3,12-15,75,9,
-Body Part,1,Fri,Arms,1,Close-Grip Bench Press,4,8-10,120,8,
-Body Part,1,Fri,Arms,2,Barbell Curl,4,8-10,90,8,
-Body Part,1,Fri,Arms,3,Skullcrusher,3,10-12,75,9,
-Body Part,1,Fri,Arms,4,Incline Dumbbell Curl,3,10-12,75,9,
-Body Part,1,Fri,Arms,5,Rope Pushdown,3,15,60,9,
-Body Part,1,Fri,Arms,6,Hammer Curl,3,15,60,9,`,
+      + 'left alone for a week, across a twelve-week block.\n\n'
+      + 'Frequency is lower than modern research prefers, but the volume per session is high and '
+      + 'plenty of people have built plenty of muscle on exactly this. It also has the practical '
+      + 'advantage of being easy to remember and hard to rush.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Chest', day: 'Mon', exercises: [
+          ['Barbell Bench Press', 'main', 180],
+          ['Incline Dumbbell Press', 'secondary', 120],
+          ['Machine Chest Press', 'accessory', 90],
+          ['Cable Fly', 'isolation', 60],
+          ['Push-Up', 'isolation', 60],
+        ] },
+        { name: 'Back', day: 'Tue', exercises: [
+          ['Deadlift', 'main', 240],
+          ['Barbell Row', 'secondary', 150],
+          ['Lat Pulldown', 'accessory', 90],
+          ['Seated Cable Row', 'isolation', 75],
+          ['Straight-Arm Pulldown', 'isolation', 60],
+        ] },
+        { name: 'Legs', day: 'Wed', exercises: [
+          ['Back Squat', 'main', 210],
+          ['Leg Press', 'secondary', 150],
+          ['Romanian Deadlift', 'accessory', 120],
+          ['Lying Leg Curl', 'isolation', 75],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+        { name: 'Shoulders', day: 'Thu', exercises: [
+          ['Overhead Press', 'main', 180],
+          ['Seated Dumbbell Shoulder Press', 'accessory', 90],
+          ['Lateral Raise', 'isolation', 60],
+          ['Rear Delt Fly', 'isolation', 60],
+          ['Shrug', 'isolation', 75],
+        ] },
+        { name: 'Arms', day: 'Fri', exercises: [
+          ['Close-Grip Bench Press', 'secondary', 120],
+          ['Barbell Curl', 'secondary', 90],
+          ['Skullcrusher', 'isolation', 75],
+          ['Incline Dumbbell Curl', 'isolation', 75],
+          ['Rope Pushdown', 'isolation', 60],
+          ['Hammer Curl', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -255,34 +333,42 @@ Body Part,1,Fri,Arms,6,Hammer Curl,3,15,60,9,`,
     goal: 'muscle',
     level: 'beginner',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Three full-body sessions. Best growth per hour in the gym.',
-    detail: 'Everything, three times a week, with the exercises rotated so nothing gets stale. '
-      + 'Frequency does a lot of the work here: hitting each muscle three times a week at '
-      + 'moderate volume grows it about as well as hitting it once with triple the sets, and it '
-      + 'takes far less time. The right plan if you have three hours a week and want them to '
-      + 'count.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Full Body,1,Mon,Full Body A,1,Back Squat,3,6-8,180,8,
-Full Body,1,Mon,Full Body A,2,Barbell Bench Press,3,6-8,180,8,
-Full Body,1,Mon,Full Body A,3,Barbell Row,3,8-10,120,8,
-Full Body,1,Mon,Full Body A,4,Seated Dumbbell Shoulder Press,3,10-12,90,8,
-Full Body,1,Mon,Full Body A,5,Lying Leg Curl,3,12-15,75,9,
-Full Body,1,Mon,Full Body A,6,Hanging Leg Raise,3,12,60,8,
-Full Body,1,Wed,Full Body B,1,Romanian Deadlift,3,8-10,180,8,
-Full Body,1,Wed,Full Body B,2,Incline Dumbbell Press,3,8-10,120,8,
-Full Body,1,Wed,Full Body B,3,Lat Pulldown,3,10-12,90,8,
-Full Body,1,Wed,Full Body B,4,Leg Press,3,12-15,120,8,
-Full Body,1,Wed,Full Body B,5,Lateral Raise,3,15-20,60,9,
-Full Body,1,Wed,Full Body B,6,Cable Curl,3,12-15,60,9,
-Full Body,1,Fri,Full Body C,1,Front Squat,3,8-10,180,8,
-Full Body,1,Fri,Full Body C,2,Overhead Press,3,8-10,150,8,
-Full Body,1,Fri,Full Body C,3,Chin-Up,3,8-10,120,8,
-Full Body,1,Fri,Full Body C,4,Hip Thrust,3,10-12,120,8,
-Full Body,1,Fri,Full Body C,5,Chest-Supported Row,3,12-15,90,8,
-Full Body,1,Fri,Full Body C,6,Standing Calf Raise,3,15,60,9,`,
+    summary: 'Twelve weeks of three full-body sessions. Best growth per hour.',
+    detail: 'Everything, three times a week, with the exercises rotated so nothing gets stale, '
+      + 'laid out across twelve weeks.\n\n'
+      + 'Frequency does a lot of the work here: hitting each muscle three times a week at moderate '
+      + 'volume grows it about as well as hitting it once with triple the sets, and it takes far '
+      + 'less time. The right block if you have three hours a week and want them to count.',
+    spec: {
+      length: 12,
+      sessions: [
+        { name: 'Full Body A', day: 'Mon', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Barbell Bench Press', 'main', 180],
+          ['Barbell Row', 'secondary', 120],
+          ['Seated Dumbbell Shoulder Press', 'accessory', 90],
+          ['Lying Leg Curl', 'isolation', 75],
+          ['Hanging Leg Raise', 'isolation', 60],
+        ] },
+        { name: 'Full Body B', day: 'Wed', exercises: [
+          ['Romanian Deadlift', 'main', 180],
+          ['Incline Dumbbell Press', 'secondary', 120],
+          ['Lat Pulldown', 'secondary', 90],
+          ['Leg Press', 'accessory', 120],
+          ['Lateral Raise', 'isolation', 60],
+          ['Cable Curl', 'isolation', 60],
+        ] },
+        { name: 'Full Body C', day: 'Fri', exercises: [
+          ['Front Squat', 'main', 180],
+          ['Overhead Press', 'secondary', 150],
+          ['Chin-Up', 'secondary', 120],
+          ['Hip Thrust', 'accessory', 120],
+          ['Chest-Supported Row', 'accessory', 90],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -291,35 +377,88 @@ Full Body,1,Fri,Full Body C,6,Standing Calf Raise,3,15,60,9,`,
     goal: 'muscle',
     level: 'beginner',
     days: 4,
-    weeks: 1,
-    repeat: true,
     equipment: 'Dumbbells',
-    summary: 'A full upper/lower split with nothing but a pair of dumbbells.',
+    summary: 'Eight weeks of upper/lower with nothing but a pair of dumbbells.',
     detail: 'Built for a home rack, a hotel gym, or a commercial gym at six in the evening when '
-      + 'every barbell is taken. No bars, no machines, no cables. Loading jumps are bigger with '
-      + 'dumbbells, so progress by reps first — work to the top of the range on every set, then '
-      + 'take the next pair up and start again at the bottom.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Dumbbell,1,Mon,Upper A,1,Dumbbell Bench Press,4,8-10,120,8,
-Dumbbell,1,Mon,Upper A,2,Dumbbell Row,4,10-12,90,8,
-Dumbbell,1,Mon,Upper A,3,Seated Dumbbell Shoulder Press,3,10-12,90,8,
-Dumbbell,1,Mon,Upper A,4,Dumbbell Curl,3,12-15,60,9,
-Dumbbell,1,Mon,Upper A,5,Dumbbell Kickback,3,12-15,60,9,
-Dumbbell,1,Tue,Lower A,1,Goblet Squat,4,10-12,120,8,
-Dumbbell,1,Tue,Lower A,2,Romanian Deadlift,4,10-12,120,8,
-Dumbbell,1,Tue,Lower A,3,Bulgarian Split Squat,3,10 each,90,8,
-Dumbbell,1,Tue,Lower A,4,Single-Leg Calf Raise,3,15 each,60,9,
-Dumbbell,1,Tue,Lower A,5,Plank,3,45s,45,,
-Dumbbell,1,Thu,Upper B,1,Incline Dumbbell Press,4,10-12,120,8,
-Dumbbell,1,Thu,Upper B,2,Chest-Supported Row,4,10-12,90,8,
-Dumbbell,1,Thu,Upper B,3,Arnold Press,3,10-12,90,8,
-Dumbbell,1,Thu,Upper B,4,Lateral Raise,4,15-20,60,9,
-Dumbbell,1,Thu,Upper B,5,Hammer Curl,3,12-15,60,9,
-Dumbbell,1,Fri,Lower B,1,Walking Lunge,4,12 each,120,8,
-Dumbbell,1,Fri,Lower B,2,Single-Leg Romanian Deadlift,3,10 each,90,8,
-Dumbbell,1,Fri,Lower B,3,Step-Up,3,12 each,90,8,
-Dumbbell,1,Fri,Lower B,4,Glute Bridge,3,15,75,8,
-Dumbbell,1,Fri,Lower B,5,Side Plank,3,30s each,45,,`,
+      + 'every barbell is taken. No bars, no machines, no cables.\n\n'
+      + 'Eight weeks rather than twelve, because loading jumps with dumbbells are large and you '
+      + 'will run out of room to add weight sooner. Progress by reps first — work to the top of '
+      + 'the range on every set, then take the next pair up and start again at the bottom.',
+    spec: {
+      length: 8,
+      sessions: [
+        { name: 'Upper A', day: 'Mon', exercises: [
+          ['Dumbbell Bench Press', 'main', 120],
+          ['Dumbbell Row', 'main', 90],
+          ['Seated Dumbbell Shoulder Press', 'accessory', 90],
+          ['Dumbbell Curl', 'isolation', 60],
+          ['Dumbbell Kickback', 'isolation', 60],
+        ] },
+        { name: 'Lower A', day: 'Tue', exercises: [
+          ['Goblet Squat', 'main', 120],
+          ['Romanian Deadlift', 'main', 120],
+          ['Bulgarian Split Squat', 'accessory', 90],
+          ['Single-Leg Calf Raise', 'isolation', 60],
+          ['Plank', 'hold', 45, '45s'],
+        ] },
+        { name: 'Upper B', day: 'Thu', exercises: [
+          ['Incline Dumbbell Press', 'main', 120],
+          ['Chest-Supported Row', 'main', 90],
+          ['Arnold Press', 'accessory', 90],
+          ['Lateral Raise', 'isolation', 60],
+          ['Hammer Curl', 'isolation', 60],
+        ] },
+        { name: 'Lower B', day: 'Fri', exercises: [
+          ['Walking Lunge', 'main', 120],
+          ['Single-Leg Romanian Deadlift', 'secondary', 90],
+          ['Step-Up', 'accessory', 90],
+          ['Glute Bridge', 'isolation', 75],
+          ['Side Plank', 'hold', 45, '30s each'],
+        ] },
+      ],
+    },
+  },
+
+  {
+    id: 'first-gym-plan',
+    name: 'Your First Gym Plan',
+    goal: 'muscle',
+    level: 'beginner',
+    days: 3,
+    equipment: 'Machines and dumbbells',
+    summary: 'Eight weeks on machines and dumbbells. For a first block in a gym.',
+    detail: 'Written for someone who has just joined a gym and does not yet want to be the person '
+      + 'figuring out a squat rack in front of everyone. Machines and dumbbells only, three '
+      + 'sessions a week, the same exercises every time so you get to practise them.\n\n'
+      + 'Eight weeks with a deload in the middle and a heavier finish, so you leave it stronger '
+      + 'than you would from repeating an identical week. After this, barbells will feel a lot '
+      + 'less intimidating — move to Full Body Hypertrophy or Upper / Lower next.',
+    spec: {
+      length: 8,
+      sessions: [
+        { name: 'Full Body A', day: 'Mon', exercises: [
+          ['Leg Press', 'main', 120],
+          ['Machine Chest Press', 'secondary', 90],
+          ['Lat Pulldown', 'secondary', 90],
+          ['Seated Leg Curl', 'accessory', 75],
+          ['Plank', 'hold', 45, '30s'],
+        ] },
+        { name: 'Full Body B', day: 'Wed', exercises: [
+          ['Goblet Squat', 'main', 120],
+          ['Seated Cable Row', 'secondary', 90],
+          ['Machine Shoulder Press', 'secondary', 90],
+          ['Leg Extension', 'isolation', 75],
+          ['Dead Bug', 'accessory', 45],
+        ] },
+        { name: 'Full Body C', day: 'Fri', exercises: [
+          ['Leg Press', 'main', 120],
+          ['Incline Dumbbell Press', 'secondary', 90],
+          ['Chest-Supported Row', 'secondary', 90],
+          ['Dumbbell Curl', 'isolation', 60],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -334,9 +473,9 @@ Dumbbell,1,Fri,Lower B,5,Side Plank,3,30s each,45,,`,
     summary: 'Three build phases with a deload between each, then a peak week.',
     detail: 'A full quarter of training with an arc: three four-week blocks that get heavier and '
       + 'lower in reps as they go, each followed by a genuine deload week, and a final week to '
-      + 'see what it bought you. Phase one builds work capacity at 12-15 reps, phase two moves '
-      + 'to 8-10, phase three to 5-6. Do not skip the deloads — they are what makes thirteen '
-      + 'weeks possible.',
+      + 'see what it bought you.\n\n'
+      + 'Phase one builds work capacity at 12-15 reps, phase two moves to 8-10, phase three to '
+      + '5-6. Do not skip the deloads — they are what makes thirteen weeks possible.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
 Phase 1 Foundation,1-3,Mon,Upper Build,1,Barbell Bench Press,4,12-15,120,7,Leave three reps in reserve early on.
 Phase 1 Foundation,1-3,Mon,Upper Build,2,Barbell Row,4,12-15,120,7,

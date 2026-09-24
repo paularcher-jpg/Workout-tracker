@@ -1,7 +1,7 @@
 // Offline shell cache. The app's data never goes through here — that lives in
 // IndexedDB — so a stale cache can only ever affect the code, not your logs.
 
-const VERSION = 'v3.3.0';
+const VERSION = 'v3.4.0';
 const CACHE = `workout-tracker-${VERSION}`;
 
 const SHELL = [
@@ -27,6 +27,7 @@ const SHELL = [
   './js/views/settings.js',
   './js/views/programs.js',
   './js/programs/index.js',
+  './js/programs/periodise.js',
   './js/programs/strength.js',
   './js/programs/muscle.js',
   './js/programs/endurance.js',

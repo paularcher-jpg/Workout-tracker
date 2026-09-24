@@ -221,26 +221,34 @@ Workout 14,14,Wed,Workout 14,10,Easy Aerobic,1,600s,60,4,Cool down.`,
     goal: 'endurance',
     level: 'beginner',
     days: 2,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Two short heavy sessions a week. Built for running economy.',
+    summary: 'Twelve weeks of short heavy sessions. Built for running economy.',
     detail: 'Heavy, low-rep, low-volume lifting is the version of strength work that actually '
-      + 'improves running economy — light circuits do not. Two sessions a week, four to six reps '
-      + 'on the main lifts, nowhere near failure, and never so much volume that tomorrow’s run '
-      + 'suffers. Run this in base season when mileage is moderate. If a session leaves your legs '
-      + 'wrecked for two days, cut a set, not the weight.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Base,1,Tue,Heavy Lower,1,Back Squat,4,5,180,8,Heavy but never grinding. Stop two reps short.
-Base,1,Tue,Heavy Lower,2,Romanian Deadlift,3,6,150,8,
-Base,1,Tue,Heavy Lower,3,Bulgarian Split Squat,3,8 each,120,8,
-Base,1,Tue,Heavy Lower,4,Single-Leg Calf Raise,3,12 each,75,8,Slow down. Three seconds lowering.
-Base,1,Tue,Heavy Lower,5,Plank,3,45s,45,,
-Base,1,Fri,Power and Posterior,1,Trap Bar Deadlift,4,5,180,8,
-Base,1,Fri,Power and Posterior,2,Box Jump,4,4,120,7,Land soft. Step back down every time.
-Base,1,Fri,Power and Posterior,3,Hip Thrust,3,8,120,8,
-Base,1,Fri,Power and Posterior,4,Nordic Curl,3,5,120,8,Lower as slowly as you can.
-Base,1,Fri,Power and Posterior,5,Copenhagen Plank,3,20s each,45,,Adductors. Runners neglect these.`,
+      + 'improves running economy — light circuits do not. Two sessions a week across a twelve-week '
+      + 'block, building from sixes to triples.\n\n'
+      + 'Nothing here goes near failure and the volume never gets high, because the running is the '
+      + 'training and the gym must not cost it. Run this in base season when mileage is moderate. '
+      + 'If a session leaves your legs wrecked for two days, cut a set rather than the weight.',
+    spec: {
+      length: 12,
+      roleset: 'endurance',
+      sessions: [
+        { name: 'Heavy Lower', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Bulgarian Split Squat', 'accessory', 120],
+          ['Single-Leg Calf Raise', 'isolation', 75],
+          ['Plank', 'hold', 45, '45s'],
+        ] },
+        { name: 'Power and Posterior', day: 'Fri', exercises: [
+          ['Trap Bar Deadlift', 'main', 180],
+          ['Box Jump', 'power', 120],
+          ['Hip Thrust', 'secondary', 120],
+          ['Nordic Curl', 'accessory', 120],
+          ['Copenhagen Plank', 'hold', 45, '20s each'],
+        ] },
+      ],
+    },
   },
 
   {
@@ -249,24 +257,32 @@ Base,1,Fri,Power and Posterior,5,Copenhagen Plank,3,20s each,45,,Adductors. Runn
     goal: 'endurance',
     level: 'intermediate',
     days: 2,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Maintenance only. Keeps the strength you built without stealing legs.',
-    detail: 'When mileage and intensity go up, lifting has to get out of the way. This keeps '
-      + 'two short sessions a week at heavy loads and tiny volume — enough to hold onto strength, '
-      + 'not enough to cost you a workout. Two to three sets, three to five reps, always well '
-      + 'short of failure. Put these on the same day as a hard run rather than on an easy day, '
-      + 'so easy days stay easy.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-In Season,1,Tue,Maintain A,1,Back Squat,3,4,180,7,Same bar speed every rep. Leave three in reserve.
-In Season,1,Tue,Maintain A,2,Single-Leg Romanian Deadlift,2,8 each,90,7,
-In Season,1,Tue,Maintain A,3,Single-Leg Calf Raise,3,12 each,60,7,
-In Season,1,Tue,Maintain A,4,Side Plank,2,30s each,45,,
-In Season,1,Fri,Maintain B,1,Trap Bar Deadlift,3,4,180,7,
-In Season,1,Fri,Maintain B,2,Pogo Hop,3,20,60,6,Stiff ankles. Minimal ground contact.
-In Season,1,Fri,Maintain B,3,Hip Thrust,2,8,90,7,
-In Season,1,Fri,Maintain B,4,Dead Bug,3,10 each,45,,`,
+    summary: 'Eight weeks of maintenance. Keeps strength without stealing legs.',
+    detail: 'When mileage and intensity go up, lifting has to get out of the way. Two short '
+      + 'sessions a week at heavy loads and tiny volume — enough to hold onto strength, not enough '
+      + 'to cost you a workout.\n\n'
+      + 'Eight weeks so it has an end, with a deload and a light final week that lines up with a '
+      + 'race taper. Two to three sets, three to six reps, always well short of failure. Put these '
+      + 'on the same day as a hard run rather than on an easy day, so easy days stay easy.',
+    spec: {
+      length: 8,
+      roleset: 'endurance',
+      sessions: [
+        { name: 'Maintain A', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Single-Leg Romanian Deadlift', 'accessory', 90],
+          ['Single-Leg Calf Raise', 'isolation', 60],
+          ['Side Plank', 'hold', 45, '30s each'],
+        ] },
+        { name: 'Maintain B', day: 'Fri', exercises: [
+          ['Trap Bar Deadlift', 'main', 180],
+          ['Pogo Hop', 'power', 60],
+          ['Hip Thrust', 'accessory', 90],
+          ['Dead Bug', 'isolation', 45],
+        ] },
+      ],
+    },
   },
 
 
@@ -276,15 +292,16 @@ In Season,1,Fri,Maintain B,4,Dead Bug,3,10 each,45,,`,
     goal: 'endurance',
     level: 'beginner',
     days: 3,
-    weeks: 8,
+    weeks: 9,
     repeat: false,
     equipment: 'Full gym',
-    summary: 'The eight weeks you do before you earn the right to train muscular endurance.',
+    summary: 'The nine weeks you do before you earn the right to train muscular endurance.',
     detail: 'General strength first, always. This is the block that makes a muscular endurance '
       + 'phase safe and worth doing: eight weeks moving from bodyweight competence through to '
       + 'genuinely heavy compound lifting, with single-leg work and core throughout. Weeks one '
-      + 'to three are about movement quality, four to six add load, seven and eight get heavy. '
-      + 'Run it in the off season when aerobic volume is lowest.',
+      + 'to three are about movement quality, four to six add load, week seven backs off, and '
+      + 'eight and nine get genuinely heavy. Run it in the off season when aerobic volume is '
+      + 'lowest, and go straight into a muscular endurance block afterwards.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
 Foundation,1-3,Mon,Full Body A,1,Goblet Squat,3,12,90,7,Own the movement before you load it.
 Foundation,1-3,Mon,Full Body A,2,Push-Up,3,12,90,7,
@@ -312,18 +329,27 @@ Loading,4-6,Fri,Strength C,1,Front Squat,3,8,150,8,
 Loading,4-6,Fri,Strength C,2,Pull-Up,3,6,120,8,
 Loading,4-6,Fri,Strength C,3,Nordic Curl,3,5,120,8,
 Loading,4-6,Fri,Strength C,4,Farmer Carry,3,45s,90,8,Heavy. Stay tall.
-Max Strength,7-8,Mon,Heavy A,1,Back Squat,5,5,210,8.5,The heaviest weeks. Warm up thoroughly.
-Max Strength,7-8,Mon,Heavy A,2,Barbell Bench Press,4,5,180,8.5,
-Max Strength,7-8,Mon,Heavy A,3,Barbell Row,3,6,150,8,
-Max Strength,7-8,Mon,Heavy A,4,Plank,3,60s,45,,
-Max Strength,7-8,Wed,Heavy B,1,Trap Bar Deadlift,5,5,210,8.5,
-Max Strength,7-8,Wed,Heavy B,2,Bulgarian Split Squat,3,8 each,120,8,
-Max Strength,7-8,Wed,Heavy B,3,Overhead Press,4,5,150,8.5,
-Max Strength,7-8,Wed,Heavy B,4,Hanging Leg Raise,3,12,60,8,
-Max Strength,7-8,Fri,Heavy C,1,Front Squat,4,5,180,8.5,
-Max Strength,7-8,Fri,Heavy C,2,Pull-Up,4,5,120,8.5,
-Max Strength,7-8,Fri,Heavy C,3,Nordic Curl,3,6,120,8,
-Max Strength,7-8,Fri,Heavy C,4,Farmer Carry,3,60s,90,8,`,
+Deload,7,Mon,Back Off A,1,Back Squat,2,5,150,5,Half the weight you finished the last block on.
+Deload,7,Mon,Back Off A,2,Barbell Bench Press,2,5,120,5,
+Deload,7,Mon,Back Off A,3,Plank,2,45s,45,,
+Deload,7,Wed,Back Off B,1,Trap Bar Deadlift,2,5,150,5,Move well and leave.
+Deload,7,Wed,Back Off B,2,Overhead Press,2,5,120,5,
+Deload,7,Wed,Back Off B,3,Dead Bug,2,10 each,45,,
+Deload,7,Fri,Back Off C,1,Front Squat,2,5,150,5,
+Deload,7,Fri,Back Off C,2,Pull-Up,2,5,120,5,
+Deload,7,Fri,Back Off C,3,Bird Dog,2,10 each,45,,
+Max Strength,8-9,Mon,Heavy A,1,Back Squat,5,5,210,8.5,The heaviest weeks. Warm up thoroughly.
+Max Strength,8-9,Mon,Heavy A,2,Barbell Bench Press,4,5,180,8.5,
+Max Strength,8-9,Mon,Heavy A,3,Barbell Row,3,6,150,8,
+Max Strength,8-9,Mon,Heavy A,4,Plank,3,60s,45,,
+Max Strength,8-9,Wed,Heavy B,1,Trap Bar Deadlift,5,5,210,8.5,
+Max Strength,8-9,Wed,Heavy B,2,Bulgarian Split Squat,3,8 each,120,8,
+Max Strength,8-9,Wed,Heavy B,3,Overhead Press,4,5,150,8.5,
+Max Strength,8-9,Wed,Heavy B,4,Hanging Leg Raise,3,12,60,8,
+Max Strength,8-9,Fri,Heavy C,1,Front Squat,4,5,180,8.5,
+Max Strength,8-9,Fri,Heavy C,2,Pull-Up,4,5,120,8.5,
+Max Strength,8-9,Fri,Heavy C,3,Nordic Curl,3,6,120,8,
+Max Strength,8-9,Fri,Heavy C,4,Farmer Carry,3,60s,90,8,`,
   },
 
   {
@@ -332,31 +358,42 @@ Max Strength,7-8,Fri,Heavy C,4,Farmer Carry,3,60s,90,8,`,
     goal: 'endurance',
     level: 'intermediate',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Eccentric and single-leg work. For the descents that wreck you.',
+    summary: 'Twelve weeks of eccentric and single-leg work. For the descents that wreck you.',
     detail: 'Downhill running is where trail races are actually lost, and it is eccentric loading '
-      + 'that causes the damage. This week is built around controlled lowering — step-downs, slow '
+      + 'that causes the damage. This block is built around controlled lowering — step-downs, slow '
       + 'Nordics, tempo squats — plus the single-leg stability work that keeps ankles and hips '
-      + 'honest on uneven ground. Expect to be sore for the first fortnight; that is the point, '
-      + 'and it stops once you adapt.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Durability,1,Tue,Eccentric Legs,1,Back Squat,4,6,180,8,Four seconds down on every rep.
-Durability,1,Tue,Eccentric Legs,2,Box Step-Down,4,8 each,90,8,Three seconds to the floor. No dropping.
-Durability,1,Tue,Eccentric Legs,3,Nordic Curl,4,5,120,8,As slow as you can hold it.
-Durability,1,Tue,Eccentric Legs,4,Single-Leg Calf Raise,3,15 each,60,8,Slow lowering.
-Durability,1,Tue,Eccentric Legs,5,Copenhagen Plank,3,25s each,45,,
-Durability,1,Thu,Stability and Core,1,Single-Leg Romanian Deadlift,4,8 each,90,8,
-Durability,1,Thu,Stability and Core,2,Lateral Lunge,3,10 each,90,8,Frontal plane. Trails are not flat.
-Durability,1,Thu,Stability and Core,3,Monster Walk,3,15 each,60,7,
-Durability,1,Thu,Stability and Core,4,Pallof Press,3,10 each,60,8,
-Durability,1,Thu,Stability and Core,5,Side Plank,3,40s each,45,,
-Durability,1,Sat,Power and Carry,1,Trap Bar Deadlift,4,5,180,8,
-Durability,1,Sat,Power and Carry,2,Box Jump,4,4,120,7,Land soft.
-Durability,1,Sat,Power and Carry,3,Walking Lunge,3,12 each,90,8,
-Durability,1,Sat,Power and Carry,4,Farmer Carry,3,60s,90,8,Pack-carrying strength.
-Durability,1,Sat,Power and Carry,5,Hanging Leg Raise,3,12,60,8,`,
+      + 'honest on uneven ground.\n\n'
+      + 'Expect to be sore for the first fortnight; that is the point, and it stops once you adapt. '
+      + 'The deload weeks are not optional here — eccentric work accumulates damage faster than it '
+      + 'feels like it does.',
+    spec: {
+      length: 12,
+      roleset: 'endurance',
+      sessions: [
+        { name: 'Eccentric Legs', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Box Step-Down', 'secondary', 90],
+          ['Nordic Curl', 'accessory', 120],
+          ['Single-Leg Calf Raise', 'isolation', 60],
+          ['Copenhagen Plank', 'hold', 45, '25s each'],
+        ] },
+        { name: 'Stability and Core', day: 'Thu', exercises: [
+          ['Single-Leg Romanian Deadlift', 'main', 90],
+          ['Lateral Lunge', 'secondary', 90],
+          ['Monster Walk', 'isolation', 60],
+          ['Pallof Press', 'accessory', 60],
+          ['Side Plank', 'hold', 45, '40s each'],
+        ] },
+        { name: 'Power and Carry', day: 'Sat', exercises: [
+          ['Trap Bar Deadlift', 'main', 180],
+          ['Box Jump', 'power', 120],
+          ['Walking Lunge', 'accessory', 90],
+          ['Farmer Carry', 'hold', 90, '60s'],
+          ['Hanging Leg Raise', 'isolation', 60],
+        ] },
+      ],
+    },
   },
 
   {
@@ -365,26 +402,34 @@ Durability,1,Sat,Power and Carry,5,Hanging Leg Raise,3,12,60,8,`,
     goal: 'endurance',
     level: 'beginner',
     days: 2,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Heavy legs and the posterior chain cycling never loads.',
-    detail: 'Cycling is a narrow movement: seated, one plane, no impact, and almost no work for '
-      + 'the hamstrings or the bones. Two sessions a week fix what the bike neglects — heavy '
-      + 'bilateral squatting and hinging for power, single-leg work for the imbalance every '
-      + 'cyclist develops, and upper back work to undo the position. Low volume, high load, and '
-      + 'never the day before a hard ride.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Cyclist,1,Tue,Legs and Hinge,1,Back Squat,4,5,180,8,
-Cyclist,1,Tue,Legs and Hinge,2,Romanian Deadlift,3,6,150,8,Hamstrings. The bike does nothing for these.
-Cyclist,1,Tue,Legs and Hinge,3,Bulgarian Split Squat,3,8 each,120,8,
-Cyclist,1,Tue,Legs and Hinge,4,Standing Calf Raise,3,12,75,8,
-Cyclist,1,Tue,Legs and Hinge,5,Plank,3,45s,45,,
-Cyclist,1,Fri,Power and Posture,1,Trap Bar Deadlift,4,5,180,8,
-Cyclist,1,Fri,Power and Posture,2,Box Jump,3,4,120,7,Bone loading. Cycling gives you none.
-Cyclist,1,Fri,Power and Posture,3,Barbell Row,3,8,120,8,Undo the riding position.
-Cyclist,1,Fri,Power and Posture,4,Face Pull,3,15,60,8,
-Cyclist,1,Fri,Power and Posture,5,Hip Thrust,3,8,120,8,`,
+    summary: 'Twelve weeks on the posterior chain and bone loading cycling never gives you.',
+    detail: 'Cycling is a narrow movement: seated, one plane, no impact, and almost no work for the '
+      + 'hamstrings or the bones. Two sessions a week across twelve weeks fix what the bike '
+      + 'neglects.\n\n'
+      + 'Heavy bilateral squatting and hinging for power, single-leg work for the imbalance every '
+      + 'cyclist develops, jumping for bone density, and upper back work to undo the position. Low '
+      + 'volume, high load, and never the day before a hard ride.',
+    spec: {
+      length: 12,
+      roleset: 'endurance',
+      sessions: [
+        { name: 'Legs and Hinge', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Bulgarian Split Squat', 'accessory', 120],
+          ['Standing Calf Raise', 'isolation', 75],
+          ['Plank', 'hold', 45, '45s'],
+        ] },
+        { name: 'Power and Posture', day: 'Fri', exercises: [
+          ['Trap Bar Deadlift', 'main', 180],
+          ['Box Jump', 'power', 120],
+          ['Barbell Row', 'secondary', 120],
+          ['Face Pull', 'isolation', 60],
+          ['Hip Thrust', 'accessory', 120],
+        ] },
+      ],
+    },
   },
 
   {
@@ -393,25 +438,33 @@ Cyclist,1,Fri,Power and Posture,5,Hip Thrust,3,8,120,8,`,
     goal: 'endurance',
     level: 'intermediate',
     days: 2,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Whole-body work that fits round three sports. Shoulders included.',
-    detail: 'Three disciplines already fill the week, so the gym gets two sessions and has to '
-      + 'earn them. Heavy lower body for the bike and run, pulling and shoulder stability for the '
-      + 'swim, and core work that ties the three together. Kept short on purpose — if lifting '
-      + 'starts costing you swim or run quality, cut a set rather than dropping the session.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Triathlon,1,Tue,Lower and Pull,1,Back Squat,4,5,180,8,
-Triathlon,1,Tue,Lower and Pull,2,Romanian Deadlift,3,6,150,8,
-Triathlon,1,Tue,Lower and Pull,3,Pull-Up,3,6,120,8,Swim pull strength.
-Triathlon,1,Tue,Lower and Pull,4,Straight-Arm Pulldown,3,12,60,8,The swim catch.
-Triathlon,1,Tue,Lower and Pull,5,Plank,3,45s,45,,
-Triathlon,1,Fri,Power and Shoulders,1,Trap Bar Deadlift,4,5,180,8,
-Triathlon,1,Fri,Power and Shoulders,2,Single-Leg Romanian Deadlift,3,8 each,90,8,
-Triathlon,1,Fri,Power and Shoulders,3,Seated Dumbbell Shoulder Press,3,8,120,8,
-Triathlon,1,Fri,Power and Shoulders,4,Face Pull,3,15,60,8,Shoulder health. Non-negotiable for swimmers.
-Triathlon,1,Fri,Power and Shoulders,5,Side Plank,3,30s each,45,,`,
+    summary: 'Twelve weeks of whole-body work that fits round three sports.',
+    detail: 'Three disciplines already fill the week, so the gym gets two sessions and has to earn '
+      + 'them. Heavy lower body for the bike and run, pulling and shoulder stability for the swim, '
+      + 'and core work that ties the three together.\n\n'
+      + 'Kept short on purpose and periodised so it still goes somewhere. If lifting starts costing '
+      + 'you swim or run quality, cut a set rather than dropping the session.',
+    spec: {
+      length: 12,
+      roleset: 'endurance',
+      sessions: [
+        { name: 'Lower and Pull', day: 'Tue', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Pull-Up', 'secondary', 120],
+          ['Straight-Arm Pulldown', 'isolation', 60],
+          ['Plank', 'hold', 45, '45s'],
+        ] },
+        { name: 'Power and Shoulders', day: 'Fri', exercises: [
+          ['Trap Bar Deadlift', 'main', 180],
+          ['Single-Leg Romanian Deadlift', 'accessory', 90],
+          ['Seated Dumbbell Shoulder Press', 'secondary', 120],
+          ['Face Pull', 'isolation', 60],
+          ['Side Plank', 'hold', 45, '30s each'],
+        ] },
+      ],
+    },
   },
 
   {
@@ -420,33 +473,48 @@ Triathlon,1,Fri,Power and Shoulders,5,Side Plank,3,30s each,45,,`,
     goal: 'endurance',
     level: 'intermediate',
     days: 4,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym plus sled and erg',
-    summary: 'Strength plus sleds, carries and ergs. For fitness-race formats.',
+    summary: 'Twelve weeks of strength plus sleds, carries and ergs. For fitness-race formats.',
     detail: 'Built for the races that alternate running with functional stations — sled pushes, '
-      + 'carries, wall balls, rowing. Two strength days keep you capable of moving heavy things, '
+      + 'carries, wall balls, rowing. Two strength days keep you capable of moving heavy things; '
       + 'two mixed days train the specific skill of working hard with your heart rate already '
-      + 'buried. The compromise is real: you will not get as strong as a pure strength plan or '
-      + 'as fit as a pure running one, which is exactly the trade these events ask for.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Hybrid,1,Mon,Strength Lower,1,Back Squat,4,5,180,8,
-Hybrid,1,Mon,Strength Lower,2,Romanian Deadlift,3,8,150,8,
-Hybrid,1,Mon,Strength Lower,3,Walking Lunge,3,12 each,120,8,
-Hybrid,1,Mon,Strength Lower,4,Standing Calf Raise,3,15,60,8,
-Hybrid,1,Tue,Engine,1,Ski Erg,5,60s,60,8,Hard minute. Easy minute. Repeat.
-Hybrid,1,Tue,Engine,2,Sled Push,6,30s,90,9,Heavy. Short. Brutal.
-Hybrid,1,Tue,Engine,3,Farmer Carry,4,45s,60,8,
-Hybrid,1,Tue,Engine,4,Wall Ball,4,20,60,8,
-Hybrid,1,Thu,Strength Upper,1,Barbell Bench Press,4,5,180,8,
-Hybrid,1,Thu,Strength Upper,2,Barbell Row,4,8,150,8,
-Hybrid,1,Thu,Strength Upper,3,Overhead Press,3,8,120,8,
-Hybrid,1,Thu,Strength Upper,4,Pull-Up,3,8,120,8,
-Hybrid,1,Sat,Mixed,1,Rowing Machine,4,240s,90,8,Four minutes hard. Hold the split.
-Hybrid,1,Sat,Mixed,2,Burpee,5,15,60,9,
-Hybrid,1,Sat,Mixed,3,Sandbag Carry,4,60s,90,8,
-Hybrid,1,Sat,Mixed,4,Kettlebell Swing,5,20,60,8,
-Hybrid,1,Sat,Mixed,5,Plank,3,60s,45,,`,
+      + 'buried.\n\n'
+      + 'The strength days periodise properly across the block while the conditioning days hold '
+      + 'their shape, which is the right way round: you want the engine work consistent and the '
+      + 'lifting progressive. The compromise is real — you will not get as strong as a pure '
+      + 'strength block or as fit as a pure running one, which is exactly the trade these events '
+      + 'ask for.',
+    spec: {
+      length: 12,
+      roleset: 'endurance',
+      sessions: [
+        { name: 'Strength Lower', day: 'Mon', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Romanian Deadlift', 'secondary', 150],
+          ['Walking Lunge', 'accessory', 120],
+          ['Standing Calf Raise', 'isolation', 60],
+        ] },
+        { name: 'Engine', day: 'Tue', exercises: [
+          ['Ski Erg', 'hold', 60, '60s'],
+          ['Sled Push', 'hold', 90, '30s'],
+          ['Farmer Carry', 'hold', 60, '45s'],
+          ['Wall Ball', 'accessory', 60],
+        ] },
+        { name: 'Strength Upper', day: 'Thu', exercises: [
+          ['Barbell Bench Press', 'main', 180],
+          ['Barbell Row', 'secondary', 150],
+          ['Overhead Press', 'accessory', 120],
+          ['Pull-Up', 'accessory', 120],
+        ] },
+        { name: 'Mixed', day: 'Sat', exercises: [
+          ['Rowing Machine', 'hold', 90, '240s'],
+          ['Burpee', 'accessory', 60],
+          ['Sandbag Carry', 'hold', 90, '60s'],
+          ['Kettlebell Swing', 'accessory', 60],
+          ['Plank', 'hold', 45, '60s'],
+        ] },
+      ],
+    },
   },
 
   {

@@ -8,8 +8,9 @@ import { STRENGTH } from './strength.js';
 import { MUSCLE } from './muscle.js';
 import { ENDURANCE } from './endurance.js';
 import { MINIMAL } from './minimal.js';
+import { expand } from './periodise.js';
 
-export const PROGRAMS = [...STRENGTH, ...MUSCLE, ...ENDURANCE, ...MINIMAL];
+export const PROGRAMS = expand([...STRENGTH, ...MUSCLE, ...ENDURANCE, ...MINIMAL]);
 
 export const GOALS = [
   { id: 'strength', label: 'Strength' },

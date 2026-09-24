@@ -143,3 +143,87 @@ test('the gym muscular endurance block matches the published progression', () =>
 test('the invented mountain block is gone now the real protocol is in', () => {
   assert.equal(getProgram('muscular-endurance-mountain'), null);
 });
+
+/* ------------------------------------------------------------ periodisation */
+
+// A repeating one-week template is not a program. The app has no progression
+// engine — it shows exactly what the plan says — so a week on a loop shows the
+// same targets forever and the athlete stalls. These rules keep that out.
+
+// The only plans allowed to be short or to repeat, each with its reason. A new
+// entry here needs a real argument, not a shrug.
+const EXEMPT = new Map([
+  // a stopgap for the fortnight you are away, not a block
+  ['travel-minimal', 'short'],
+  // the cycle repeats on purpose: the training max it is calculated from rises
+  // every time round, so the same percentages mean heavier bars
+  ['percentage-cycle', 'repeat'],
+]);
+const SHORT_BY_DESIGN = new Set([...EXEMPT].filter(([, why]) => why === 'short').map(([id]) => id));
+
+/** Total prescribed sets in one week — a rough measure of that week's load. */
+function weekLoad(plan, week) {
+  let sets = 0;
+  for (const key of week.days) {
+    if (!key) continue;
+    for (const ex of plan.sessions[key].exercises) sets += ex.sets;
+  }
+  return sets;
+}
+
+/** What a week actually prescribes, so two weeks can be compared. */
+function weekSignature(plan, week) {
+  return JSON.stringify(week.days.map((key) => (key
+    ? plan.sessions[key].exercises.map((e) => [e.name, e.sets, e.reps, e.restSec])
+    : null)));
+}
+
+test('programs are blocks, not a single week on repeat', () => {
+  for (const def of PROGRAMS) {
+    if (SHORT_BY_DESIGN.has(def.id)) continue;
+    assert.ok(def.weeks >= 4, `${def.id} is only ${def.weeks} week(s) long`);
+  }
+});
+
+test('nothing repeats a cycle long enough to stagnate on', () => {
+  for (const def of PROGRAMS) {
+    if (!def.repeat) continue;
+    assert.ok(EXEMPT.has(def.id), `${def.id} repeats but has no stated reason to`);
+  }
+});
+
+test('a block actually changes across its weeks', () => {
+  for (const def of PROGRAMS) {
+    if (SHORT_BY_DESIGN.has(def.id)) continue;
+    const plan = parsed.get(def.id);
+    const shapes = new Set(plan.weeks.map((w) => weekSignature(plan, w)));
+    const wanted = def.weeks >= 8 ? 3 : 2;
+    assert.ok(shapes.size >= wanted,
+      `${def.id} runs ${def.weeks} weeks but only ${shapes.size} distinct week(s) — that is a template on repeat`);
+  }
+});
+
+test('every block of six weeks or more contains a real deload', () => {
+  for (const def of PROGRAMS) {
+    if (SHORT_BY_DESIGN.has(def.id) || def.weeks < 6) continue;
+    const plan = parsed.get(def.id);
+    const loads = plan.weeks.map((w) => weekLoad(plan, w));
+    const peak = Math.max(...loads);
+    const easiest = Math.min(...loads);
+    assert.ok(easiest <= peak * 0.75,
+      `${def.id} never backs off — lightest week is ${easiest} sets against a peak of ${peak}`);
+  }
+});
+
+test('the load goes somewhere across a block', () => {
+  // the first week and the last working week must not prescribe the same thing
+  for (const def of PROGRAMS) {
+    if (SHORT_BY_DESIGN.has(def.id)) continue;
+    const plan = parsed.get(def.id);
+    assert.notEqual(
+      weekSignature(plan, plan.weeks[0]),
+      weekSignature(plan, plan.weeks.at(-1)),
+      `${def.id} finishes on exactly the same prescription it started with`,
+    );
+  }
+});

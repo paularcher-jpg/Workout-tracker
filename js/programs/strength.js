@@ -16,27 +16,28 @@ export const STRENGTH = [
     goal: 'strength',
     level: 'beginner',
     days: 3,
-    weeks: 2,
-    repeat: true,
     equipment: 'Barbell',
-    summary: 'Two alternating full-body sessions. Add weight every time.',
-    detail: 'The simplest thing that works, and the fastest progress you will ever make. '
-      + 'Three sessions a week alternating A and B, so you squat every time you train. '
-      + 'Add 2.5kg to the bar each session while you can; when a lift stalls twice, drop it '
-      + '10% and build back. Expect this to run for two to four months before it stops giving.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Odd weeks,1,Mon Fri,Full Body A,1,Back Squat,3,5,180,8,Add 2.5kg from last session.
-Odd weeks,1,Mon Fri,Full Body A,2,Barbell Bench Press,3,5,180,8,Pause briefly on the chest.
-Odd weeks,1,Mon Fri,Full Body A,3,Deadlift,1,5,240,8,One hard set only. Reset each rep.
-Odd weeks,1,Wed,Full Body B,1,Back Squat,3,5,180,8,Same bar speed as Monday.
-Odd weeks,1,Wed,Full Body B,2,Overhead Press,3,5,180,8,Squeeze glutes. No leg drive.
-Odd weeks,1,Wed,Full Body B,3,Power Clean,5,3,180,7,Speed over load. Stop if it slows.
-Even weeks,2,Mon Fri,Full Body B,1,Back Squat,3,5,180,8,Add 2.5kg from last session.
-Even weeks,2,Mon Fri,Full Body B,2,Overhead Press,3,5,180,8,Squeeze glutes. No leg drive.
-Even weeks,2,Mon Fri,Full Body B,3,Power Clean,5,3,180,7,Speed over load. Stop if it slows.
-Even weeks,2,Wed,Full Body A,1,Back Squat,3,5,180,8,Same bar speed as Monday.
-Even weeks,2,Wed,Full Body A,2,Barbell Bench Press,3,5,180,8,Pause briefly on the chest.
-Even weeks,2,Wed,Full Body A,3,Deadlift,1,5,240,8,One hard set only. Reset each rep.`,
+    summary: 'Twelve weeks of two alternating full-body sessions, fives down to doubles.',
+    detail: 'The simplest thing that works, given an end. Three sessions a week alternating A and '
+      + 'B, so you squat every time you train. Odd and even weeks swap which session runs twice, '
+      + 'so neither is always the one you do tired.\n\n'
+      + 'Add 2.5kg to the bar each session while you can — that is the real engine of a beginner '
+      + 'block and no written plan can do it for you. What the block adds is a shape: fives for '
+      + 'four weeks, a deload, threes for four more, another deload, then two weeks of doubles to '
+      + 'see what you built. If a lift stalls twice inside a phase, drop it ten per cent and build '
+      + 'back.',
+    alternating: {
+      a: { name: 'Full Body A', exercises: [
+        ['Back Squat', 'main', 180],
+        ['Barbell Bench Press', 'main', 180, 'Pause briefly on the chest.'],
+        ['Deadlift', 'secondary', 240, 'Reset every rep.'],
+      ] },
+      b: { name: 'Full Body B', exercises: [
+        ['Back Squat', 'main', 180],
+        ['Overhead Press', 'main', 180, 'Squeeze the glutes. No leg drive.'],
+        ['Power Clean', 'power', 180, 'Speed over load. Stop the set if the bar slows.'],
+      ] },
+    },
   },
 
   {
@@ -45,53 +46,64 @@ Even weeks,2,Wed,Full Body A,3,Deadlift,1,5,240,8,One hard set only. Reset each 
     goal: 'strength',
     level: 'beginner',
     days: 3,
-    weeks: 2,
-    repeat: true,
     equipment: 'Barbell',
-    summary: 'Five sets of five on three lifts. More volume than a pure 3×5.',
-    detail: 'The other classic beginner template. Five sets of five builds more muscle than '
-      + 'three sets of five and stalls a little sooner, which is a fair trade. Alternate A and B '
-      + 'across three sessions a week. Add 2.5kg a session on the upper body lifts and 5kg on '
-      + 'squats and deadlifts for as long as every rep moves well.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Odd weeks,1,Mon Fri,Workout A,1,Back Squat,5,5,180,8,All five sets at the same weight.
-Odd weeks,1,Mon Fri,Workout A,2,Barbell Bench Press,5,5,180,8,Elbows tucked to about 45 degrees.
-Odd weeks,1,Mon Fri,Workout A,3,Barbell Row,5,5,150,8,Bar to the lower ribs. Torso still.
-Odd weeks,1,Wed,Workout B,1,Back Squat,5,5,180,8,All five sets at the same weight.
-Odd weeks,1,Wed,Workout B,2,Overhead Press,5,5,180,8,Head through at lockout.
-Odd weeks,1,Wed,Workout B,3,Deadlift,1,5,240,8,One set. Stop if the back rounds.
-Even weeks,2,Mon Fri,Workout B,1,Back Squat,5,5,180,8,All five sets at the same weight.
-Even weeks,2,Mon Fri,Workout B,2,Overhead Press,5,5,180,8,Head through at lockout.
-Even weeks,2,Mon Fri,Workout B,3,Deadlift,1,5,240,8,One set. Stop if the back rounds.
-Even weeks,2,Wed,Workout A,1,Back Squat,5,5,180,8,All five sets at the same weight.
-Even weeks,2,Wed,Workout A,2,Barbell Bench Press,5,5,180,8,Elbows tucked to about 45 degrees.
-Even weeks,2,Wed,Workout A,3,Barbell Row,5,5,150,8,Bar to the lower ribs. Torso still.`,
+    summary: 'Twelve weeks of five sets of five, stepping down to heavy doubles.',
+    detail: 'The other classic beginner template, run as a block. Five sets across builds more '
+      + 'muscle than three and stalls a little sooner, which is a fair trade.\n\n'
+      + 'Alternate A and B across three sessions a week, adding 2.5kg a session on the upper body '
+      + 'lifts and 5kg on squats and deadlifts for as long as every rep moves well. The block '
+      + 'steps the main lifts from fives to triples to doubles, with a deload before each change, '
+      + 'so you get a proper run at heavy weight rather than grinding fives until you stall.',
+    alternating: {
+      a: { name: 'Workout A', exercises: [
+        ['Back Squat', 'main', 180],
+        ['Barbell Bench Press', 'main', 180, 'Elbows tucked to about 45 degrees.'],
+        ['Barbell Row', 'secondary', 150, 'Bar to the lower ribs. Torso still.'],
+      ] },
+      b: { name: 'Workout B', exercises: [
+        ['Back Squat', 'main', 180],
+        ['Overhead Press', 'main', 180, 'Head through at lockout.'],
+        ['Deadlift', 'secondary', 240, 'Stop the set if the back rounds.'],
+      ] },
+    },
   },
 
   {
     id: 'ramping-5x5',
-    name: 'Ramping 5×5',
+    name: 'Ramping Strength',
     goal: 'strength',
     level: 'intermediate',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Barbell',
-    summary: 'Heavy, light and record day each week. The step up from linear.',
-    detail: 'When adding weight every session stops working, add it every week instead. '
-      + 'Monday is the volume day, Wednesday is deliberately light so you recover, and Friday '
-      + 'you set a small record. Sets ramp up to the top weight rather than sitting at one load, '
-      + 'which lets you handle heavier bars without burying yourself.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Ramping 5x5,1,Mon,Heavy,1,Back Squat,5,5,180,8,Ramp up. Only the last set is hard.
-Ramping 5x5,1,Mon,Heavy,2,Barbell Bench Press,5,5,180,8,Ramp to the same top set as last week plus 2.5kg.
-Ramping 5x5,1,Mon,Heavy,3,Barbell Row,5,5,150,8,Ramp alongside the bench.
-Ramping 5x5,1,Wed,Light,1,Back Squat,4,5,150,6,Stop at 80% of Monday's top set.
-Ramping 5x5,1,Wed,Light,2,Overhead Press,4,5,150,7,Ramp to a comfortable top set.
-Ramping 5x5,1,Wed,Light,3,Deadlift,4,5,210,7,Ramp. Leave plenty in the tank.
-Ramping 5x5,1,Fri,Record,1,Back Squat,4,5,210,9,Four ramping sets then one triple above Monday.
-Ramping 5x5,1,Fri,Record,2,Barbell Bench Press,4,5,210,9,Same. A small record beats a big miss.
-Ramping 5x5,1,Fri,Record,3,Barbell Row,4,5,150,8,Ramp to a heavy five.`,
+    summary: 'Twelve weeks of heavy, light and record days. The step up from linear.',
+    detail: 'When adding weight every session stops working, add it every week instead. Monday is '
+      + 'the volume day, Wednesday is deliberately light so you recover, and Friday you set a '
+      + 'small record.\n\n'
+      + 'Sets ramp up to the top weight rather than sitting at one load, which lets you handle '
+      + 'heavier bars without burying yourself. Across the block the top-set target moves from '
+      + 'fives to triples to doubles, so the records you are chasing on Friday change shape as you '
+      + 'get stronger.',
+    spec: {
+      length: 12,
+      roleset: 'strength',
+      sessions: [
+        { name: 'Heavy', day: 'Mon', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Barbell Bench Press', 'main', 180],
+          ['Barbell Row', 'secondary', 150],
+        ] },
+        { name: 'Light', day: 'Wed', exercises: [
+          ['Back Squat', 'accessory', 150],
+          ['Overhead Press', 'secondary', 150],
+          ['Deadlift', 'accessory', 210],
+        ] },
+        { name: 'Record', day: 'Fri', exercises: [
+          ['Back Squat', 'main', 210],
+          ['Barbell Bench Press', 'main', 210],
+          ['Chin-Up', 'accessory', 120],
+        ] },
+      ],
+    },
   },
 
   {
@@ -100,24 +112,36 @@ Ramping 5x5,1,Fri,Record,3,Barbell Row,4,5,150,8,Ramp to a heavy five.`,
     goal: 'strength',
     level: 'intermediate',
     days: 3,
-    weeks: 1,
-    repeat: true,
     equipment: 'Barbell',
-    summary: 'One brutal volume day, one easy day, one single heavy set.',
-    detail: 'A week with three jobs. Monday accumulates the work that drives adaptation. '
-      + 'Wednesday is genuinely light and exists only so Friday is possible. Friday you take '
-      + 'one heavy set of five and try to beat last week by the smallest margin that counts. '
-      + 'Ruthless about recovery, and it runs for months if you respect the light day.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Undulating,1,Mon,Volume,1,Back Squat,5,5,240,8,All five sets at 90% of Friday's top set.
-Undulating,1,Mon,Volume,2,Barbell Bench Press,5,5,210,8,Same weight across. This is the hard day.
-Undulating,1,Mon,Volume,3,Barbell Row,5,5,150,8,Keep it strict.
-Undulating,1,Wed,Light,1,Back Squat,2,5,150,6,80% of Monday. Move well and leave.
-Undulating,1,Wed,Light,2,Overhead Press,3,5,180,8,This is your pressing progression day.
-Undulating,1,Wed,Light,3,Chin-Up,3,8,120,8,Add weight when eight is easy.
-Undulating,1,Fri,Intensity,1,Back Squat,1,5,300,9.5,One set of five. Beat last Friday.
-Undulating,1,Fri,Intensity,2,Barbell Bench Press,1,5,300,9.5,One set of five. Beat last Friday.
-Undulating,1,Fri,Intensity,3,Deadlift,1,5,300,9,One set. Every rep from a dead stop.`,
+    summary: 'Twelve weeks of one brutal volume day, one easy day, one heavy single set.',
+    detail: 'A week with three jobs, repeated across a block that gets heavier. Monday accumulates '
+      + 'the work that drives adaptation. Wednesday is genuinely light and exists only so Friday is '
+      + 'possible. Friday you take one heavy set and try to beat last week by the smallest margin '
+      + 'that counts.\n\n'
+      + 'Ruthless about recovery, and it runs for months if you respect the light day. The block '
+      + 'moves the Friday target from fives to triples to doubles, which is what stops the whole '
+      + 'thing stalling around week six.',
+    spec: {
+      length: 12,
+      roleset: 'strength',
+      sessions: [
+        { name: 'Volume', day: 'Mon', exercises: [
+          ['Back Squat', 'main', 240],
+          ['Barbell Bench Press', 'main', 210],
+          ['Barbell Row', 'secondary', 150],
+        ] },
+        { name: 'Light', day: 'Wed', exercises: [
+          ['Back Squat', 'isolation', 150],
+          ['Overhead Press', 'secondary', 180],
+          ['Chin-Up', 'accessory', 120],
+        ] },
+        { name: 'Intensity', day: 'Fri', exercises: [
+          ['Back Squat', 'power', 300],
+          ['Barbell Bench Press', 'power', 300],
+          ['Deadlift', 'main', 300],
+        ] },
+      ],
+    },
   },
 
   {
@@ -200,28 +224,40 @@ Week 4 deload,4,Fri,Squat Day,2,Lying Leg Curl,3,10,75,6,`,
     goal: 'strength',
     level: 'beginner',
     days: 4,
-    weeks: 1,
-    repeat: true,
     equipment: 'Full gym',
-    summary: 'Every lift gets a heavy day and a volume day. Three tiers per session.',
+    summary: 'Twelve weeks where every lift gets a heavy day and a volume day.',
     detail: 'Each session has one heavy main lift, one moderate lift for volume, and light '
-      + 'accessory work. Over four sessions every big lift appears twice, once heavy and once '
-      + 'for reps. Progress the heavy tier until you miss, then change the rep scheme rather '
-      + 'than the weight: fives become doubles, doubles become singles, then reset heavier. '
-      + 'Much harder to stall out than a plain linear plan.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Tiered,1,Mon,Day 1,1,Back Squat,5,3+,180,8.5,Heavy tier. Last set to a hard rep. When you miss switch to 6x2.
-Tiered,1,Mon,Day 1,2,Barbell Bench Press,3,10,120,7,Volume tier. Start light. Add weight weekly.
-Tiered,1,Mon,Day 1,3,Lat Pulldown,3,15+,75,8,Accessory tier. Last set as many as you can.
-Tiered,1,Tue,Day 2,1,Overhead Press,5,3+,180,8.5,Heavy tier. Last set to a hard rep.
-Tiered,1,Tue,Day 2,2,Deadlift,3,10,150,7,Volume tier. Keep the back flat.
-Tiered,1,Tue,Day 2,3,Dumbbell Row,3,15+,75,8,Accessory tier.
-Tiered,1,Thu,Day 3,1,Barbell Bench Press,5,3+,180,8.5,Heavy tier. Last set to a hard rep.
-Tiered,1,Thu,Day 3,2,Back Squat,3,10,150,7,Volume tier.
-Tiered,1,Thu,Day 3,3,Lat Pulldown,3,15+,75,8,Accessory tier.
-Tiered,1,Fri,Day 4,1,Deadlift,5,3+,210,8.5,Heavy tier. Reset each rep.
-Tiered,1,Fri,Day 4,2,Overhead Press,3,10,120,7,Volume tier.
-Tiered,1,Fri,Day 4,3,Dumbbell Row,3,15+,75,8,Accessory tier.`,
+      + 'accessory work. Over four sessions every big lift appears twice, once heavy and once for '
+      + 'reps.\n\n'
+      + 'The block walks the heavy tier down the rep ladder — fives, then triples, then doubles — '
+      + 'with deloads between, so you change the scheme on a plan rather than because you missed a '
+      + 'rep. Much harder to stall out than a plain linear plan.',
+    spec: {
+      length: 12,
+      roleset: 'strength',
+      sessions: [
+        { name: 'Day 1', day: 'Mon', exercises: [
+          ['Back Squat', 'main', 180],
+          ['Barbell Bench Press', 'accessory', 120],
+          ['Lat Pulldown', 'isolation', 75],
+        ] },
+        { name: 'Day 2', day: 'Tue', exercises: [
+          ['Overhead Press', 'main', 180],
+          ['Deadlift', 'accessory', 150],
+          ['Dumbbell Row', 'isolation', 75],
+        ] },
+        { name: 'Day 3', day: 'Thu', exercises: [
+          ['Barbell Bench Press', 'main', 180],
+          ['Back Squat', 'accessory', 150],
+          ['Lat Pulldown', 'isolation', 75],
+        ] },
+        { name: 'Day 4', day: 'Fri', exercises: [
+          ['Deadlift', 'main', 210],
+          ['Overhead Press', 'accessory', 120],
+          ['Dumbbell Row', 'isolation', 75],
+        ] },
+      ],
+    },
   },
 
   {
@@ -283,29 +319,54 @@ Test,6,Fri,Press Test,1,Overhead Press,5,1,240,10,Work up in singles to a new be
   },
 
   {
-    id: 'three-week-specialisation',
-    name: 'Three-Week Specialisation',
+    id: 'squat-specialisation',
+    name: 'Squat Specialisation',
     goal: 'strength',
     level: 'advanced',
     days: 4,
-    weeks: 3,
+    weeks: 4,
     repeat: false,
     equipment: 'Barbell',
-    summary: 'Brutal high-frequency block on one lift. Three weeks then stop.',
+    summary: 'Four weeks of squatting four times a week. Brutal, effective, then stop.',
     detail: 'A short overload block that hammers one lift four times a week at rising intensity '
-      + 'and falling volume: sixes, fives, fours, then triples. It works, it hurts, and it is not '
-      + 'something to run twice in a row. Use your true max to set the percentages, add a little '
-      + 'each week, and test about a week after you finish. Only worth doing if your recovery, '
-      + 'sleep and food are genuinely in order.',
+      + 'and falling volume: sixes, fives, fours, then triples, each day at a different '
+      + 'percentage.\n\n'
+      + 'Three loading weeks that add both weight and sets, then a deload week that finishes with '
+      + 'a test. It works, it hurts, and it is not something to run twice in a row. Only worth '
+      + 'doing if your recovery, sleep and food are genuinely in order.',
     csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Specialisation,1-3,Mon,Sixes,1,Back Squat,6,6,180,8,70% of your max. Add 5kg next week.
-Specialisation,1-3,Mon,Sixes,2,Chin-Up,3,8,90,7,Everything else stays light.
-Specialisation,1-3,Tue,Fives,1,Back Squat,7,5,180,8.5,75% of your max.
-Specialisation,1-3,Tue,Fives,2,Barbell Row,3,10,90,7,
-Specialisation,1-3,Thu,Fours,1,Back Squat,8,4,210,9,80% of your max.
-Specialisation,1-3,Thu,Fours,2,Face Pull,3,15,60,7,
-Specialisation,1-3,Sat,Triples,1,Back Squat,10,3,240,9.5,85% of your max. This is the hard one.
-Specialisation,1-3,Sat,Triples,2,Plank,3,45s,45,,`,
+Week 1,1,Mon,Sixes — Week 1,1,Back Squat,6,6,210,8.5,70% 75% 80% and 85% of your max across the four days.
+Week 1,1,Mon,Sixes — Week 1,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 1,1,Tue,Fives — Week 1,1,Back Squat,7,5,210,8.5,70% 75% 80% and 85% of your max across the four days.
+Week 1,1,Tue,Fives — Week 1,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 1,1,Thu,Fours — Week 1,1,Back Squat,8,4,210,8.5,70% 75% 80% and 85% of your max across the four days.
+Week 1,1,Thu,Fours — Week 1,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 1,1,Sat,Triples — Week 1,1,Back Squat,10,3,210,8.5,70% 75% 80% and 85% of your max across the four days.
+Week 1,1,Sat,Triples — Week 1,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 2,2,Mon,Sixes — Week 2,1,Back Squat,7,6,210,8.5,Same percentages plus 5kg. One more set on the first three days.
+Week 2,2,Mon,Sixes — Week 2,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 2,2,Tue,Fives — Week 2,1,Back Squat,8,5,210,8.5,Same percentages plus 5kg. One more set on the first three days.
+Week 2,2,Tue,Fives — Week 2,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 2,2,Thu,Fours — Week 2,1,Back Squat,9,4,210,8.5,Same percentages plus 5kg. One more set on the first three days.
+Week 2,2,Thu,Fours — Week 2,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 2,2,Sat,Triples — Week 2,1,Back Squat,10,3,210,8.5,Same percentages plus 5kg. One more set on the first three days.
+Week 2,2,Sat,Triples — Week 2,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 3,3,Mon,Sixes — Week 3,1,Back Squat,8,6,210,8.5,Plus another 5kg. This is the hardest week you will do.
+Week 3,3,Mon,Sixes — Week 3,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 3,3,Tue,Fives — Week 3,1,Back Squat,9,5,210,8.5,Plus another 5kg. This is the hardest week you will do.
+Week 3,3,Tue,Fives — Week 3,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 3,3,Thu,Fours — Week 3,1,Back Squat,10,4,210,8.5,Plus another 5kg. This is the hardest week you will do.
+Week 3,3,Thu,Fours — Week 3,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 3,3,Sat,Triples — Week 3,1,Back Squat,10,3,210,8.5,Plus another 5kg. This is the hardest week you will do.
+Week 3,3,Sat,Triples — Week 3,2,Chin-Up,3,8,90,7,Everything else stays light.
+Week 4 test,4,Mon,Sixes — Test,1,Back Squat,3,3,240,6,Deload week. 60% only. Then test a single on Saturday.
+Week 4 test,4,Mon,Sixes — Test,2,Plank,2,45s,45,,
+Week 4 test,4,Tue,Fives — Test,1,Back Squat,3,3,240,6,Deload week. 60% only. Then test a single on Saturday.
+Week 4 test,4,Tue,Fives — Test,2,Plank,2,45s,45,,
+Week 4 test,4,Thu,Fours — Test,1,Back Squat,3,3,240,6,Deload week. 60% only. Then test a single on Saturday.
+Week 4 test,4,Thu,Fours — Test,2,Plank,2,45s,45,,
+Week 4 test,4,Sat,Triples — Test,1,Back Squat,3,3,240,6,Deload week. 60% only. Then test a single on Saturday.
+Week 4 test,4,Sat,Triples — Test,2,Plank,2,45s,45,,`,
   },
 
   {
@@ -314,26 +375,25 @@ Specialisation,1-3,Sat,Triples,2,Plank,3,45s,45,,`,
     goal: 'strength',
     level: 'beginner',
     days: 3,
-    weeks: 2,
-    repeat: true,
     equipment: 'Barbell',
-    summary: 'Linear progression with an AMRAP top set and heavy pressing.',
-    detail: 'A linear plan where the last set of every main lift is taken for as many reps as '
-      + 'you can manage. That gives you a built-in signal: hit ten or more and jump the weight '
-      + 'twice as much next time. Pressing appears every session, so it suits anyone whose '
-      + 'overhead strength lags behind their squat.',
-    csv: `Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
-Odd weeks,1,Mon Fri,Session A,1,Overhead Press,3,5/5/5+,180,9,Last set as many reps as possible.
-Odd weeks,1,Mon Fri,Session A,2,Back Squat,3,5/5/5+,210,9,Last set as many reps as possible.
-Odd weeks,1,Mon Fri,Session A,3,Chin-Up,3,8,120,8,Add weight when you clear eight.
-Odd weeks,1,Wed,Session B,1,Barbell Bench Press,3,5/5/5+,180,9,Last set as many reps as possible.
-Odd weeks,1,Wed,Session B,2,Deadlift,1,5+,300,9,One set. Stop when form goes.
-Odd weeks,1,Wed,Session B,3,Barbell Row,3,8,120,8,
-Even weeks,2,Mon Fri,Session B,1,Barbell Bench Press,3,5/5/5+,180,9,Last set as many reps as possible.
-Even weeks,2,Mon Fri,Session B,2,Deadlift,1,5+,300,9,One set. Stop when form goes.
-Even weeks,2,Mon Fri,Session B,3,Barbell Row,3,8,120,8,
-Even weeks,2,Wed,Session A,1,Overhead Press,3,5/5/5+,180,9,Last set as many reps as possible.
-Even weeks,2,Wed,Session A,2,Back Squat,3,5/5/5+,210,9,Last set as many reps as possible.
-Even weeks,2,Wed,Session A,3,Chin-Up,3,8,120,8,`,
+    summary: 'Twelve weeks with pressing every session and a heavy finish.',
+    detail: 'A linear block for anyone whose overhead strength lags behind their squat. Pressing '
+      + 'of one kind or another appears every session, and the accessory work is all pulling to '
+      + 'keep the shoulders honest.\n\n'
+      + 'Take the last set of each main lift close to a hard rep — if you clear the target on every '
+      + 'set comfortably, jump the weight twice as much next session. The block runs fives, then '
+      + 'threes, then doubles, with deloads between.',
+    alternating: {
+      a: { name: 'Session A', exercises: [
+        ['Overhead Press', 'main', 180],
+        ['Back Squat', 'main', 210],
+        ['Chin-Up', 'accessory', 120, 'Add weight when you clear the target.'],
+      ] },
+      b: { name: 'Session B', exercises: [
+        ['Barbell Bench Press', 'main', 180],
+        ['Deadlift', 'secondary', 300, 'Every rep from a dead stop.'],
+        ['Barbell Row', 'accessory', 120],
+      ] },
+    },
   },
 ];
