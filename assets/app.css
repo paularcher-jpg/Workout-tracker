@@ -47,6 +47,8 @@
   --done-wash: #E4F1E9;
   --done-edge: #B4DCC4;
   --on-done: #FFFFFF;
+  /* a switch that is on: green in both themes, deep enough to hold a white knob */
+  --switch-on: #14743F;
 
   /* Beating your best is the one warm moment. */
   --ember: #A34A00;
@@ -97,6 +99,7 @@
     --done-wash: #14301F;
     --done-edge: #2A6B45;
     --on-done: #07210F;
+    --switch-on: #2E9E5F;
     --ember: #FFA55C;
     --ember-hot: #FF8A3D;
     --ember-wash: #33220F;
@@ -800,11 +803,18 @@ textarea.input { min-height: 96px; resize: vertical; }
   background: var(--text-3);
   transition: transform 0.28s var(--ease-exp), background 0.24s;
 }
+/* On is green in both themes. It used to borrow the accent, which in dark mode
+   is near-white — under a white knob the whole switch vanished. */
 .switch-input:checked ~ .switch-track {
-  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 130%);
+  background: var(--switch-on);
   border-color: transparent;
 }
-.switch-input:checked ~ .switch-track::after { transform: translateX(19px); background: #fff; }
+.switch-input:checked ~ .switch-track::after {
+  transform: translateX(19px);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+.switch-input:focus-visible ~ .switch-track { outline: 2px solid var(--switch-on); outline-offset: 2px; }
 
 /* ------------------------------------------------------------------ sheet */
 

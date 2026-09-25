@@ -1064,6 +1064,29 @@ await step('it is taken again after the phone drops it', async () => {
   await page.waitForFunction(() => window.__wake.filter((e) => e === 'request:screen').length >= 2,
     null, { timeout: 4000 });
 });
+await page.locator('.tab[data-tab="settings"]').click();
+await step('an on switch is green and its knob stands out, in dark mode', async () => {
+  // the tests run in dark mode, which is where an accent-coloured track went
+  // near-white under a white knob and the whole switch disappeared
+  const m = await page.evaluate(() => {
+    const rgb = (c) => c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+    const lum = ([r, g, b]) => {
+      const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+    const input = [...document.querySelectorAll('.switch-input')].find((i) => i.checked);
+    const track = input.nextElementSibling;
+    const t = rgb(getComputedStyle(track).backgroundColor);
+    const k = rgb(getComputedStyle(track, '::after').backgroundColor);
+    const c = rgb(getComputedStyle(track.closest('.card')).backgroundColor);
+    return { t, knob: ratio(k, t), card: ratio(t, c) };
+  });
+  const [r, g, b] = m.t;
+  if (!(g > r + 40 && g > b + 20)) throw new Error(`on track is not green: rgb(${m.t})`);
+  if (m.knob < 3) throw new Error(`knob barely visible against the track: ${m.knob.toFixed(2)}:1`);
+  if (m.card < 3) throw new Error(`track barely visible against the card: ${m.card.toFixed(2)}:1`);
+});
 await step('turning it off in Settings lets the screen sleep', async () => {
   await page.locator('.tab[data-tab="settings"]').click();
   const row = page.locator('label.switch', { hasText: 'Keep the screen on' });
