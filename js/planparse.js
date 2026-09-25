@@ -6,7 +6,7 @@
 // so a session used by several weeks becomes one routine, not a copy per week.
 
 import { list, getState, upsert, uid, addCustomExercise } from './state.js';
-import { slugify } from './exercises.js';
+import { slugify, aliasId } from './exercises.js';
 import { newProgram, setActiveProgram, toISODate, mondayOf } from './program.js';
 import { describeReps } from './workout.js';
 export { describeReps };
@@ -30,7 +30,11 @@ export function resolveExerciseName(name) {
   const library = list('exercises');
   const slug = slugify(name);
   const target = normaliseName(name);
-  const found = library.find((ex) => ex.id === slug || normaliseName(ex.name) === target);
+  // another name for a library exercise is that exercise: a plan that says
+  // "Dumbbell Lateral Raise" logs to Lateral Raise rather than a lookalike
+  const alias = aliasId(name);
+  const found = library.find((ex) => ex.id === slug || normaliseName(ex.name) === target)
+    || (alias && library.find((ex) => ex.id === alias));
   return found ? { exercise: found, isNew: false } : { exercise: null, isNew: true };
 }
 

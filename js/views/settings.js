@@ -1,7 +1,11 @@
 // Preferences, Google Drive sync setup, and backup/restore.
 
 import { h, clear, toast, confirmSheet, openSheet, relativeTime } from '../ui.js';
-import { getState, updateSettings, updateLocal, syncPayload, importDocument, flush, list, softDelete } from '../state.js';
+import {
+  getState, updateSettings, updateLocal, syncPayload, importDocument, flush, list, get, softDelete, upsert,
+  adoptBuiltInsNow,
+} from '../state.js';
+import { nameKey, aliasId } from '../exercises.js';
 import { keepAwake, wakeLockSupported } from '../wakelock.js';
 import * as Drive from '../drive.js';
 import { field } from './train.js';
@@ -81,27 +85,7 @@ export function render(root, { refresh }) {
   /* -------------------------------------------------------- custom data */
 
   const custom = list('exercises').filter((e) => e.custom);
-  if (custom.length) {
-    wrap.appendChild(h('section', { class: 'card' },
-      h('h3', {}, 'Your custom exercises'),
-      h('ul', { class: 'routine-items' },
-        custom.sort((a, b) => a.name.localeCompare(b.name)).map((ex) => h('li', {},
-          h('span', {}, ex.name),
-          h('button', {
-            class: 'icon-btn icon-danger', type: 'button', 'aria-label': `Delete ${ex.name}`,
-            onclick: async () => {
-              const ok = await confirmSheet({
-                title: 'Delete exercise?',
-                message: `“${ex.name}” will be removed from the list. Workouts you already logged keep their data.`,
-                confirmLabel: 'Delete', danger: true,
-              });
-              if (ok) { softDelete('exercises', ex.id); refresh(); }
-            },
-          }, '×'),
-        )),
-      ),
-    ));
-  }
+  if (custom.length) wrap.appendChild(customExercisesCard(custom, refresh));
 
   /* ---------------------------------------------------------------- misc */
 
@@ -130,6 +114,137 @@ export function render(root, { refresh }) {
   ));
 
   root.appendChild(wrap);
+}
+
+/* ---------------------------------------------------- custom exercises */
+
+/** Routines that use an exercise. */
+function routinesUsing(exerciseId) {
+  return list('routines').filter((r) => (r.items || []).some((i) => i.exerciseId === exerciseId));
+}
+
+function customExercisesCard(custom, refresh) {
+  const card = h('section', { class: 'card' },
+    h('h3', {}, 'Your custom exercises'),
+    h('p', { class: 'muted small' },
+      'Exercises you added that are not in the app’s library. Renaming keeps their history; '
+      + 'rename one to a name the library has and it is merged in.'),
+  );
+  const listEl = h('ul', { class: 'custom-list' });
+  for (const ex of custom.sort((a, b) => a.name.localeCompare(b.name))) {
+    const used = routinesUsing(ex.id);
+    listEl.appendChild(h('li', { class: 'plan-row' },
+      h('div', { class: 'plan-row-text' },
+        h('p', { class: 'plan-row-name' }, ex.name),
+        h('p', { class: 'muted small' }, used.length
+          ? `In ${used.length} routine${used.length === 1 ? '' : 's'}`
+          : 'Not in any routine'),
+      ),
+      h('div', { class: 'plan-row-actions' },
+        h('button', {
+          class: 'btn btn-sm btn-quiet', type: 'button', 'aria-label': `Rename ${ex.name}`,
+          onclick: () => openRename(ex, refresh),
+        }, 'Rename'),
+        h('button', {
+          class: 'btn btn-sm btn-quiet plan-remove', type: 'button', 'aria-label': `Delete ${ex.name}`,
+          onclick: () => openDelete(ex, refresh),
+        }, 'Delete'),
+      ),
+    ));
+  }
+  card.appendChild(listEl);
+  return card;
+}
+
+/**
+ * Deleting an exercise a routine still uses would leave a nameless blank in
+ * that routine, so it is refused, with the routines named and renaming offered.
+ */
+function openDelete(ex, refresh) {
+  const used = routinesUsing(ex.id);
+  if (used.length) {
+    openSheet({
+      title: `${ex.name} is in use`,
+      render: (close) => h('div', { class: 'confirm' },
+        h('p', {}, used.length === 1 ? 'It is part of this routine:' : 'It is part of these routines:'),
+        h('ul', { class: 'in-use-list' }, used.map((r) => h('li', {}, r.name))),
+        h('p', { class: 'muted small' },
+          'Deleting it would leave a blank in each of them. Take it out of those routines first, '
+          + 'or rename it instead.'),
+        h('div', { class: 'confirm-stack' },
+          h('button', {
+            class: 'btn btn-secondary btn-block', type: 'button',
+            onclick: () => { close(); openRename(ex, refresh); },
+          }, 'Rename instead'),
+          h('button', { class: 'btn btn-ghost btn-block', type: 'button', onclick: close }, 'OK'),
+        ),
+      ),
+    });
+    return;
+  }
+  confirmSheet({
+    title: 'Delete exercise?',
+    message: `“${ex.name}” will be removed from the list. Workouts you already logged keep their data.`,
+    confirmLabel: 'Delete', danger: true,
+  }).then((ok) => { if (ok) { softDelete('exercises', ex.id); refresh(); } });
+}
+
+/**
+ * Rename keeps the id, so history stays attached. A name the library already
+ * has is a merge rather than a rename, and says so before doing it.
+ */
+function openRename(ex, refresh) {
+  openSheet({
+    title: 'Rename exercise',
+    render: (close) => {
+      const input = h('input', {
+        class: 'input', type: 'text', id: 'rename-exercise', value: ex.name, maxlength: 60,
+        autocapitalize: 'words', enterkeyhint: 'done',
+        onkeydown: (e) => { if (e.key === 'Enter') save(); },
+      });
+
+      const save = () => {
+        const name = input.value.trim().replace(/\s+/g, ' ');
+        if (!name || name === ex.name) { close(); return; }
+
+        const clash = list('exercises').find((e) => e.id !== ex.id && nameKey(e.name) === nameKey(name));
+        if (clash?.custom) {
+          toast(`You already have an exercise called ${clash.name}`, 'error');
+          return;
+        }
+        const target = get('exercises', clash ? clash.id : aliasId(name));
+        if (target && !target.custom) {
+          confirmSheet({
+            title: `Merge into ${target.name}?`,
+            message: `${target.name} is already in the app. ${ex.name} will be folded into it, `
+              + `and everything you logged as ${ex.name} moves across.`,
+            confirmLabel: 'Merge',
+          }).then((ok) => {
+            if (!ok) return;
+            upsert('exercises', { ...ex, name });   // the library name is what triggers the merge
+            adoptBuiltInsNow();
+            close();
+            refresh();
+            toast(`Merged into ${target.name}`, 'success');
+          });
+          return;
+        }
+
+        upsert('exercises', { ...ex, name });
+        close();
+        refresh();
+        toast('Renamed');
+      };
+
+      queueMicrotask(() => { input.focus(); input.select(); });
+      return h('div', { class: 'form' },
+        h('label', { class: 'field-label', for: 'rename-exercise' }, 'Name'),
+        input,
+        h('p', { class: 'muted small' }, 'Everything you have logged stays with it.'),
+        h('button', { class: 'btn btn-primary btn-block', type: 'button', onclick: save }, 'Save'),
+      );
+    },
+  });
 }
 
 function toggle(label, value, onChange) {

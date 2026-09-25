@@ -25,6 +25,7 @@ const SEED = [
   ['Pull-Up', 'Back', 'Bodyweight', 150],
   ['Chin-Up', 'Back', 'Bodyweight', 150],
   ['Lat Pulldown', 'Back', 'Cable', 120],
+  ['Pull-Up or Lat Pulldown', 'Back', 'Bar or cable', 120],
   ['Seated Cable Row', 'Back', 'Cable', 120],
   ['Chest-Supported Row', 'Back', 'Machine', 120],
   ['T-Bar Row', 'Back', 'Barbell', 150],
@@ -34,6 +35,7 @@ const SEED = [
   // Shoulders
   ['Overhead Press', 'Shoulders', 'Barbell', 180],
   ['Seated Dumbbell Shoulder Press', 'Shoulders', 'Dumbbell', 150],
+  ['Dumbbell Shoulder Press', 'Shoulders', 'Dumbbell', 120],
   ['Arnold Press', 'Shoulders', 'Dumbbell', 120],
   ['Machine Shoulder Press', 'Shoulders', 'Machine', 120],
   ['Lateral Raise', 'Shoulders', 'Dumbbell', 75],
@@ -63,6 +65,7 @@ const SEED = [
   ['Hack Squat', 'Quads', 'Machine', 180],
   ['Leg Press', 'Quads', 'Machine', 180],
   ['Bulgarian Split Squat', 'Quads', 'Dumbbell', 150],
+  ['Dumbbell Split Squat', 'Quads', 'Dumbbell', 90],
   ['Walking Lunge', 'Quads', 'Dumbbell', 120],
   ['Goblet Squat', 'Quads', 'Dumbbell', 120],
   ['Leg Extension', 'Quads', 'Machine', 90],
@@ -72,6 +75,7 @@ const SEED = [
   ['Stiff-Leg Deadlift', 'Hamstrings', 'Barbell', 180],
   ['Lying Leg Curl', 'Hamstrings', 'Machine', 90],
   ['Seated Leg Curl', 'Hamstrings', 'Machine', 90],
+  ['Seated or Lying Leg Curl', 'Hamstrings', 'Machine', 90],
   ['Nordic Curl', 'Hamstrings', 'Bodyweight', 120],
   ['Good Morning', 'Hamstrings', 'Barbell', 150],
   // Glutes
@@ -87,6 +91,7 @@ const SEED = [
   ['Plank', 'Core', 'Bodyweight', 60, 'time'],
   ['Side Plank', 'Core', 'Bodyweight', 45, 'time'],
   ['Hanging Leg Raise', 'Core', 'Bodyweight', 75],
+  ['Hanging Knee Raise', 'Core', 'Bodyweight', 60],
   ['Cable Crunch', 'Core', 'Cable', 75],
   ['Ab Wheel Rollout', 'Core', 'Other', 75],
   ['Russian Twist', 'Core', 'Other', 60],
@@ -190,6 +195,43 @@ export function howToUrl(exercise) {
   if (!name) return null;
   const q = encodeURIComponent(`how to ${name} proper form technique`);
   return `https://www.youtube.com/results?search_query=${q}`;
+}
+
+/** Compare names ignoring case, spacing and punctuation. */
+export function nameKey(name) {
+  return String(name ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Other names for exercises already in the library. A plan written as
+ * "Dumbbell Lateral Raise" means the Lateral Raise here; giving it an entry of
+ * its own would split one movement's progress across two exercises.
+ *
+ * Only names that are unambiguously the same movement belong here. Seated
+ * versus standing, or rear foot up versus down, are different exercises and
+ * get entries of their own instead.
+ */
+const ALIASES = {
+  'Triceps Rope Pushdown': 'Rope Pushdown',
+  'Tricep Rope Pushdown': 'Rope Pushdown',
+  'Tricep Pushdown': 'Triceps Pushdown',
+  'Dumbbell Lateral Raise': 'Lateral Raise',
+  'DB Lateral Raise': 'Lateral Raise',
+  'Overhead Cable Triceps Extension': 'Overhead Cable Extension',
+  'Overhead Cable Tricep Extension': 'Overhead Cable Extension',
+  'Single Arm Dumbbell Row': 'Dumbbell Row',
+  'One Arm Dumbbell Row': 'Dumbbell Row',
+  'Standing Overhead Press': 'Overhead Press',
+  'Barbell Overhead Press': 'Overhead Press',
+  'Pullup': 'Pull-Up',
+  'Chinup': 'Chin-Up',
+};
+
+const ALIAS_IDS = new Map(Object.entries(ALIASES).map(([alias, name]) => [nameKey(alias), slugify(name)]));
+
+/** The library id another name for an exercise stands for, if it is one. */
+export function aliasId(name) {
+  return ALIAS_IDS.get(nameKey(name)) || null;
 }
 
 export const SEED_EXERCISES = SEED.map(([name, group, equipment, restSec, mode]) => ({

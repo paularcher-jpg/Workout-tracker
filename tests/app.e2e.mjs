@@ -1277,6 +1277,113 @@ await step('a range a spreadsheet turned into a date is flagged', async () => {
 });
 
 
+console.log('\n== your custom exercises ==');
+let benchIds = {};
+await step('custom exercises show where they are used', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  benchIds = await page.evaluate(async () => {
+    const st = await import('/js/state.js');
+    const hug = st.addCustomExercise({ name: 'Sandbag Bear Hug Walk', group: 'Core', equipment: 'Other', restSec: 90 });
+    st.addCustomExercise({ name: 'Band Pull Apart', group: 'Back', equipment: 'Other', restSec: 60 });
+    const pulls = st.addCustomExercise({ name: 'My Lat Pulls', group: 'Back', equipment: 'Cable', restSec: 90 });
+    st.upsert('routines', { name: 'Garage Day', items: [{ exerciseId: hug.id, sets: 3, reps: '40s', restSec: 90 }], lastUsedAt: 0 });
+    st.upsert('workouts', {
+      name: 'Old session', startedAt: Date.now() - 86400e3, finishedAt: Date.now() - 86000e3,
+      entries: [{ id: 'e1', exerciseId: pulls.id, sets: [{ id: 's1', weight: '50', reps: '10', secs: '', done: true }] }],
+    });
+    return { hug: hug.id, pulls: pulls.id };
+  });
+  await page.locator('.tab[data-tab="settings"]').click();
+  const card = await page.locator('section.card', { hasText: 'Your custom exercises' }).innerText();
+  if (!/Sandbag Bear Hug Walk\s+In 1 routine/.test(card)) throw new Error('usage not shown: ' + card);
+  if (!/Band Pull Apart\s+Not in any routine/.test(card)) throw new Error(card);
+});
+await step('an exercise a routine uses cannot be deleted out from under it', async () => {
+  await page.getByRole('button', { name: 'Delete Sandbag Bear Hug Walk' }).click();
+  const sheet = await page.locator('.sheet').last().innerText();
+  if (!/is in use/.test(sheet) || !/Garage Day/.test(sheet)) throw new Error('did not name the routine: ' + sheet);
+  await page.getByRole('button', { name: 'OK', exact: true }).click();
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  if (!(await page.getByRole('button', { name: 'Delete Sandbag Bear Hug Walk' }).count())) throw new Error('deleted anyway');
+});
+await step('an unused one deletes after confirming', async () => {
+  await page.getByRole('button', { name: 'Delete Band Pull Apart' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  if (await page.getByRole('button', { name: 'Delete Band Pull Apart' }).count()) throw new Error('still listed');
+});
+await step('renaming keeps the exercise and its routines attached', async () => {
+  await page.getByRole('button', { name: 'Rename Sandbag Bear Hug Walk' }).click();
+  await page.locator('#rename-exercise').fill('Bear Hug Carry');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  const r = await page.evaluate(async (id) => {
+    const st = await import('/js/state.js');
+    const routine = st.list('routines').find((x) => x.name === 'Garage Day');
+    return { name: st.get('exercises', id)?.name, still: routine.items[0].exerciseId === id };
+  }, benchIds.hug);
+  if (r.name !== 'Bear Hug Carry' || !r.still) throw new Error(JSON.stringify(r));
+});
+await step('a name another custom exercise has is refused', async () => {
+  await page.getByRole('button', { name: 'Rename My Lat Pulls' }).click();
+  await page.locator('#rename-exercise').fill('bear hug carry');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.waitForFunction(() => /already have an exercise called/.test(document.getElementById('toast')?.textContent || ''), null, { timeout: 3000 });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+});
+await step('renaming to a library name merges it in, history and all', async () => {
+  await page.getByRole('button', { name: 'Rename My Lat Pulls' }).click();
+  await page.locator('#rename-exercise').fill('Lat Pulldown');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  const confirm = await page.locator('.sheet').last().innerText();
+  if (!/Merge into Lat Pulldown/.test(confirm)) throw new Error('no merge warning: ' + confirm);
+  await page.getByRole('button', { name: 'Merge', exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector('.sheet'), null, { timeout: 4000 });
+  const r = await page.evaluate(async (old) => {
+    const st = await import('/js/state.js');
+    const w = st.list('workouts').find((x) => x.name === 'Old session');
+    return { gone: st.get('exercises', old) === null, id: w.entries[0].exerciseId, set: w.entries[0].sets[0] };
+  }, benchIds.pulls);
+  if (!r.gone || r.id !== 'lat-pulldown') throw new Error(JSON.stringify(r));
+  if (r.set.weight !== '50' || r.set.reps !== '10') throw new Error('logged set changed: ' + JSON.stringify(r.set));
+  if (await page.getByRole('button', { name: 'Rename My Lat Pulls' }).count()) throw new Error('still listed as custom');
+});
+
+
+console.log('\n== a save cut short ==');
+// When the app is closed mid-save, the synchronous localStorage copy can be
+// newer than the IndexedDB one. An init script edits the stored copy after the
+// old page has gone and before the new one starts, which is exactly that state.
+const CUT_SHORT = () => {
+  const plan = sessionStorage.getItem('craft');
+  if (!plan) return;
+  sessionStorage.removeItem('craft');
+  const [name, when] = plan.split('|');
+  const raw = JSON.parse(localStorage.getItem('wt:state:v1'));
+  raw.settings.name = name;
+  raw.savedAt = when === 'newer' ? Date.now() + 60000 : 1;
+  localStorage.setItem('wt:state:v1', JSON.stringify(raw));
+};
+await step('a save that only reached the backup copy is not lost', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession({ init: CUT_SHORT }));
+  await page.evaluate(() => sessionStorage.setItem('craft', 'Backup|newer'));
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.tabbar');
+  const h1 = (await page.locator('.hero h1').first().innerText()).trim();
+  if (h1 !== 'Hi Backup') throw new Error('loaded the older copy: ' + h1);
+});
+await step('an older backup copy never overrides the main one', async () => {
+  await page.evaluate(() => sessionStorage.setItem('craft', 'Stale|older'));
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.tabbar');
+  const h1 = (await page.locator('.hero h1').first().innerText()).trim();
+  if (h1 !== 'Hi Backup') throw new Error('an old copy won: ' + h1);
+});
+
+
 console.log('\n== shipping an update ==');
 await step('a new version reaches an already-installed app', async () => {
   // This is the path every future fix takes to the phone. It broke once by

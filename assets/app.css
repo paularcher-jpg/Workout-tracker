@@ -1085,6 +1085,8 @@ textarea.input { min-height: 96px; resize: vertical; }
 .plan-remove { color: var(--danger); }
 
 .confirm-stack { display: flex; flex-direction: column; gap: 0.5rem; }
+.custom-list { list-style: none; margin: 0.4rem 0 0; padding: 0; }
+.in-use-list { margin: 0; padding-left: 1.1rem; font-weight: 600; line-height: 1.6; }
 
 /* ------------------------------------------------------- training days */
 

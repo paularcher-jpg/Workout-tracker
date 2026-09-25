@@ -6,7 +6,7 @@
 // make it theirs.
 
 import { h, openSheet } from '../ui.js';
-import { getState, updateSettings, updateLocal } from '../state.js';
+import { getState, updateSettings, updateLocal, flush } from '../state.js';
 
 export function displayName() {
   return String(getState().settings.name || '').trim();
@@ -23,7 +23,9 @@ export function openWelcome(refresh) {
   openSheet({
     title: 'Welcome',
     // closing it any way at all counts as having been asked
-    onClose: () => updateLocal({ askedName: true }),
+    // saved at once, not on the usual short delay: this closes in the first
+    // seconds of a first launch, when an app is most likely to be swiped away
+    onClose: () => { updateLocal({ askedName: true }); flush(); },
     render: (close) => {
       const input = h('input', {
         class: 'input', type: 'text', id: 'welcome-name',

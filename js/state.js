@@ -5,7 +5,7 @@
 // with Google Drive is a merge, never an overwrite. Nothing you log on your
 // phone can be clobbered by a stale copy of the file.
 
-import { SEED_EXERCISES, slugify } from './exercises.js';
+import { SEED_EXERCISES, slugify, nameKey, aliasId } from './exercises.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -129,6 +129,59 @@ function seedExercises(s) {
       s.exercises[ex.id] = { ...ex, custom: false, deleted: false, updatedAt: now() };
     }
   }
+  return adoptBuiltIns(s);
+}
+
+/**
+ * Fold exercises you created yourself into the library once it has them.
+ *
+ * Two cases. A built-in can arrive with the same id as one you made earlier —
+ * uploading a plan that said "Hanging Knee Raise" before the library had it —
+ * and the built-in simply takes the record over. Or yours can be another name
+ * for a built-in, "Dumbbell Lateral Raise" for Lateral Raise; then routines
+ * and logged workouts are pointed at the built-in and yours is retired, so one
+ * movement's progress lives in one place.
+ *
+ * Runs on every load and after every sync, and only writes when something
+ * changes, so a device that syncs later is brought into line the same way.
+ */
+function adoptBuiltIns(s) {
+  const seeds = new Map(SEED_EXERCISES.map((e) => [e.id, e]));
+  const byName = new Map(SEED_EXERCISES.map((e) => [nameKey(e.name), e.id]));
+  const moved = new Map();   // retired id -> built-in id
+
+  for (const [id, rec] of Object.entries(s.exercises)) {
+    if (!rec || rec.deleted || !rec.custom) continue;
+    const target = seeds.has(id) ? id : (byName.get(nameKey(rec.name)) || aliasId(rec.name));
+    if (!target || !seeds.has(target)) continue;
+
+    if (target === id) {
+      // keep a rest time you had set; everything else comes from the library
+      s.exercises[id] = {
+        ...rec, ...seeds.get(id), id, custom: false, deleted: false,
+        restSec: rec.restSec ?? seeds.get(id).restSec, updatedAt: now(),
+      };
+    } else {
+      moved.set(id, target);
+      s.exercises[id] = { ...rec, deleted: true, updatedAt: now() };
+    }
+  }
+  if (!moved.size) return s;
+
+  const repoint = (list) => {
+    let changed = false;
+    for (const item of list || []) {
+      if (moved.has(item.exerciseId)) { item.exerciseId = moved.get(item.exerciseId); changed = true; }
+    }
+    return changed;
+  };
+  for (const r of Object.values(s.routines)) {
+    if (repoint(r.items)) r.updatedAt = now();
+  }
+  for (const w of Object.values(s.workouts)) {
+    if (repoint(w.entries)) w.updatedAt = now();
+  }
+  if (s.active) repoint(s.active.entries);
   return s;
 }
 
@@ -153,13 +206,17 @@ function normalise(raw) {
 /* ------------------------------------------------------------ load / save */
 
 export async function loadState() {
-  let raw = await idbGet(STATE_KEY);
-  if (!raw) {
-    try {
-      const ls = localStorage.getItem(LS_KEY);
-      if (ls) raw = JSON.parse(ls);
-    } catch { /* ignore */ }
-  }
+  const fromIdb = await idbGet(STATE_KEY);
+  let fromLs = null;
+  try {
+    const ls = localStorage.getItem(LS_KEY);
+    if (ls) fromLs = JSON.parse(ls);
+  } catch { /* ignore */ }
+  // Whichever copy was written last wins. The localStorage copy is written
+  // first and synchronously, so when the app is killed mid-save it is the one
+  // that made it; on a tie IndexedDB, the primary, is used.
+  const stamp = (doc) => Number(doc?.savedAt) || 0;
+  const raw = fromIdb && stamp(fromIdb) >= stamp(fromLs) ? fromIdb : (fromLs || fromIdb);
   state = normalise(raw);
   await persist();
   return state;
@@ -171,14 +228,18 @@ export function getState() {
 }
 
 async function persist() {
+  state.savedAt = Date.now();
   const snapshot = JSON.stringify(state);
-  const ok = await idbSet(STATE_KEY, JSON.parse(snapshot));
+  // The synchronous copy goes first. Saving is what happens as the app is
+  // closed, and an IndexedDB write is asynchronous — if the page is torn down
+  // while it is in flight, a localStorage write queued behind it never runs,
+  // and the backup would miss exactly the save that mattered.
   try {
     localStorage.setItem(LS_KEY, snapshot);
   } catch {
     // localStorage can be full or blocked in private mode; IndexedDB is primary
   }
-  return ok;
+  return idbSet(STATE_KEY, JSON.parse(snapshot));
 }
 
 /** Persist and notify views. Debounced so rapid typing doesn't thrash storage. */
@@ -319,6 +380,18 @@ export function mergeStates(local, remote) {
     }
   }
   return { merged, changed };
+}
+
+/**
+ * Fold custom exercises into the library now, rather than at the next load —
+ * used after a rename that turns one into a name the library already has.
+ * @returns the number of custom exercises that are no longer custom
+ */
+export function adoptBuiltInsNow() {
+  const before = Object.values(state.exercises).filter((e) => e.custom && !e.deleted).length;
+  adoptBuiltIns(state);
+  commit();
+  return before - Object.values(state.exercises).filter((e) => e.custom && !e.deleted).length;
 }
 
 /** Replace in-memory state with a merged document (used by Drive sync). */
