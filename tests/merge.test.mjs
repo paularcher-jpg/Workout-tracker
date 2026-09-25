@@ -109,3 +109,20 @@ test('routines and exercises merge on the same rules', () => {
   assert.equal(merged.routines.r.name, 'remote');
   assert.equal(merged.exercises.custom.name, 'Zercher Squat');
 });
+
+test('a fresh install never overrides settings made on another device', () => {
+  // a new phone joining sync: nothing edited yet, so the Drive copy must win
+  const fresh = base();
+  const yours = { ...base(), settings: { ...base().settings, name: 'Paul', units: 'lb', updatedAt: 5000 } };
+  const { merged, changed } = mergeStates(fresh, yours);
+  assert.equal(changed, true);
+  assert.equal(merged.settings.name, 'Paul');
+  assert.equal(merged.settings.units, 'lb');
+});
+
+test('two untouched installs do not see each other as a change', () => {
+  // made a moment apart, which used to be enough to count as an edit
+  const a = base();
+  const later = base();
+  assert.equal(mergeStates(a, later).changed, false);
+});

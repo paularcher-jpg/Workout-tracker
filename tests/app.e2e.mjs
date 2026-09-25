@@ -145,6 +145,20 @@ await step('log a set and start rest timer', async () => {
   const row = page.locator('.set-row').first();
   await row.locator('.set-input').nth(0).fill('80');
   await row.locator('.set-input').nth(1).fill('8');
+  // A typed weight going missing before the tick has been seen once in a full
+  // run and never in isolation. If it happens, say what was on screen.
+  const typed = await page.evaluate(async () => {
+    const set = (await import('/js/workout.js')).activeWorkout()?.entries?.[0]?.sets?.[0];
+    return {
+      weight: set?.weight, reps: set?.reps,
+      box: document.querySelector('.set-row .set-input')?.value,
+      sheets: [...document.querySelectorAll('.sheet')].map((el) => el.getAttribute('aria-label')),
+      focused: document.activeElement?.id || document.activeElement?.className || '',
+    };
+  });
+  if (String(typed.weight) !== '80' || String(typed.reps) !== '8') {
+    throw new Error('typed numbers did not reach the session: ' + JSON.stringify(typed));
+  }
   await row.locator('.set-check').click();
   await page.waitForSelector('.restbar:not([hidden])', { timeout: 3000 });
   const t = await page.locator('.rest-time').textContent();

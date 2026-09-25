@@ -102,7 +102,10 @@ export function emptyState() {
       barWeight: 20,
       // what to call you; synced, so it follows you to a new phone via Drive
       name: '',
-      updatedAt: now(),
+      // Defaults have never been edited, so they carry no time. Stamping them
+      // with the install time made a fresh phone's untouched defaults "newer"
+      // than your real settings, and the first sync overwrote those with them.
+      updatedAt: 0,
     },
     // device-local, never synced
     local: {

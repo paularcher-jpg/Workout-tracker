@@ -93,6 +93,8 @@ export function render(root, { refresh }) {
     h('h3', {}, 'About'),
     h('p', { class: 'muted small' },
       'Your data lives on this device and, when sync is on, in a single file in your Google Drive. Nothing is sent anywhere else.'),
+    h('p', { class: 'muted small' },
+      h('a', { href: './privacy.html', target: '_blank', rel: 'noopener' }, 'Privacy policy')),
     h('p', { class: 'muted small' }, `Device ID ${s.local.deviceId.slice(0, 8)}`),
     h('button', {
       class: 'btn btn-quiet btn-block', type: 'button',
