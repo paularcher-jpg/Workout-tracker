@@ -2,6 +2,7 @@
 
 import { h, clear, toast, confirmSheet, openSheet, relativeTime } from '../ui.js';
 import { getState, updateSettings, updateLocal, syncPayload, importDocument, flush, list, softDelete } from '../state.js';
+import { keepAwake, wakeLockSupported } from '../wakelock.js';
 import * as Drive from '../drive.js';
 import { field } from './train.js';
 
@@ -32,6 +33,26 @@ export function render(root, { refresh }) {
     onchange: (e) => { updateSettings({ defaultRestSec: Math.max(0, Number(e.target.value) || 0) }); toast('Saved'); },
   });
 
+  const nameInput = h('input', {
+    class: 'input', type: 'text', value: s.settings.name || '',
+    placeholder: 'Your first name', autocomplete: 'given-name', autocapitalize: 'words', maxlength: 40,
+    onchange: (e) => { updateSettings({ name: e.target.value.trim() }); toast('Saved'); },
+  });
+
+  wrap.appendChild(h('section', { class: 'card' },
+    h('h3', {}, 'You'),
+    field('Your name', nameInput, 'Used to greet you. Kept on this phone and in your own Google Drive.'),
+  ));
+
+  const awake = toggle('Keep the screen on while the app is open', s.local.keepAwake !== false, (v) => {
+    updateLocal({ keepAwake: v });
+    keepAwake(v);
+  });
+  if (!wakeLockSupported()) {
+    awake.querySelector('input').disabled = true;
+    awake.appendChild(h('span', { class: 'muted small switch-note' }, 'Not supported by this browser'));
+  }
+
   wrap.appendChild(h('section', { class: 'card' },
     h('h3', {}, 'Preferences'),
     field('Units', unitSelect, 'Changing this does not convert numbers you already logged.'),
@@ -39,6 +60,7 @@ export function render(root, { refresh }) {
     toggle('Start rest timer automatically', s.settings.autoStartRest, (v) => updateSettings({ autoStartRest: v })),
     toggle('Sound when rest ends', s.settings.sound, (v) => { updateSettings({ sound: v }); }),
     toggle('Vibrate when rest ends', s.settings.vibrate, (v) => updateSettings({ vibrate: v })),
+    awake,
   ));
 
   /* -------------------------------------------------------------- drive */

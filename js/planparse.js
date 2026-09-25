@@ -53,6 +53,24 @@ function parseRest(raw) {
   return secs > 0 && secs <= 1800 ? secs : null;
 }
 
+/**
+ * A spreadsheet will happily turn "8-10" into the 8th of October, or into the
+ * serial number it stores dates as. Neither is a sensible rep count or week,
+ * so catch it and say what happened rather than importing 45208 reps.
+ */
+const MONTH = '(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*';
+
+export function looksLikeDate(raw) {
+  const t = String(raw ?? '').trim();
+  if (!t) return false;
+  // month names, not any word: "10 each" is a real rep count
+  return /^\d{4,}(\.0+)?$/.test(t)                                          // a date serial: 45208
+    || new RegExp(`^\\d{1,2}[-/ ]${MONTH}([-/ ]\\d{2,4})?$`, 'i').test(t)    // 8-Oct, 8 Oct 2026
+    || new RegExp(`^${MONTH}[-/ ]\\d{1,4}$`, 'i').test(t)                     // Oct-10, Oct 2026
+    || /^\d{1,4}[/.]\d{1,2}[/.]\d{2,4}$/.test(t)           // 10/8/2026, 8.10.26
+    || /^\d{4}-\d{2}-\d{2}/.test(t);                       // 2026-10-08
+}
+
 /** "1-2" → [1,2]; "3-9" → [3…9]; "4" → [4]; "1,3" → [1,3]. */
 function parseWeekRange(raw) {
   const text = String(raw ?? '').trim();
@@ -212,6 +230,14 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
 
     const sets = Math.min(20, Math.max(1, Number(cell(row, 'sets')) || 1));
     const reps = cell(row, 'reps');
+    if (looksLikeDate(reps)) {
+      warnings.push(`Row ${i + 1}: reps "${reps}" looks like a date — a spreadsheet may have `
+        + 'converted a range like 8-10. Format the Reps column as text and type it again.');
+    }
+    if (looksLikeDate(cell(row, 'weeks'))) {
+      warnings.push(`Row ${i + 1}: weeks "${cell(row, 'weeks')}" looks like a date — format the `
+        + 'Weeks column as text and type it again.');
+    }
     const rpe = cell(row, 'rpe');
     const notes = cell(row, 'notes');
 
@@ -434,6 +460,60 @@ export function parseTextPlan(text, { name = 'My plan' } = {}) {
 /** Parse either format, choosing by content. */
 export function parsePlan(text, options) {
   return looksLikeCSV(text) ? parseCSVPlan(text, options) : parseTextPlan(text, options);
+}
+
+/* ------------------------------------------------------------ fit to days */
+
+/** Training days a plan needs: the busiest week decides. */
+export function daysNeeded(parsed) {
+  return Math.max(0, ...(parsed.weeks || []).map((w) => w.days.filter(Boolean).length));
+}
+
+/**
+ * The weekdays a plan trains on by default — its busiest week's layout —
+ * used to pre-select the questionnaire.
+ */
+export function defaultDays(parsed) {
+  const busiest = (parsed.weeks || []).reduce(
+    (best, w) => (w.days.filter(Boolean).length > (best?.days.filter(Boolean).length ?? -1) ? w : best),
+    null,
+  );
+  return busiest ? busiest.days.map((k, i) => (k ? i : null)).filter((i) => i !== null) : [];
+}
+
+/**
+ * Move a plan onto the days someone can actually train.
+ *
+ * Each week's sessions keep their order and are laid onto the chosen days in
+ * order, so a heavy/light/heavy week stays heavy/light/heavy and an A/B/A week
+ * stays A/B/A — only the days move. A lighter week (a deload with fewer
+ * sessions) spreads across the chosen days rather than bunching at the start,
+ * so two sessions picked from Mon/Tue/Thu/Fri land Monday and Friday.
+ */
+export function fitToDays(parsed, chosen) {
+  const days = [...new Set(chosen)].filter((d) => d >= 0 && d <= 6).sort((a, b) => a - b);
+  if (!days.length) return parsed;
+
+  const warnings = [...(parsed.warnings || [])];
+  const weeks = (parsed.weeks || []).map((week, w) => {
+    const sessions = week.days.filter(Boolean);
+    const out = Array.from({ length: 7 }, () => null);
+    if (!sessions.length) return { days: out };
+
+    const n = days.length;
+    const k = Math.min(sessions.length, n);
+    // one slot per day, so a week with more sessions than days cannot fit;
+    // the setup sheet prevents this, but never lose a session without saying
+    if (sessions.length > n) {
+      warnings.push(`Week ${w + 1} has ${sessions.length} sessions but only ${n} days were chosen.`);
+    }
+    for (let i = 0; i < k; i++) {
+      const at = k === 1 ? 0 : Math.round((i * (n - 1)) / (k - 1));
+      out[days[at]] = sessions[i];
+    }
+    return { days: out };
+  });
+  return { ...parsed, weeks, warnings };
 }
 
 /* ------------------------------------------------------------------ apply */

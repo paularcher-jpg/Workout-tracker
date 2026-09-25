@@ -4,7 +4,7 @@
 // is reached the cycle repeats, so a one-week plan simply repeats every week,
 // while a multi-week block cycles and can carry week-to-week progression.
 
-import { list, get, upsert, uid } from './state.js';
+import { list, get, upsert, uid, softDelete } from './state.js';
 
 export const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 export const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -102,17 +102,94 @@ export function allPrograms() {
   return list('programs');
 }
 
-export function activeProgram() {
-  const programs = allPrograms();
-  return programs.find((p) => p.active) || null;
+/**
+ * Every plan you are currently following. Several can run at once — a
+ * strength block alongside a muscular endurance block is a normal week for an
+ * endurance athlete — so the calendar is the union of all of them.
+ */
+export function activePrograms() {
+  return allPrograms()
+    .filter((p) => p.active)
+    .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate))
+      || String(a.name).localeCompare(String(b.name)));
 }
 
-/** Make one program the active one; there is only ever a single active plan. */
-export function setActiveProgram(id) {
-  for (const p of allPrograms()) {
-    const shouldBeActive = p.id === id;
-    if (!!p.active !== shouldBeActive) upsert('programs', { ...p, active: shouldBeActive });
+/** The first active plan. Kept for callers that only ever show one. */
+export function activeProgram() {
+  return activePrograms()[0] || null;
+}
+
+/** Add a plan to the calendar without taking any other plan off it. */
+export function activateProgram(id) {
+  const program = get('programs', id);
+  if (program && !program.active) upsert('programs', { ...program, active: true });
+}
+
+/** @deprecated a plan no longer replaces the others; use activateProgram. */
+export const setActiveProgram = activateProgram;
+
+/** Routine ids a program schedules anywhere in its cycle. */
+export function routinesOf(program) {
+  const ids = new Set();
+  for (const week of program?.weeks || []) {
+    for (const slot of week.days || []) if (slot?.routineId) ids.add(slot.routineId);
   }
+  return ids;
+}
+
+/**
+ * The routines that would go with a plan if it were removed: the ones it
+ * schedules that no other plan still uses. A routine you have borrowed into a
+ * second plan stays, or removing one plan would punch holes in the other.
+ */
+export function routinesOnlyIn(program) {
+  const mine = routinesOf(program);
+  for (const other of allPrograms()) {
+    if (other.id === program.id) continue;
+    for (const id of routinesOf(other)) mine.delete(id);
+  }
+  return [...mine].filter((id) => get('routines', id));
+}
+
+/**
+ * Take a plan off the calendar. Logged workouts are never touched — they are
+ * a record of what you did, not of what a plan said — and the plan's own
+ * routines go only if asked.
+ */
+export function removeProgram(id, { removeRoutines = false } = {}) {
+  const program = get('programs', id);
+  if (!program) return { removedRoutines: 0 };
+  const orphans = removeRoutines ? routinesOnlyIn(program) : [];
+  for (const rid of orphans) softDelete('routines', rid);
+  softDelete('programs', id);
+  return { removedRoutines: orphans.length };
+}
+
+/** Everything scheduled on a date across every active plan. */
+export function scheduledAcross(date, programs = activePrograms()) {
+  return programs.map((program) => scheduledFor(date, program)).filter(Boolean);
+}
+
+/** Today's sessions across every active plan, rest days excluded. */
+export function todaysSessions(programs = activePrograms()) {
+  return scheduledAcross(new Date(), programs).filter((s) => !s.rest);
+}
+
+/** Weekdays (0 = Monday) each active plan trains on, for spotting clashes. */
+export function daysInUse(programs = activePrograms(), exceptId = null) {
+  const used = new Map();   // dayIndex -> [program names]
+  for (const program of programs) {
+    if (program.id === exceptId) continue;
+    const days = new Set();
+    for (const week of program.weeks || []) {
+      (week.days || []).forEach((slot, day) => { if (slot?.routineId) days.add(day); });
+    }
+    for (const day of days) {
+      if (!used.has(day)) used.set(day, []);
+      used.get(day).push(program.name);
+    }
+  }
+  return used;
 }
 
 /* -------------------------------------------------------------- schedule */
@@ -188,6 +265,16 @@ export function projection(days = 28, from = new Date(), program = activeProgram
 /** Next scheduled training day at or after `from`, skipping rest days. */
 export function nextTrainingDay(from = new Date(), program = activeProgram()) {
   return projection(60, from, program).find((s) => !s.rest) || null;
+}
+
+/** The soonest session after today in any active plan. */
+export function nextSessionAcross(from = addDays(new Date(), 1), programs = activePrograms()) {
+  let best = null;
+  for (const program of programs) {
+    const next = nextTrainingDay(from, program);
+    if (next && (!best || next.date < best.date)) best = next;
+  }
+  return best;
 }
 
 /** How many training days the plan has per cycle, for display. */

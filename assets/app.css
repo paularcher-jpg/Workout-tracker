@@ -1021,7 +1021,14 @@ textarea.input { min-height: 96px; resize: vertical; }
 }
 .sched-row:last-child { border-bottom: none; }
 .sched-date { color: var(--text-3); font-size: 0.79rem; font-weight: 600; }
-.sched-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+.sched-name { min-width: 0; font-weight: 650; line-height: 1.25; }
+.sched-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
 .sched-row.is-rest .sched-name { color: var(--text-3); font-weight: 500; }
 .sched-row.is-today {
   background: var(--accent-wash);
@@ -1035,6 +1042,85 @@ textarea.input { min-height: 96px; resize: vertical; }
 .sched-row.is-done .sched-name { color: var(--text-2); }
 .sched-done-tag { margin-left: 0.45rem; color: var(--ok); }
 .sched-start { min-height: 44px; padding: 0 0.85rem; font-size: 0.82rem; border-radius: 11px; }
+/* with several plans running, each session says which plan it came from */
+.sched-plan {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* two sessions today: the second sits under the first, divided by a rule */
+.today-block { display: flex; flex-direction: column; gap: 0.35rem; }
+.today-block-next { border-top: 1px solid var(--hairline); padding-top: 0.8rem; margin-top: 0.45rem; }
+.today-block-next h3 { font-size: 1.2rem; }
+
+/* ------------------------------------------------------------ your plans */
+
+.plan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.plan-row:last-of-type { border-bottom: none; }
+.plan-row-text { min-width: 0; }
+.plan-row-name { font-weight: 700; overflow-wrap: anywhere; line-height: 1.3; }
+.plan-row-actions { display: flex; gap: 0.3rem; flex: none; }
+.plan-remove { color: var(--danger); }
+
+.confirm-stack { display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* ------------------------------------------------------- training days */
+
+.setup-lead { font-size: 1rem; line-height: 1.45; }
+.day-picker {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+.day-chip {
+  position: relative;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--glass-sunken);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.day-chip.is-on {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+/* a day another plan already trains on: a quiet dot, not a warning */
+.day-chip.is-taken::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+.setup-count { font-weight: 700; font-size: 0.9rem; color: var(--text-2); }
+.setup-count.is-ready { color: var(--done); }
+
+.switch-note { display: block; margin-top: 0.15rem; }
+
+
 
 .week-block {
   border: 1px solid var(--hairline);

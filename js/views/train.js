@@ -6,6 +6,7 @@ import { getState, list, get, addCustomExercise, commit } from '../state.js';
 import { MUSCLE_GROUPS } from '../exercises.js';
 import * as P from '../program.js';
 import { todayCard } from './plan.js';
+import { displayName } from './welcome.js';
 import * as W from '../workout.js';
 import * as Timer from '../timer.js';
 
@@ -29,21 +30,31 @@ function startView(refresh, navigate) {
   const routines = list('routines').sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0));
   const recent = W.workoutsSorted()[0];
   const stats = W.overallStats();
-  const program = P.activeProgram();
+  const programs = P.activePrograms();
+  const program = programs[0] || null;
+  const today = P.todaysSessions(programs);
+  const name = displayName();
 
   const wrap = h('div', { class: 'view' });
 
+  // Greet by name when there is one. The line under it says what today is,
+  // since that is the one thing you open the app to find out.
+  let line;
+  if (today.length === 1) line = 'Here’s today’s plan.';
+  else if (today.length > 1) line = `You have ${today.length} sessions planned today.`;
+  else if (programs.length) line = 'Nothing planned today. Rest up, or start something below.';
+  else if (stats.workouts) {
+    line = `${stats.workouts} session${stats.workouts === 1 ? '' : 's'} logged · ${fmtVolume(stats.volume)} lifted`;
+  } else line = 'Start your first session below.';
+
   wrap.appendChild(h('div', { class: 'hero' },
-    h('h1', {}, 'Ready to train'),
-    h('p', { class: 'muted' },
-      stats.workouts
-        ? `${stats.workouts} session${stats.workouts === 1 ? '' : 's'} logged · ${fmtVolume(stats.volume)} lifted`
-        : 'Start your first session below.'),
+    h('h1', {}, name ? `Hi ${name}` : 'Ready to train'),
+    h('p', { class: 'muted' }, line),
   ));
 
   // if a plan is scheduled, today's session leads
-  if (program) {
-    wrap.appendChild(todayCard(program, refresh, navigate));
+  if (programs.length) {
+    wrap.appendChild(todayCard(programs, refresh, navigate));
   }
 
   wrap.appendChild(h('button', {

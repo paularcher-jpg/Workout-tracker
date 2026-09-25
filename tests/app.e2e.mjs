@@ -76,8 +76,27 @@ const server = await serve();
 const browser = await chromium.launch(LAUNCH);
 const BASE = `http://localhost:${PORT}/`;
 
+/**
+ * Every fresh install asks for a name once. Most tests are about something
+ * else, so they skip it the way a person would; the welcome tests keep it.
+ */
+async function skipWelcome(p) {
+  const skip = p.getByRole('button', { name: 'Skip for now' });
+  try { await skip.waitFor({ timeout: 2500 }); } catch { return false; }
+  await skip.click();
+  await p.waitForSelector('.sheet', { state: 'detached', timeout: 4000 });
+  return true;
+}
+
+/** Accept the training-days questionnaire as offered: the plan's own days. */
+async function startPlan(p) {
+  await p.waitForSelector('.day-picker', { timeout: 5000 });
+  await p.getByRole('button', { name: 'Start plan' }).click();
+  await p.waitForSelector('.day-picker', { state: 'detached', timeout: 5000 });
+}
+
 /** A clean install of the app: fresh storage, fresh service worker. */
-async function newSession() {
+async function newSession({ welcome = false, init = null } = {}) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -85,11 +104,13 @@ async function newSession() {
     colorScheme: 'dark',
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
   });
+  if (init) await context.addInitScript(init);
   const p = await context.newPage();
   p.on('console', (m) => { if (m.type() === 'error') problems.push('console: ' + m.text()); });
   p.on('pageerror', (e) => problems.push('pageerror: ' + e.message));
   await p.goto(BASE, { waitUntil: 'networkidle' });
   await p.waitForSelector('.tabbar', { timeout: 10000 });
+  if (!welcome) await skipWelcome(p);
   return { context, page: p };
 }
 
@@ -451,6 +472,7 @@ await step('a clean plan produces no warnings', async () => {
 });
 await step('importing builds routines and a schedule', async () => {
   await page.getByRole('button', { name: 'Add this plan' }).click();
+  await startPlan(page);
   await page.waitForSelector('.sched-row', { timeout: 5000 });
   const n = await page.locator('.card .routine-items').count();
   if (n !== 3) throw new Error(`expected 3 routines, got ${n}`);
@@ -526,6 +548,7 @@ await step('the phase change shows in the week layout', async () => {
 });
 await step('importing makes one routine per session, not per week', async () => {
   await page.getByRole('button', { name: 'Add this plan' }).click();
+  await startPlan(page);
   await page.waitForSelector('.sched-row', { timeout: 6000 });
   const n = await page.locator('.card .routine-items').count();
   if (n !== 5) throw new Error(`expected 5 routines, got ${n}`);
@@ -756,6 +779,7 @@ await step('tapping a rest day offers the routines', async () => {
   await page.locator('input[type="file"]').setInputFiles(path.join(ROOT, 'tests/fixtures/plan.csv'));
   await page.waitForSelector('.plan-ok');
   await page.getByRole('button', { name: 'Add this plan' }).click();
+  await startPlan(page);
   await page.waitForSelector('.sched-row');
 
   const rest = page.locator('.sched-row.is-rest').first();
@@ -911,7 +935,8 @@ await step('the detail sheet shows the week-by-week layout', async () => {
   }
 });
 await step('using a program builds routines and a schedule', async () => {
-  await page.getByRole('button', { name: 'Use this program' }).click();
+  await page.getByRole('button', { name: 'Choose your days' }).click();
+  await startPlan(page);
   await page.waitForSelector('.sched-row', { timeout: 6000 });
   const routines = await page.locator('.card .routine-items').count();
   if (routines < 2) throw new Error(`expected several routines, got ${routines}`);
@@ -959,6 +984,275 @@ await step('a repeating program keeps running past its written weeks', async () 
   // the one just imported is the six-week endurance block, which must finish
   if (repeats.repeat !== false) throw new Error(`${repeats.name} should not repeat`);
 });
+
+console.log('\n== your name ==');
+await step('a fresh install asks for a name, once', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession({ welcome: true }));
+  await page.waitForSelector('#welcome-name', { timeout: 5000 });
+});
+await step('the name greets you on the Train screen', async () => {
+  await page.locator('#welcome-name').fill('Paul');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForSelector('.sheet', { state: 'detached', timeout: 4000 });
+  const h1 = (await page.locator('.hero h1').first().innerText()).trim();
+  if (h1 !== 'Hi Paul') throw new Error('expected "Hi Paul", got ' + h1);
+});
+await step('the welcome does not come back on the next launch', async () => {
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.tabbar');
+  await page.waitForTimeout(800);
+  if (await page.locator('#welcome-name').count()) throw new Error('asked again');
+  if ((await page.locator('.hero h1').first().innerText()).trim() !== 'Hi Paul') throw new Error('name forgotten');
+});
+await step('the name can be changed in Settings', async () => {
+  await page.locator('.tab[data-tab="settings"]').click();
+  const input = page.locator('input[autocomplete="given-name"]');
+  await input.fill('Sam');
+  await input.press('Tab');
+  await page.locator('.tab[data-tab="train"]').click();
+  const h1 = (await page.locator('.hero h1').first().innerText()).trim();
+  if (h1 !== 'Hi Sam') throw new Error('expected "Hi Sam", got ' + h1);
+});
+await step('skipping is remembered too', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession({ welcome: true }));
+  await page.getByRole('button', { name: 'Skip for now' }).click();
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.tabbar');
+  await page.waitForTimeout(800);
+  if (await page.locator('#welcome-name').count()) throw new Error('asked again after skipping');
+  const h1 = (await page.locator('.hero h1').first().innerText()).trim();
+  if (h1 !== 'Ready to train') throw new Error('no name should mean no greeting, got ' + h1);
+});
+
+
+console.log('\n== screen stays on ==');
+// Headless Chromium has no screen to hold on, so the browser API is faked:
+// what is under test is that the app asks at the right moments.
+const FAKE_WAKE_LOCK = () => {
+  window.__wake = [];
+  window.__locks = [];
+  Object.defineProperty(navigator, 'wakeLock', {
+    configurable: true,
+    value: {
+      request: async (type) => {
+        window.__wake.push('request:' + type);
+        const lock = new EventTarget();
+        lock.released = false;
+        lock.release = async () => {
+          if (lock.released) return;
+          lock.released = true;
+          window.__wake.push('release');
+          lock.dispatchEvent(new Event('release'));
+        };
+        window.__locks.push(lock);
+        return lock;
+      },
+    },
+  });
+};
+await step('opening the app keeps the screen on', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession({ init: FAKE_WAKE_LOCK }));
+  await page.waitForFunction(() => window.__wake?.includes('request:screen'), null, { timeout: 4000 });
+});
+await step('it is taken again after the phone drops it', async () => {
+  // switching apps or locking the phone releases the lock; coming back must re-take it
+  await page.evaluate(() => window.__locks.at(-1).release());
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForFunction(() => window.__wake.filter((e) => e === 'request:screen').length >= 2,
+    null, { timeout: 4000 });
+});
+await step('turning it off in Settings lets the screen sleep', async () => {
+  await page.locator('.tab[data-tab="settings"]').click();
+  const row = page.locator('label.switch', { hasText: 'Keep the screen on' });
+  const toggle = row.locator('input');
+  if (!(await toggle.isChecked())) throw new Error('should default to on');
+  await row.click();   // the whole row is the tap target, as on the phone
+  if (await toggle.isChecked()) throw new Error('did not switch off');
+  await page.waitForFunction(() => window.__wake.at(-1) === 'release', null, { timeout: 4000 });
+  const stored = await page.evaluate(async () => (await import('/js/state.js')).getState().local.keepAwake);
+  if (stored !== false) throw new Error('setting not saved');
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForTimeout(300);
+  if (await page.evaluate(() => window.__wake.at(-1)) !== 'release') throw new Error('re-took a lock while off');
+});
+
+
+console.log('\n== choosing training days ==');
+/** Click day chips until exactly `want` (0 = Monday) are on, deselecting first. */
+async function chooseDays(p, want) {
+  const chips = p.locator('.day-chip');
+  for (let d = 0; d < 7; d++) {
+    if ((await chips.nth(d).getAttribute('aria-pressed')) === 'true' && !want.includes(d)) await chips.nth(d).click();
+  }
+  for (const d of want) {
+    if ((await chips.nth(d).getAttribute('aria-pressed')) !== 'true') await chips.nth(d).click();
+  }
+}
+async function openProgram(p, search, from = 'Browse programs') {
+  await p.locator('.tab[data-tab="plan"]').click();
+  await p.getByRole('button', { name: from }).click();
+  await p.waitForSelector('.prog-browse .picker-item');
+  await p.locator('.prog-browse input[type="search"]').fill(search);
+  await p.waitForTimeout(150);
+  await p.locator('.prog-browse .picker-item').first().click();
+  await p.waitForSelector('.prog-detail');
+  await p.getByRole('button', { name: 'Choose your days' }).click();
+  await p.waitForSelector('.day-picker');
+}
+await step('choosing a plan asks which days you can train', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await openProgram(page, 'full body hypertrophy');
+  const on = await page.locator('.day-chip[aria-pressed="true"]').count();
+  if (on !== 3) throw new Error(`a 3-day plan should start with 3 days picked, got ${on}`);
+  const count = await page.locator('.setup-count').innerText();
+  if (!/3 of 3/.test(count)) throw new Error(count);
+});
+await step('it will not start on the wrong number of days', async () => {
+  await chooseDays(page, [1, 3]);
+  if (!(await page.getByRole('button', { name: 'Start plan' }).isDisabled())) throw new Error('started with 2 of 3 days');
+  // a fourth day is refused rather than silently swapping one out
+  await chooseDays(page, [1, 3, 5]);
+  await page.locator('.day-chip').nth(6).click();
+  const on = await page.locator('.day-chip[aria-pressed="true"]').count();
+  if (on !== 3) throw new Error(`took ${on} days for a 3-day plan`);
+});
+await step('the sessions land on the days you chose, in order', async () => {
+  await chooseDays(page, [1, 3, 5]);   // Tue Thu Sat instead of Mon Wed Fri
+  await page.getByRole('button', { name: 'Start plan' }).click();
+  await page.waitForSelector('.sched-row');
+  const rows = await page.locator('.sched-row:not(.is-rest)').allInnerTexts();
+  const days = [...new Set(rows.map((r) => r.trim().slice(0, 3).toLowerCase()))];
+  if (days.sort().join() !== 'sat,thu,tue') throw new Error('sessions on ' + days.join(', '));
+  const firstWeek = rows.slice(0, 3).map((r) => r.match(/Full Body [ABC]/)?.[0]);
+  if (firstWeek.join() !== 'Full Body A,Full Body B,Full Body C') throw new Error('order changed: ' + firstWeek.join());
+});
+await step('only having fewer days leads to plans built for that', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await openProgram(page, 'upper / lower');
+  await chooseDays(page, [0, 3]);
+  await page.getByRole('button', { name: /Only 2 days/ }).click();
+  // the old list animates out; read the new one only once it is alone
+  await page.waitForFunction(() => document.querySelectorAll('.prog-browse').length === 1, null, { timeout: 4000 });
+  await page.waitForSelector('.prog-browse .picker-item');
+  const pressed = await page.locator('.prog-browse .chip[aria-pressed="true"]').allInnerTexts();
+  if (!pressed.includes('2 days')) throw new Error('library not filtered to 2 days: ' + pressed.join(', '));
+  const metas = await page.locator('.prog-browse .picker-meta').allInnerTexts();
+  if (metas.some((m) => !/2 days a week/.test(m))) throw new Error('a non-2-day plan leaked through');
+  await page.keyboard.press('Escape');
+});
+
+
+console.log('\n== several plans at once ==');
+let todayIdx;
+await step('a second plan joins the first rather than replacing it', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  todayIdx = await page.evaluate(() => (new Date().getDay() + 6) % 7);
+  await openProgram(page, 'gym muscular');
+  await chooseDays(page, [todayIdx]);
+  await page.getByRole('button', { name: 'Start plan' }).click();
+  await page.waitForSelector('.sched-row');
+
+  await openProgram(page, 'weighted carry', 'Add another plan');
+  const taken = await page.locator('.day-chip.is-taken').count();
+  if (taken !== 1) throw new Error(`the first plan's day should be marked, ${taken} marked`);
+  await chooseDays(page, [todayIdx]);
+  const clash = await page.locator('.setup').innerText();
+  if (!/already used by Gym Muscular Endurance/.test(clash)) throw new Error('clash not explained');
+  await page.getByRole('button', { name: 'Start plan' }).click();
+  await page.waitForSelector('.day-picker', { state: 'detached' });
+
+  const hero = await page.locator('.hero p').first().innerText();
+  if (!/2 plans running/.test(hero)) throw new Error(hero);
+  const plans = await page.locator('.plan-row-name').allInnerTexts();
+  if (plans.length !== 2) throw new Error('plans listed: ' + plans.join(', '));
+});
+await step('today shows a session from each plan', async () => {
+  const blocks = await page.locator('.card-today .today-block').count();
+  if (blocks !== 2) throw new Error(`expected 2 sessions today, got ${blocks}`);
+  const labelled = await page.locator('.sched-row.is-today .sched-plan').allInnerTexts();
+  if (labelled.length !== 2) throw new Error('today rows should name their plan: ' + labelled.join(', '));
+  await page.locator('.tab[data-tab="train"]').click();
+  const line = await page.locator('.hero p').first().innerText();
+  if (!/2 sessions planned today/.test(line)) throw new Error(line);
+});
+await step('log a session from one of them', async () => {
+  const btn = page.locator('.card-today').getByRole('button', { name: /Start Weighted Carry/ });
+  await btn.click();
+  await page.waitForSelector('.entry');
+  await page.locator('.entry').first().locator('.set-check').first().click();
+  if (!(await endSession(page))) throw new Error('could not finish');
+});
+await step('removing a plan offers to take its routines with it', async () => {
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Remove Weighted Carry Endurance' }).click();
+  const sheet = await page.locator('.sheet').last().innerText();
+  if (!/logged are kept/.test(sheet)) throw new Error('does not reassure about history');
+  await page.getByRole('button', { name: /Remove plan and its \d+ routines?/ }).click();
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  const plans = await page.locator('.plan-row-name').allInnerTexts();
+  if (plans.join() !== 'Gym Muscular Endurance') throw new Error('left: ' + plans.join(', '));
+  const lib = await page.locator('.view').innerText();
+  if (/Weighted Carry\b/.test(lib.split('Routines')[1] || '')) throw new Error('its routines were left behind');
+});
+await step('the other plan is untouched and history is kept', async () => {
+  const today = await page.locator('.card-today').innerText();
+  if (!/Workout 1/.test(today)) throw new Error('remaining plan lost its session: ' + today);
+  await page.locator('.tab[data-tab="history"]').click();
+  const hist = await page.locator('.view').innerText();
+  if (!/Weighted Carry/.test(hist)) throw new Error('the logged session vanished with its plan');
+});
+
+
+console.log('\n== plan template ==');
+await step('the template downloads from the app', async () => {
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Paste a plan' }).click();
+  const href = await page.locator('a.template-link').getAttribute('href');
+  const res = await page.request.get(new URL(href, BASE).href);
+  if (res.status() !== 200) throw new Error('template ' + res.status());
+  const body = await res.body();
+  if (body.subarray(0, 2).toString() !== 'PK') throw new Error('not an xlsx (zip) file');
+});
+await step('the filled-in .xlsx uploads as it is', async () => {
+  await page.locator('input[type="file"]').setInputFiles(path.join(ROOT, 'templates/plan-template.xlsx'));
+  await page.waitForSelector('.plan-ok', { timeout: 5000 });
+  const ok = await page.locator('.plan-ok').innerText();
+  if (!/9 weeks/.test(ok)) throw new Error(ok);
+  const label = await page.locator('.sheet .form').first().innerText();
+  if (!/sheet “Plan”/.test(label)) throw new Error('did not say which sheet it read');
+  if (await page.locator('.plan-warn').count()) throw new Error(await page.locator('.plan-warn').first().innerText());
+});
+await step('an Excel-saved workbook reads too', async () => {
+  // shared strings, a rich-text run, a formula with a comma, and a notes
+  // sheet ahead of the plan: how a file looks after Excel or Numbers saves it
+  await page.locator('input[type="file"]').setInputFiles(path.join(ROOT, 'tests/fixtures/excel-saved.xlsx'));
+  await page.waitForFunction(() => /Training/.test(document.querySelector('.sheet .form')?.innerText || ''), null, { timeout: 5000 });
+  const text = await page.locator('.plan-input').inputValue();
+  if (!/Push Day/.test(text)) throw new Error('rich text not joined: ' + text.slice(0, 200));
+  if (!text.includes('"Keep, it ""tight"""')) throw new Error('comma and quotes not escaped: ' + text);
+  const sessions = await page.locator('.plan-session strong').allInnerTexts();
+  if (!sessions.includes('Push Day') || !sessions.includes('Pull Day')) throw new Error(sessions.join(', '));
+});
+await step('a Numbers file gets told how to export', async () => {
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'plan.numbers', mimeType: 'application/octet-stream', buffer: Buffer.from('not really'),
+  });
+  await page.waitForFunction(() => /Export To/.test(document.getElementById('toast')?.textContent || ''), null, { timeout: 3000 });
+});
+await step('a range a spreadsheet turned into a date is flagged', async () => {
+  await page.locator('.plan-input').fill('Workout,Exercise,Sets,Reps\nA,Back Squat,3,45208');
+  await page.waitForSelector('.plan-warn');
+  const warn = await page.locator('.plan-warn').first().innerText();
+  if (!/looks like a date/.test(warn)) throw new Error(warn);
+  await page.keyboard.press('Escape');
+});
+
 
 console.log('\n== shipping an update ==');
 await step('a new version reaches an already-installed app', async () => {

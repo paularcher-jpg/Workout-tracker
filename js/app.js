@@ -5,6 +5,8 @@ import { h, clear, toast, relativeTime, icon } from './ui.js';
 import * as Timer from './timer.js';
 import * as Drive from './drive.js';
 import * as W from './workout.js';
+import { keepAwake } from './wakelock.js';
+import { maybeWelcome } from './views/welcome.js';
 
 import * as train from './views/train.js';
 import * as plan from './views/plan.js';
@@ -59,6 +61,10 @@ async function boot() {
 
   document.getElementById('splash')?.remove();
   document.body.classList.add('ready');
+
+  // a phone propped on a bench should not lock itself between sets
+  keepAwake(getState().local.keepAwake !== false);
+  maybeWelcome(() => navigate(current || 'train'));
 
   registerServiceWorker();
   wireSync();

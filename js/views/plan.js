@@ -1,13 +1,15 @@
 // Your training plan on a calendar: what you are doing today, and what is
 // coming up. Routines are the templates; the plan says which day each falls on.
 
-import { h, clear, toast, confirmSheet, openSheet, emptyState, icon } from '../ui.js';
-import { list, get, upsert, softDelete } from '../state.js';
+import { h, clear, toast, openSheet, emptyState, icon } from '../ui.js';
+import { list, get, upsert } from '../state.js';
 import * as P from '../program.js';
 import * as W from '../workout.js';
 import { libraryNode, editRoutine } from './routines.js';
-import { parsePlan, applyPlan, newExercisesIn, sessionList, looksLikeCSV } from '../planparse.js';
+import { parsePlan, newExercisesIn, sessionList, looksLikeCSV } from '../planparse.js';
 import { openProgramLibrary } from './programs.js';
+import { openSetupSheet } from './setup.js';
+import { planCsvFromXlsx } from '../xlsx.js';
 import { field } from './train.js';
 
 export function destroy() {}
@@ -15,21 +17,14 @@ export function destroy() {}
 export function render(root, { refresh, navigate }) {
   clear(root);
   const wrap = h('div', { class: 'view' });
-  const program = P.activeProgram();
+  const programs = P.activePrograms();
 
-  const summary = program ? P.programSummary(program) : null;
   wrap.appendChild(h('div', { class: 'hero' },
     h('h1', {}, 'Plan'),
-    h('p', { class: 'muted' }, program
-      ? [
-        program.name,
-        `${summary.weeks} week${summary.weeks === 1 ? '' : 's'}`,
-        `${summary.sessions} session${summary.sessions === 1 ? '' : 's'} a cycle`,
-      ].filter((part, i) => i !== 0 || part.toLowerCase() !== 'plan').join(' · ')
-      : 'Schedule your sessions so the app knows what today is.'),
+    h('p', { class: 'muted' }, heroLine(programs)),
   ));
 
-  if (!program) {
+  if (!programs.length) {
     wrap.appendChild(emptyState(icon('plan'), 'No plan yet',
       'Pick a program off the shelf, or paste one you already follow.'));
     wrap.appendChild(h('button', {
@@ -45,28 +40,47 @@ export function render(root, { refresh, navigate }) {
       onclick: () => { createEmptyPlan(); refresh(); },
     }, 'Build one by hand'));
   } else {
-    wrap.appendChild(todayCard(program, refresh, navigate));
-    wrap.appendChild(upcomingCard(program, refresh, navigate));
-    wrap.appendChild(h('div', { class: 'btn-row' },
-      h('button', {
-        class: 'btn btn-secondary', type: 'button',
-        onclick: () => openPlanEditor(program, refresh),
-      }, 'Edit plan'),
-      h('button', {
-        class: 'btn btn-secondary', type: 'button',
-        onclick: () => openProgramLibrary(refresh),
-      }, 'Browse programs'),
-    ));
-    wrap.appendChild(h('button', {
-      class: 'btn btn-quiet btn-block', type: 'button',
-      onclick: () => openPasteSheet(refresh),
-    }, 'Paste a new plan'));
+    wrap.appendChild(todayCard(programs, refresh, navigate));
+    wrap.appendChild(upcomingCard(programs, refresh, navigate));
+    wrap.appendChild(plansCard(programs, refresh));
   }
 
   wrap.appendChild(h('div', { class: 'section-title' }, h('h2', {}, 'Routines')));
   wrap.appendChild(libraryNode({ refresh, navigate }));
 
   root.appendChild(wrap);
+}
+
+function heroLine(programs) {
+  if (!programs.length) return 'Schedule your sessions so the app knows what today is.';
+  if (programs.length > 1) return `${programs.length} plans running`;
+  const [program] = programs;
+  const summary = P.programSummary(program);
+  return [
+    program.name,
+    `${summary.weeks} week${summary.weeks === 1 ? '' : 's'}`,
+    `${summary.sessions} session${summary.sessions === 1 ? '' : 's'} a cycle`,
+  ].filter((part, i) => i !== 0 || part.toLowerCase() !== 'plan').join(' · ');
+}
+
+/**
+ * Where a plan is up to. A repeating plan reports its place in the cycle —
+ * "week 3 of 1" is what counting weeks since the start would say.
+ */
+function weekLabel(program, slot) {
+  const n = program.weeks.length;
+  if (program.repeat === false) return `Week ${slot.weekNumber + 1} of ${n}`;
+  return n === 1 ? 'Every week' : `Week ${slot.weekIndex + 1} of ${n}, repeating`;
+}
+
+/** The weekdays a plan trains on, from its busiest week. */
+function trainingDays(program) {
+  let best = [];
+  for (const week of program.weeks || []) {
+    const days = (week.days || []).map((d, i) => (d?.routineId ? i : null)).filter((i) => i !== null);
+    if (days.length > best.length) best = days;
+  }
+  return best;
 }
 
 /* ------------------------------------------------------------ today card */
@@ -89,22 +103,57 @@ function gripIcon() {
   return svg;
 }
 
-export function todayCard(program = P.activeProgram(), refresh, navigate) {
-  const slot = P.todaysSession(program);
+/**
+ * What today holds across every plan you are following. Accepts one program
+ * or a list, so a caller that only knows about one plan still works.
+ */
+export function todayCard(programs = P.activePrograms(), refresh, navigate) {
+  programs = (Array.isArray(programs) ? programs : [programs]).filter(Boolean);
+  const multi = programs.length > 1;
+  const live = W.activeWorkout();
   const card = h('section', { class: 'card card-today' });
+  card.appendChild(h('p', { class: 'today-label' }, 'Today'));
 
-  const heading = h('div', {},
-    h('p', { class: 'today-label' }, 'Today'),
-    h('h3', {}, slot?.routine ? slot.routine.name : 'Rest day'),
-  );
-  card.appendChild(heading);
+  const sessions = P.todaysSessions(programs);
+  if (sessions.length) {
+    sessions.forEach((slot, i) => {
+      const block = h('div', { class: i ? 'today-block today-block-next' : 'today-block' });
+      block.appendChild(h('h3', {}, slot.routine.name));
+      const end = P.planEndDate(slot.program);
+      block.appendChild(h('p', { class: 'muted small' }, [
+        multi ? slot.program.name : null,
+        weekLabel(slot.program, slot),
+        multi ? null : P.DAY_NAMES[slot.dayIndex],
+        end ? `ends ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : null,
+      ].filter(Boolean).join(' · ')));
+      const names = (slot.routine.items || [])
+        .map((it) => get('exercises', it.exerciseId)?.name).filter(Boolean);
+      block.appendChild(h('p', { class: 'muted small' },
+        names.slice(0, 5).join(' · ') + (names.length > 5 ? ` +${names.length - 5}` : '')));
+      block.appendChild(h('button', {
+        class: `btn ${i ? 'btn-secondary' : 'btn-primary'} btn-block`, type: 'button',
+        disabled: !!live,
+        // each block has its own heading, so the visible label stays short;
+        // the accessible name still says which session it starts
+        'aria-label': sessions.length > 1 ? `Start ${slot.routine.name}` : null,
+        onclick: () => startScheduled(slot, refresh, navigate),
+      }, sessions.length > 1 ? 'Start this session' : 'Start today’s session'));
+      card.appendChild(block);
+    });
+    return card;
+  }
 
-  if (!slot) {
-    const state = P.planState(program);
-    if (state === 'finished') {
-      heading.lastChild.textContent = 'Plan complete';
+  const running = programs.filter((p) => P.planState(p) === 'active');
+  const finished = programs.filter((p) => P.planState(p) === 'finished');
+  const upcoming = programs.filter((p) => P.planState(p) === 'upcoming');
+
+  // every plan has run out: say so, and offer the obvious next steps
+  if (!running.length && !upcoming.length && finished.length) {
+    card.appendChild(h('h3', {}, 'Plan complete'));
+    for (const program of finished) {
       card.appendChild(h('p', { class: 'muted small' },
-        `${program.weeks.length} weeks done. Start the next block, or run this one again.`));
+        `${multi ? `${program.name}: ` : ''}${program.weeks.length} weeks done. `
+        + 'Start the next block, or run this one again.'));
       card.appendChild(h('div', { class: 'btn-row' },
         h('button', {
           class: 'btn btn-primary', type: 'button',
@@ -113,124 +162,121 @@ export function todayCard(program = P.activeProgram(), refresh, navigate) {
             refresh();
             toast('Plan restarted from this week', 'success');
           },
-        }, 'Run it again'),
+        }, multi ? `Run ${program.name} again` : 'Run it again'),
         h('button', {
           class: 'btn btn-quiet', type: 'button',
-          onclick: () => openPasteSheet(refresh),
-        }, 'Add a new plan'),
+          onclick: () => openProgramLibrary(refresh),
+        }, 'Choose the next plan'),
       ));
-      return card;
     }
-    card.appendChild(h('p', { class: 'muted small' },
-      `Starts ${P.startOfDay(program.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}.`));
     return card;
   }
 
-  const end = P.planEndDate(program);
-  card.appendChild(h('p', { class: 'muted small' },
-    `Week ${slot.weekNumber + 1} of ${program.weeks.length} · ${P.DAY_NAMES[slot.dayIndex]}` +
-    (end ? ` · ends ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : '')));
-
-  if (slot.routine) {
-    const names = (slot.routine.items || [])
-      .map((i) => get('exercises', i.exerciseId)?.name).filter(Boolean);
+  if (!running.length && upcoming.length) {
+    const first = upcoming[0];
+    card.appendChild(h('h3', {}, 'Not started yet'));
     card.appendChild(h('p', { class: 'muted small' },
-      names.slice(0, 5).join(' · ') + (names.length > 5 ? ` +${names.length - 5}` : '')));
-    card.appendChild(h('button', {
-      class: 'btn btn-primary btn-block', type: 'button',
-      onclick: () => startScheduled(slot, refresh, navigate),
-    }, 'Start today’s session'));
-  } else {
-    const next = P.nextTrainingDay();
-    if (next) {
-      card.appendChild(h('p', { class: 'muted small' },
-        `Next: ${next.routine.name} on ${next.date.toLocaleDateString(undefined, { weekday: 'long' })}.`));
-    }
+      `${multi ? `${first.name} starts` : 'Starts'} `
+      + `${P.startOfDay(first.startDate).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}.`));
+    return card;
+  }
+
+  card.appendChild(h('h3', {}, 'Rest day'));
+  const next = P.nextSessionAcross(P.addDays(new Date(), 1), programs);
+  if (next) {
+    card.appendChild(h('p', { class: 'muted small' },
+      `Next: ${next.routine.name} on ${next.date.toLocaleDateString(undefined, { weekday: 'long' })}`
+      + `${multi ? ` (${next.program.name})` : ''}.`));
   }
   return card;
 }
 
 /* -------------------------------------------------------- assign sheet */
 
-function openAssignSheet(slot, program, refresh) {
+/**
+ * Put a session on a date, or clear it back to rest. With several plans the
+ * sheet asks which plan the change belongs to, since a day can hold one
+ * session from each.
+ */
+function openAssignSheet(date, programs, refresh, programId = null) {
   const routines = list('routines').sort((a, b) => a.name.localeCompare(b.name));
-  const selected = slot.routineId;
+  const day = P.weekdayIndex(date);
+  let target = programs.find((p) => p.id === programId) || programs[0];
 
-  return new Promise((resolve) => {
-    openSheet({
-      title: `${P.DAY_NAMES[slot.dayIndex]}, ${slot.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`,
-      fullHeight: true,
-      onClose: () => resolve(),
-      render: (close) => {
-        const body = h('div', { class: 'picker-list' });
+  openSheet({
+    title: `${P.DAY_NAMES[day]}, ${P.startOfDay(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`,
+    fullHeight: true,
+    render: (close) => {
+      const body = h('div', { class: 'form' });
+      const chips = h('div', { class: 'chips' });
+      const listEl = h('div', { class: 'picker-list' });
 
-        // Add routine options
+      const draw = () => {
+        clear(chips);
+        for (const program of programs) {
+          chips.appendChild(h('button', {
+            class: `chip${program.id === target.id ? ' chip-on' : ''}`, type: 'button',
+            'aria-pressed': program.id === target.id ? 'true' : 'false',
+            onclick: () => { target = program; draw(); },
+          }, program.name));
+        }
+
+        clear(listEl);
+        const slot = P.scheduledFor(date, target);
+        if (!slot) {
+          listEl.appendChild(h('p', { class: 'muted pad' }, `This day is outside ${target.name}’s dates.`));
+          return;
+        }
+        const selected = slot.routineId;
+        const assign = (routineId) => {
+          P.setSlot(get('programs', target.id), slot.weekIndex, slot.dayIndex, routineId);
+          refresh();
+          close();
+        };
+
         for (const routine of routines) {
-          const isSelected = routine.id === selected;
-          body.appendChild(h('button', {
-            class: `picker-item${isSelected ? ' is-selected' : ''}`,
-            type: 'button',
-            title: isSelected ? 'Currently scheduled' : '',
-            onclick: () => {
-              P.setSlot(program, slot.weekIndex, slot.dayIndex, routine.id);
-              refresh();
-              close();
-            },
+          const on = routine.id === selected;
+          listEl.appendChild(h('button', {
+            class: `picker-item${on ? ' is-selected' : ''}`, type: 'button',
+            onclick: () => assign(routine.id),
           },
             h('span', { class: 'picker-name' }, routine.name),
-            isSelected ? h('span', { class: 'picker-meta' }, '✓') : null,
+            on ? h('span', { class: 'picker-meta' }, '✓') : null,
           ));
         }
-
-        // Add rest day option
-        const isRest = !selected;
-        body.appendChild(h('button', {
-          class: `picker-item${isRest ? ' is-selected' : ''}`,
-          type: 'button',
-          title: isRest ? 'Currently a rest day' : '',
-          onclick: () => {
-            P.setSlot(program, slot.weekIndex, slot.dayIndex, null);
-            refresh();
-            close();
-          },
+        listEl.appendChild(h('button', {
+          class: `picker-item${selected ? '' : ' is-selected'}`, type: 'button',
+          onclick: () => assign(null),
         },
-          h('span', { class: 'picker-name' }, 'Rest day'),
-          isRest ? h('span', { class: 'picker-meta' }, '✓') : null,
+          h('span', { class: 'picker-name' }, selected ? 'Make this a rest day' : 'Rest day'),
+          selected ? null : h('span', { class: 'picker-meta' }, '✓'),
         ));
+      };
 
-        // Add remove option if there's currently a session
-        if (selected) {
-          body.appendChild(h('button', {
-            class: 'picker-item picker-danger',
-            type: 'button',
-            onclick: () => {
-              P.setSlot(program, slot.weekIndex, slot.dayIndex, null);
-              refresh();
-              close();
-            },
-          }, 'Remove from this day'));
-        }
-
-        return body;
-      },
-    });
+      if (programs.length > 1) {
+        body.appendChild(h('p', { class: 'field-label' }, 'Which plan'));
+        body.appendChild(chips);
+      }
+      body.appendChild(listEl);
+      draw();
+      return body;
+    },
   });
 }
 
 /* --------------------------------------------------------------- upcoming */
 
-function upcomingCard(program, refresh, navigate) {
+function upcomingCard(programs, refresh, navigate) {
   const card = h('section', { class: 'card' });
   const live = W.activeWorkout();
+  const multi = programs.length > 1;
 
   // Start from this Monday, not today, so a session you missed earlier in the
   // week is still on screen and can still be done.
   const weekStart = P.mondayOf(new Date());
-  const from = weekStart < P.startOfDay(program.startDate)
-    ? P.startOfDay(program.startDate)
-    : weekStart;
+  const earliest = programs.map((p) => P.startOfDay(p.startDate)).sort((a, b) => a - b)[0];
+  const from = earliest > weekStart ? earliest : weekStart;
 
-  const days = P.projection(21, from, program);
   const todayISO = P.toISODate(new Date());
   const today = P.startOfDay(new Date());
   const doneThisWeek = W.routinesLoggedBetween(weekStart, P.addDays(weekStart, 6));
@@ -243,126 +289,138 @@ function upcomingCard(program, refresh, navigate) {
   ));
 
   const listEl = h('div', { class: 'sched' });
+  let lastShown = null;
 
-  for (const slot of days) {
-    const iso = P.toISODate(slot.date);
+  for (let i = 0; i < 21; i++) {
+    const date = P.addDays(from, i);
+    const slots = P.scheduledAcross(date, programs);
+    if (!slots.length) continue;   // no plan covers this date
+    lastShown = date;
+    const sessions = slots.filter((s) => !s.rest);
+    const iso = P.toISODate(date);
     const isToday = iso === todayISO;
-    const isPast = slot.date < today;
-    const sameWeek = slot.date >= weekStart && slot.date <= P.addDays(weekStart, 6);
-    const done = sameWeek && slot.routineId && doneThisWeek.has(slot.routineId);
+    const isPast = date < today;
+    const sameWeek = date >= weekStart && date <= P.addDays(weekStart, 6);
 
-    const classes = ['sched-row', 'sched-draggable'];
-    if (isToday) classes.push('is-today');
-    if (slot.rest) classes.push('is-rest');
-    if (isPast && !isToday) classes.push('is-past');
-    if (done) classes.push('is-done');
+    const rowFor = (slot) => {
+      const done = !!(slot && sameWeek && doneThisWeek.has(slot.routineId));
+      const classes = ['sched-row'];
+      if (slot) classes.push('sched-draggable');
+      if (isToday) classes.push('is-today');
+      if (!slot) classes.push('is-rest');
+      if (isPast && !isToday) classes.push('is-past');
+      if (done) classes.push('is-done');
 
-    const row = h('div', {
-      class: classes.join(' '),
-      'aria-grabbed': false,
-      title: slot.routine ? 'Long press to move' : 'Tap to assign a session',
-      dataset: { weekIndex: slot.weekIndex, dayIndex: slot.dayIndex },
-    },
-      h('span', { class: 'sched-day' }, P.DAY_SHORT[slot.dayIndex]),
-      h('span', { class: 'sched-date' }, slot.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })),
-      h('span', { class: 'sched-name' }, slot.routine ? slot.routine.name : 'Rest'),
-      slot.routine
-        ? h('button', {
-          class: `btn btn-sm ${isToday && !live ? 'btn-primary' : 'btn-quiet'} sched-start`,
-          type: 'button',
-          disabled: !!live,
-          title: live ? 'Finish your current workout first' : '',
-          'aria-label': live
-            ? `${slot.routine.name} — finish your current workout first`
-            : `Start ${slot.routine.name} scheduled for ${slot.date.toDateString()}`,
-          onclick: (e) => { e.stopPropagation(); startScheduled(slot, refresh, navigate); },
-        }, done ? 'Again' : 'Start')
-        : h('span', { class: 'sched-tick' }, ''),
-    );
+      // the end of a name is often what tells sessions apart ("Upper A — Build"
+      // vs "— Heavy"), so names wrap to two lines rather than being cut off
+      const title = h('span', { class: 'sched-title' }, slot ? slot.routine.name : 'Rest');
+      if (done) title.appendChild(h('span', { class: 'sched-done-tag' }, 'done'));
+      const name = h('span', { class: 'sched-name' }, title);
+      if (slot && multi) name.appendChild(h('span', { class: 'sched-plan' }, slot.program.name));
 
-    // Tap to assign a session or open the edit sheet
-    row.addEventListener('click', (e) => {
-      if (e.target.classList.contains('sched-start')) return; // Don't trigger on start button
-      openAssignSheet(slot, program, refresh);
-    });
+      const row = h('div', {
+        class: classes.join(' '),
+        'aria-grabbed': slot ? 'false' : null,
+        title: slot ? 'Drag the grip to move' : 'Tap to assign a session',
+        dataset: slot
+          ? { iso, programId: slot.program.id, weekIndex: slot.weekIndex, dayIndex: slot.dayIndex }
+          : { iso },
+      },
+        h('span', { class: 'sched-day' }, P.DAY_SHORT[P.weekdayIndex(date)]),
+        h('span', { class: 'sched-date' }, date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })),
+        name,
+        slot
+          ? h('button', {
+            class: `btn btn-sm ${isToday && !live ? 'btn-primary' : 'btn-quiet'} sched-start`,
+            type: 'button',
+            disabled: !!live,
+            title: live ? 'Finish your current workout first' : '',
+            'aria-label': live
+              ? `${slot.routine.name} — finish your current workout first`
+              : `Start ${slot.routine.name} scheduled for ${date.toDateString()}`,
+            onclick: (e) => { e.stopPropagation(); startScheduled(slot, refresh, navigate); },
+          }, done ? 'Again' : 'Start')
+          : h('span', { class: 'sched-tick' }, ''),
+      );
 
-    // Dragging starts from a grip, not the row. A long-press on the row would
-    // need touch-action:none to work, which would stop the list scrolling at
-    // all — much worse than having no drag.
-    if (slot.routine) {
-      const grip = h('button', {
-        class: 'sched-grip',
-        type: 'button',
-        'aria-label': `Move ${slot.routine.name} to another day`,
-        title: 'Drag to move to another day',
-        onclick: (e) => e.stopPropagation(),
-      }, gripIcon());
-      grip.addEventListener('pointerdown', (e) => {
-        if (e.button !== 0) return;
-        e.stopPropagation();
-        e.preventDefault();
-        startDrag(e, grip, row, slot);
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.sched-start, .sched-grip')) return;
+        openAssignSheet(date, programs, refresh, slot?.program.id);
       });
-      row.appendChild(grip);
-    }
 
-    if (done) row.querySelector('.sched-name').append(h('span', { class: 'sched-done-tag' }, 'done'));
-    listEl.appendChild(row);
+      // Dragging starts from a grip, not the row. A long-press on the row would
+      // need touch-action:none to work, which would stop the list scrolling at
+      // all — much worse than having no drag.
+      if (slot) {
+        const grip = h('button', {
+          class: 'sched-grip', type: 'button',
+          'aria-label': `Move ${slot.routine.name} to another day`,
+          title: 'Drag to move to another day',
+          onclick: (e) => e.stopPropagation(),
+        }, gripIcon());
+        grip.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          e.stopPropagation();
+          e.preventDefault();
+          startDrag(e, grip, row, slot);
+        });
+        row.appendChild(grip);
+      }
+      return row;
+    };
+
+    if (sessions.length) sessions.forEach((slot) => listEl.appendChild(rowFor(slot)));
+    else listEl.appendChild(rowFor(null));
   }
 
-  // Drag-to-move implementation
+  // Drag-to-move. A session moves within its own plan's cycle week, so a
+  // target is valid when that plan puts the same cycle week on the target
+  // date — whichever plan's row happens to be under the pointer.
   let activeDrag = null;
 
-  function startDrag(downEvent, grip, sourceRow, sourceSlot) {
-    if (!sourceSlot.routine || activeDrag) return;
+  function targetFor(candidate, sourceSlot) {
+    if (!candidate || candidate === activeDrag?.sourceRow) return null;
+    const there = P.slotFor(sourceSlot.program, candidate.dataset.iso);
+    return there && there.weekIndex === sourceSlot.weekIndex && there.dayIndex !== sourceSlot.dayIndex
+      ? there
+      : null;
+  }
 
+  function startDrag(downEvent, grip, sourceRow, sourceSlot) {
+    if (activeDrag) return;
     grip.setPointerCapture(downEvent.pointerId);
     sourceRow.classList.add('is-dragging');
     sourceRow.setAttribute('aria-grabbed', 'true');
 
     activeDrag = {
-      grip,
-      pointerId: downEvent.pointerId,
-      sourceRow,
-      sourceSlot,
-      startY: downEvent.clientY,
-      dropTarget: null,
-      onMove: null,
-      onEnd: null,
+      grip, pointerId: downEvent.pointerId, sourceRow, sourceSlot,
+      startY: downEvent.clientY, dropTarget: null, dropSlot: null, onMove: null, onEnd: null,
     };
 
     const onMove = (e) => {
       if (!activeDrag) return;
       e.preventDefault();
       sourceRow.style.transform = `translateY(${e.clientY - activeDrag.startY}px)`;
-
       // the dragged row carries pointer-events:none, so this sees through it
-      const under = document.elementFromPoint(e.clientX, e.clientY);
-      const candidate = under?.closest('.sched-row');
-      const valid = candidate
-        && candidate !== sourceRow
-        && Number(candidate.dataset.weekIndex) === sourceSlot.weekIndex
-        ? candidate
-        : null;
-
+      const candidate = document.elementFromPoint(e.clientX, e.clientY)?.closest('.sched-row');
+      const there = targetFor(candidate, sourceSlot);
+      const valid = there ? candidate : null;
       if (valid !== activeDrag.dropTarget) {
         activeDrag.dropTarget?.classList.remove('is-drop-target');
         valid?.classList.add('is-drop-target');
         activeDrag.dropTarget = valid;
+        activeDrag.dropSlot = there;
       }
     };
 
     const onEnd = () => {
       if (!activeDrag) return;
-      const target = activeDrag.dropTarget;
+      const there = activeDrag.dropSlot;
       const slot = activeDrag.sourceSlot;
       cleanupDrag();
-      if (!target) return;
-      const toDay = Number(target.dataset.dayIndex);
-      if (Number.isInteger(toDay) && toDay !== slot.dayIndex) {
-        P.moveSlot(program, slot.weekIndex, slot.dayIndex, toDay);
-        refresh();
-      }
+      if (!there) return;
+      P.moveSlot(get('programs', slot.program.id), slot.weekIndex, slot.dayIndex, there.dayIndex);
+      refresh();
     };
 
     activeDrag.onMove = onMove;
@@ -388,16 +446,108 @@ function upcomingCard(program, refresh, navigate) {
 
   card.appendChild(listEl);
 
-  const end = P.planEndDate(program);
-  if (end && days.length && days.at(-1).date >= end) {
-    card.appendChild(h('p', { class: 'muted small pad-top' },
-      `Plan ends ${end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}.`));
+  for (const program of programs) {
+    const end = P.planEndDate(program);
+    if (end && lastShown && lastShown >= end) {
+      card.appendChild(h('p', { class: 'muted small pad-top' },
+        `${multi ? program.name : 'Plan'} ends `
+        + `${end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}.`));
+    }
   }
 
   card.appendChild(h('p', { class: 'muted small pad-top' },
     'A session is logged on the day you actually do it, whichever day it was planned for.'));
 
   return card;
+}
+
+/* -------------------------------------------------------------- your plans */
+
+/** One line per plan you are following, each with its own way off the calendar. */
+function plansCard(programs, refresh) {
+  const card = h('section', { class: 'card' });
+  card.appendChild(h('div', { class: 'card-head' },
+    h('h3', {}, programs.length === 1 ? 'Your plan' : 'Your plans')));
+
+  for (const program of programs) {
+    const state = P.planState(program);
+    const slot = P.slotFor(program, new Date());
+    const end = P.planEndDate(program);
+    const status = state === 'finished' ? 'Complete'
+      : state === 'upcoming'
+        ? `Starts ${P.startOfDay(program.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+        : slot ? weekLabel(program, slot) : '';
+
+    card.appendChild(h('div', { class: 'plan-row' },
+      h('div', { class: 'plan-row-text' },
+        h('p', { class: 'plan-row-name' }, program.name),
+        h('p', { class: 'muted small' }, [
+          status,
+          trainingDays(program).map((d) => P.DAY_SHORT[d]).join(' · '),
+          end && state !== 'finished' ? `ends ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : null,
+        ].filter(Boolean).join(' · ')),
+      ),
+      h('div', { class: 'plan-row-actions' },
+        h('button', {
+          class: 'btn btn-sm btn-quiet', type: 'button',
+          'aria-label': `Edit ${program.name}`,
+          onclick: () => openPlanEditor(program, refresh),
+        }, 'Edit'),
+        h('button', {
+          class: 'btn btn-sm btn-quiet plan-remove', type: 'button',
+          'aria-label': `Remove ${program.name}`,
+          onclick: () => openRemoveSheet(program, refresh),
+        }, 'Remove'),
+      ),
+    ));
+  }
+
+  card.appendChild(h('div', { class: 'btn-row pad-top' },
+    h('button', {
+      class: 'btn btn-secondary', type: 'button',
+      onclick: () => openProgramLibrary(refresh),
+    }, 'Add another plan'),
+    h('button', {
+      class: 'btn btn-quiet', type: 'button',
+      onclick: () => openPasteSheet(refresh),
+    }, 'Paste a plan'),
+  ));
+  return card;
+}
+
+/** Taking a plan off the calendar. History always stays; its routines are your call. */
+function openRemoveSheet(program, refresh) {
+  const orphans = P.routinesOnlyIn(program);
+  const n = orphans.length;
+  const done = (removeRoutines) => {
+    const { removedRoutines } = P.removeProgram(program.id, { removeRoutines });
+    toast(removedRoutines
+      ? `${program.name} removed, with ${removedRoutines} routine${removedRoutines === 1 ? '' : 's'}`
+      : `${program.name} removed from your calendar`);
+    refresh();
+  };
+
+  openSheet({
+    title: `Remove ${program.name}?`,
+    render: (close) => h('div', { class: 'confirm' },
+      h('p', {}, 'It comes off your calendar. Workouts you have already logged are kept — '
+        + 'they are your history, not the plan’s.'),
+      n ? h('p', { class: 'muted small' },
+        `It also created ${n} routine${n === 1 ? '' : 's'} that no other plan uses. `
+        + 'Remove them too, or keep them to start by hand.') : null,
+      h('div', { class: 'confirm-stack' },
+        h('button', {
+          class: 'btn btn-danger btn-block', type: 'button',
+          onclick: () => { close(); done(true); },
+        }, n ? `Remove plan and its ${n} routine${n === 1 ? '' : 's'}` : 'Remove plan'),
+        n ? h('button', {
+          class: 'btn btn-secondary btn-block', type: 'button',
+          onclick: () => { close(); done(false); },
+        }, 'Remove plan, keep routines') : null,
+        h('button', { class: 'btn btn-ghost btn-block', type: 'button', onclick: close }, 'Cancel'),
+      ),
+    ),
+  });
 }
 
 /* ----------------------------------------------------------- plan editing */
@@ -505,17 +655,11 @@ function openPlanEditor(program, refresh) {
           ? 'Weeks run in order and start again from week 1. Good for an ongoing weekly split.'
           : `Runs once and finishes${end ? ` on ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}` : ''}. Good for a fixed block.`));
 
+        // one way to remove a plan, wherever you start from
         body.appendChild(h('button', {
           class: 'btn btn-quiet btn-block', type: 'button',
-          onclick: async () => {
-            const ok = await confirmSheet({
-              title: 'Delete plan?',
-              message: 'The schedule is removed. Your routines and logged workouts are kept.',
-              confirmLabel: 'Delete', danger: true,
-            });
-            if (ok) { softDelete('programs', program.id); close(); }
-          },
-        }, 'Delete plan'));
+          onclick: () => { close(); openRemoveSheet(get('programs', program.id) || program, refresh); },
+        }, 'Remove this plan'));
       };
 
       draw();
@@ -556,25 +700,35 @@ export function openPasteSheet(refresh) {
         placeholder: EXAMPLE,
         autocapitalize: 'off', autocorrect: 'off',
       });
-      const startInput = h('input', {
-        class: 'input', type: 'date', value: P.toISODate(P.mondayOf(new Date())),
-      });
       const preview = h('div', { class: 'plan-preview' });
       const fileLabel = h('p', { class: 'muted small' });
 
       const fileInput = h('input', {
-        type: 'file', accept: '.csv,.txt,text/csv,text/plain',
+        type: 'file',
+        accept: '.xlsx,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         style: { display: 'none' },
         onchange: async (e) => {
           const file = e.target.files?.[0];
+          e.target.value = '';   // choosing the same file again still fires
           if (!file) return;
+          const ext = (file.name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+          if (ext === 'numbers') {
+            toast('Numbers files cannot be read directly. In Numbers: File, Export To, Excel.', 'error');
+            return;
+          }
           try {
-            input.value = await file.text();
+            if (ext === 'xlsx') {
+              const { csv, sheet } = await planCsvFromXlsx(await file.arrayBuffer());
+              input.value = csv;
+              fileLabel.textContent = `Loaded ${file.name} · sheet “${sheet}”`;
+            } else {
+              input.value = await file.text();
+              fileLabel.textContent = `Loaded ${file.name}`;
+            }
             planName = titleFromFile(file.name);
-            fileLabel.textContent = `Loaded ${file.name}`;
             showPreview();
           } catch (err) {
-            toast('Could not read that file', 'error');
+            toast(err?.message || 'Could not read that file', 'error');
           }
         },
       });
@@ -635,26 +789,33 @@ export function openPasteSheet(refresh) {
 
       return h('div', { class: 'form' },
         h('p', { class: 'muted small' },
-          'Upload the spreadsheet your plan came in, or type it out. A CSV needs an ' +
-          'Exercise column; Phase, Weeks, Workout, Sets, Reps, Rest, RPE and Notes are all used if present.'),
+          'Upload a spreadsheet (.xlsx or .csv) or type the plan out. It needs an Exercise column; '
+          + 'Phase, Weeks, Weekday, Workout, Sets, Reps, Rest, RPE and Notes are all used if present.'),
         h('button', {
           class: 'btn btn-secondary btn-block', type: 'button',
           onclick: () => fileInput.click(),
-        }, 'Upload a CSV file'),
+        }, 'Upload a spreadsheet'),
+        h('a', {
+          class: 'btn btn-quiet btn-block template-link',
+          href: './templates/plan-template.xlsx',
+          download: 'plan-template.xlsx',
+        }, 'Download the template to fill in'),
         fileInput,
         fileLabel,
         input,
-        field('Start date', startInput, 'The plan runs forward from here, then repeats.'),
         preview,
         h('button', {
           class: 'btn btn-primary btn-block', type: 'button',
           onclick: () => {
             const plan = parsed();
             if (!plan.weeks.length) { toast('Nothing to import yet', 'error'); return; }
-            const result = applyPlan(plan, { startDate: startInput.value || undefined });
-            close();
-            refresh();
-            toast(`Plan added · ${result.createdRoutines.length} sessions`, 'success');
+            // same questionnaire as a built-in program: nothing lands on the
+            // calendar until you have said which days you can train
+            openSetupSheet({
+              plan,
+              name: plan.name,
+              onDone: () => { close(); refresh(); },
+            });
           },
         }, 'Add this plan'),
       );

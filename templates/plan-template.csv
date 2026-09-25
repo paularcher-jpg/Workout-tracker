@@ -1,0 +1,24 @@
+Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps,Rest (s),RPE,Notes
+Build,1-3,Mon,Upper A,1,Barbell Bench Press,4,8-10,150,8,Add weight when you hit 10 on every set
+Build,1-3,Mon,Upper A,2,Barbell Row,4,8-10,120,8,
+Build,1-3,Mon,Upper A,3,Lateral Raise,3,12-15,60,9,
+Build,1-3,Mon,Upper A,4,Plank,3,45s,45,,A hold: reps are seconds
+Build,1-3,Tue,Lower A,1,Back Squat,4,8-10,180,8,
+Build,1-3,Tue,Lower A,2,Romanian Deadlift,3,10,150,8,
+Build,1-3,Tue,Lower A,3,Bulgarian Split Squat,3,10 each,90,8,Per leg
+Build,1-3,Thu,Upper B,1,Overhead Press,4,8-10,150,8,
+Build,1-3,Thu,Upper B,2,Lat Pulldown,3,10-12,90,8,
+Build,1-3,Fri,Lower B,1,Deadlift,3,5,240,8,Reset every rep
+Build,1-3,Fri,Lower B,2,Side Plank,3,30s each,45,,Per side
+Deload,4;8,Mon Thu,Easy Full Body,1,Goblet Squat,2,10,90,5,Half your usual weight
+Deload,4;8,Mon Thu,Easy Full Body,2,Push-Up,2,10,60,5,
+Deload,4;8,Mon Thu,Easy Full Body,3,Dead Bug,2,10 each,45,,
+Heavy,5-7,Mon,Upper A Heavy,1,Barbell Bench Press,5,5,180,8.5,Heavier than the build weeks
+Heavy,5-7,Mon,Upper A Heavy,2,Barbell Row,4,6,150,8.5,
+Heavy,5-7,Tue,Lower A Heavy,1,Back Squat,5,5,210,8.5,
+Heavy,5-7,Tue,Lower A Heavy,2,Romanian Deadlift,3,6,150,8,
+Heavy,5-7,Thu,Upper B Heavy,1,Overhead Press,5,5,180,8.5,
+Heavy,5-7,Thu,Upper B Heavy,2,Chin-Up,4,6,120,8,
+Heavy,5-7,Fri,Lower B Heavy,1,Deadlift,4,3,240,8.5,
+Test,9,Mon,Test Day,1,Barbell Bench Press,5,1,300,10,Work up in singles
+Test,9,Thu,Test Day 2,1,Back Squat,5,1,300,10,Work up in singles

@@ -4,10 +4,10 @@
 // reads, so everything here funnels into the same parsePlan/applyPlan pair a
 // pasted plan uses. Nothing about a built-in plan is special once it lands.
 
-import { h, clear, toast, openSheet } from '../ui.js';
-import { upsert } from '../state.js';
+import { h, clear, openSheet } from '../ui.js';
 import * as P from '../program.js';
-import { parseCSVPlan, applyPlan, sessionList, resolveExerciseName } from '../planparse.js';
+import { parseCSVPlan, sessionList, resolveExerciseName } from '../planparse.js';
+import { openSetupSheet } from './setup.js';
 import { howToUrl } from '../exercises.js';
 import { PROGRAMS, GOALS } from '../programs/index.js';
 
@@ -49,13 +49,14 @@ function metaLine(def, { full = false } = {}) {
 
 /* ------------------------------------------------------------------ browse */
 
-export function openProgramLibrary(refresh) {
+export function openProgramLibrary(refresh, { days: initialDays = 0 } = {}) {
   openSheet({
     title: 'Programs',
     fullHeight: true,
     render: (close) => {
       let goal = 'all';
-      let days = 0;
+      // opened from the day picker with "only three days?", start filtered
+      let days = DAY_FILTERS.includes(initialDays) ? initialDays : 0;
       const wrap = h('div', { class: 'prog-browse' });
 
       const search = h('input', {
@@ -153,12 +154,6 @@ export function openProgramDetail(def, refresh, closeParent) {
         wrap.appendChild(h('p', { class: 'prog-source' }, def.source));
       }
 
-      const startInput = h('input', {
-        class: 'input', type: 'date', value: P.toISODate(P.mondayOf(new Date())),
-      });
-      wrap.appendChild(h('label', { class: 'field-label' }, 'Start the week of'));
-      wrap.appendChild(startInput);
-
       const preview = h('div', { class: 'plan-preview' });
       preview.appendChild(h('p', { class: 'plan-ok' },
         `${plan.weeks.length} week${plan.weeks.length === 1 ? '' : 's'} · `
@@ -211,22 +206,28 @@ export function openProgramDetail(def, refresh, closeParent) {
 
       wrap.appendChild(h('button', {
         class: 'btn btn-primary btn-lg btn-block', type: 'button',
-        onclick: () => {
-          const { program, createdRoutines } = applyPlan(plan, { startDate: startInput.value });
+        onclick: () => openSetupSheet({
+          plan,
+          name: def.name,
           // applyPlan assumes a multi-week block runs once; the catalogue knows
           // which cycles are meant to loop and which finish
-          if (program.repeat !== def.repeat) {
-            upsert('programs', { ...program, repeat: def.repeat });
-          }
-          toast(`${def.name} added · ${createdRoutines.length} routines`);
-          close();
-          if (typeof closeParent === 'function') closeParent();
-          refresh();
-        },
-      }, 'Use this program'));
+          repeat: def.repeat,
+          onDone: () => {
+            close();
+            if (typeof closeParent === 'function') closeParent();
+            refresh();
+          },
+          onFewerDays: (count) => {
+            close();
+            if (typeof closeParent === 'function') closeParent();
+            openProgramLibrary(refresh, { days: count });
+          },
+        }),
+      }, 'Choose your days'));
 
       wrap.appendChild(h('p', { class: 'muted small' },
-        'Your existing routines and history are left alone. You can edit any session afterwards.'));
+        'Any plans you are already following stay on your calendar, and your routines and '
+        + 'history are left alone. You can edit any session afterwards.'));
 
       return wrap;
     },

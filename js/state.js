@@ -100,11 +100,16 @@ export function emptyState() {
       vibrate: true,
       autoStartRest: true,
       barWeight: 20,
+      // what to call you; synced, so it follows you to a new phone via Drive
+      name: '',
       updatedAt: now(),
     },
     // device-local, never synced
     local: {
       deviceId: uid(),
+      // per device: you may want the screen held on your phone but not a tablet
+      keepAwake: true,
+      askedName: false,
       driveClientId: '',
       driveFileId: '',
       lastSyncAt: 0,
