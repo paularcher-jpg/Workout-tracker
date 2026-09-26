@@ -626,6 +626,52 @@ await step('logging a set carries weight into plan-prefilled sets', async () => 
     if (r !== '10') throw new Error(`set ${i + 1} reps should stay 10, got "${r}"`);
   }
 });
+await step('a heavier set updates the sets after it, every time', async () => {
+  const rows = page.locator('.entry').first().locator('.set-row');
+  await rows.nth(1).locator('.set-input').nth(0).fill('26');
+  await rows.nth(1).locator('.set-check').click();
+  const w = await rows.nth(2).locator('.set-input').nth(0).inputValue();
+  const r = await rows.nth(2).locator('.set-input').nth(1).inputValue();
+  if (w !== '26' || r !== '10') throw new Error(`set 3 should follow set 2 (26/10), got ${w}/${r}`);
+});
+await step('a number typed into a later set is kept', async () => {
+  const entry = page.locator('.entry').first();
+  await entry.getByRole('button', { name: 'Add set' }).click();
+  const rows = entry.locator('.set-row');
+  await rows.nth(3).locator('.set-input').nth(0).fill('30');
+  await rows.nth(2).locator('.set-input').nth(0).fill('28');
+  await rows.nth(2).locator('.set-check').click();
+  const w = await rows.nth(3).locator('.set-input').nth(0).inputValue();
+  if (w !== '30') throw new Error(`typed weight should stay 30, got ${w}`);
+});
+await step('a marked warm-up passes nothing on; the first working set does', async () => {
+  const rows = page.locator('.entry').nth(1).locator('.set-row');
+  const before = await rows.nth(1).locator('.set-input').nth(0).inputValue();
+  await rows.nth(0).locator('.set-index').click();
+  await rows.nth(0).locator('.set-input').nth(0).fill('10');
+  await rows.nth(0).locator('.set-input').nth(1).fill('10');
+  await rows.nth(0).locator('.set-check').click();
+  const after = await rows.nth(1).locator('.set-input').nth(0).inputValue();
+  if (after !== before) throw new Error(`warm-up weight leaked into set 2: "${before}" became "${after}"`);
+  await rows.nth(1).locator('.set-input').nth(0).fill('30');
+  await rows.nth(1).locator('.set-input').nth(1).fill('8');
+  await rows.nth(1).locator('.set-check').click();
+  const w = await rows.nth(2).locator('.set-input').nth(0).inputValue();
+  const r = await rows.nth(2).locator('.set-input').nth(1).inputValue();
+  if (w !== '30' || r !== '8') throw new Error(`set 3 should follow set 2 (30/8), got ${w}/${r}`);
+});
+await step('an unmarked light first set is corrected by the next set', async () => {
+  // the reported problem: a light first set filled every set, and later sets
+  // never updated as the weight went up
+  const rows = page.locator('.entry').nth(2).locator('.set-row');
+  await rows.nth(0).locator('.set-input').nth(0).fill('20');
+  await rows.nth(0).locator('.set-check').click();
+  if (await rows.nth(2).locator('.set-input').nth(0).inputValue() !== '20') throw new Error('first set did not carry');
+  await rows.nth(1).locator('.set-input').nth(0).fill('45');
+  await rows.nth(1).locator('.set-check').click();
+  const w = await rows.nth(2).locator('.set-input').nth(0).inputValue();
+  if (w !== '45') throw new Error(`set 3 should now be 45, got ${w}`);
+});
 
 
 console.log('\n== starting a session on any day ==');

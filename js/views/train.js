@@ -372,7 +372,9 @@ function setRow(entry, set, index, prev, refresh, drawTotals) {
     value: set.weight === '' ? '' : String(set.weight),
     placeholder: prior ? String(prior.weight) : '0',
     'aria-label': `Set ${workingIndex + 1} weight in ${units()}`,
-    oninput: (e) => { W.patchSet(entry.id, set.id, { weight: sanitiseNumber(e.target.value) }); },
+    oninput: (e) => {
+      W.patchSet(entry.id, set.id, { weight: sanitiseNumber(e.target.value), typed: { ...set.typed, weight: true } });
+    },
     onfocus: (e) => e.target.select(),
   });
 
@@ -390,8 +392,8 @@ function setRow(entry, set, index, prev, refresh, drawTotals) {
       : `Set ${workingIndex + 1} reps`,
     oninput: (e) => {
       const patch = isTime
-        ? { secs: sanitiseNumber(e.target.value, true) }
-        : { reps: sanitiseNumber(e.target.value, true) };
+        ? { secs: sanitiseNumber(e.target.value, true), typed: { ...set.typed, secs: true } }
+        : { reps: sanitiseNumber(e.target.value, true), typed: { ...set.typed, reps: true } };
       W.patchSet(entry.id, set.id, patch);
     },
     onfocus: (e) => e.target.select(),
@@ -503,36 +505,38 @@ function keepVisible(row) {
 
 
 /**
- * After you log a set, the sets below it that are still empty inherit the same
- * numbers — so a straight-sets exercise is three taps, not six.
+ * After you log a set, the sets below it take the same numbers, so a
+ * straight-sets exercise is one tap a set. Every tick updates them again, so
+ * moving up from a lighter first set carries the new weight down. Only numbers
+ * you typed into a set yourself are left alone. A warm-up passes nothing on:
+ * its weight is never the working weight.
  */
 function carryForward(entry, set, row, weight, secondsOrReps, isTime) {
+  if (set.warmup) return;
   const container = row.parentElement;
   if (!container) return;
   const rows = [...container.querySelectorAll('.set-row')];
   const from = entry.sets.indexOf(set);
   if (from < 0) return;
+  const field = isTime ? 'secs' : 'reps';
 
   entry.sets.forEach((other, i) => {
-    if (i <= from || other.done) return;
+    if (i <= from || other.done || other.warmup) return;
 
-    // Per field, not all-or-nothing: a plan prefills reps/secs, so an all-or-nothing
-    // rule would leave every later set without a weight.
+    // Per field: typing the weight on a later set keeps that weight, but its
+    // reps still follow along (and the other way round).
+    // A box you typed into and then cleared follows along again.
+    const mine = (key) => other.typed?.[key] && other[key] !== '';
     const patch = {};
-    if (other.weight === '') patch.weight = weight;
-    if (isTime) {
-      if (other.secs === '') patch.secs = secondsOrReps;
-    } else {
-      if (other.reps === '') patch.reps = secondsOrReps;
-    }
+    if (!mine('weight') && String(other.weight) !== String(weight)) patch.weight = weight;
+    if (!mine(field) && String(other[field]) !== String(secondsOrReps)) patch[field] = secondsOrReps;
     if (!Object.keys(patch).length) return;
 
     W.patchSet(entry.id, other.id, patch);
     const inputs = rows[i]?.querySelectorAll('.set-input');
     if (inputs?.length === 2) {
       if (patch.weight !== undefined) inputs[0].value = String(weight);
-      if (isTime && patch.secs !== undefined) inputs[1].value = String(secondsOrReps);
-      if (!isTime && patch.reps !== undefined) inputs[1].value = String(secondsOrReps);
+      if (patch[field] !== undefined) inputs[1].value = String(secondsOrReps);
     }
   });
 }
