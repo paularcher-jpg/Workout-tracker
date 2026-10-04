@@ -3,7 +3,7 @@
 
 import { h, clear, toast, pickExercise, confirmSheet, openSheet, fmtWeight, fmtVolume, fmtDuration, units, emptyState, icon, howTo } from '../ui.js';
 import { getState, list, get, addCustomExercise, commit } from '../state.js';
-import { MUSCLE_GROUPS } from '../exercises.js';
+import { MUSCLE_GROUPS, EQUIPMENT } from '../exercises.js';
 import * as P from '../program.js';
 import { todayCard } from './plan.js';
 import { displayName } from './welcome.js';
@@ -249,7 +249,7 @@ export function openCreateExercise(prefill = '') {
         const group = h('select', { class: 'input' });
         for (const g of MUSCLE_GROUPS) group.appendChild(h('option', { value: g }, g));
         const equip = h('select', { class: 'input' });
-        for (const e of ['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Kettlebell', 'Other']) {
+        for (const e of EQUIPMENT) {
           equip.appendChild(h('option', { value: e }, e));
         }
         const rest = h('input', {

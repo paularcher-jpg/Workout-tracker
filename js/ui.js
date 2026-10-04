@@ -1,7 +1,7 @@
 // DOM helpers, sheets, toasts and formatting shared by all views.
 
 import { list, getState } from './state.js';
-import { MUSCLE_GROUPS, howToUrl } from './exercises.js';
+import { MUSCLE_GROUPS, howToUrl, nameKey } from './exercises.js';
 
 /* -------------------------------------------------------------- dom helper */
 
@@ -232,10 +232,16 @@ export function pickExercise({ title = 'Add exercise', onCreate } = {}) {
         const groups = ['All', ...MUSCLE_GROUPS];
 
         const draw = () => {
-          const term = search.value.trim().toLowerCase();
+          // every word has to match somewhere, in any order, ignoring
+          // hyphens and spaces: "row cable" and "pullup" both find something
+          const words = search.value.trim().split(/\s+/).map(nameKey).filter(Boolean);
           const matches = list('exercises')
             .filter((ex) => group === 'All' || ex.group === group)
-            .filter((ex) => !term || ex.name.toLowerCase().includes(term) || ex.equipment.toLowerCase().includes(term))
+            .filter((ex) => {
+              if (!words.length) return true;
+              const text = nameKey(`${ex.name} ${ex.equipment} ${ex.group}`);
+              return words.every((w) => text.includes(w));
+            })
             .sort((a, b) => a.name.localeCompare(b.name));
 
           clear(results);

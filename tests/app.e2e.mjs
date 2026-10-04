@@ -461,7 +461,7 @@ Wednesday - Pull
   Lat Pulldown 3x10
 Friday - Legs
   Back Squat 5x5 rest 3min
-  Zercher Squat 3x10`;
+  Kang Squat 3x10`;
 
 console.log('\n== pasting a plan ==');
 await step('plan tab starts empty', async () => {
@@ -478,7 +478,7 @@ await step('paste sheet previews what was understood', async () => {
 });
 await step('exercises not in the library are flagged first', async () => {
   const note = await page.locator('.plan-note').textContent();
-  if (!note.includes('Zercher')) throw new Error(note);
+  if (!note.includes('Kang Squat')) throw new Error(note);
 });
 await step('a clean plan produces no warnings', async () => {
   if (await page.locator('.plan-warn').count()) {
@@ -1581,6 +1581,47 @@ await step("Sunday's session can be moved into next week", async () => {
   // a one-off: the Sunday after is untouched
   const nextSun = after.findIndex((r, i) => i > to && r.startsWith('Sun'));
   if (nextSun > 0 && !/Leg Day/.test(after[nextSun])) throw new Error('the next Sunday changed too: ' + after[nextSun]);
+});
+
+console.log('\n== the exercise library ==');
+async function openPicker(p) {
+  await p.locator('.tab[data-tab="train"]').click();
+  if (!(await p.getByRole('button', { name: '+ Add exercise' }).count())) {
+    await p.getByRole('button', { name: 'Start empty workout' }).click();
+  }
+  await p.getByRole('button', { name: '+ Add exercise' }).click();
+  await p.waitForSelector('.picker-search', { timeout: 5000 });
+}
+await step('search matches every word, in any order', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession());
+  await openPicker(page);
+  await page.locator('.picker-search').fill('row cable');
+  const items = await page.locator('.picker-item').allInnerTexts();
+  if (!items.some((t) => /Seated Cable Row/.test(t))) throw new Error('no Seated Cable Row: ' + items.slice(0, 5).join(' / '));
+  if (items.some((t) => !/row/i.test(t))) throw new Error('a non-row matched: ' + items.join(' / '));
+});
+await step('search ignores hyphens and spaces', async () => {
+  await page.locator('.picker-search').fill('pullup');
+  const items = await page.locator('.picker-item').allInnerTexts();
+  if (!items.some((t) => /^Pull-Up/.test(t.trim()))) throw new Error('pullup did not find Pull-Up: ' + items.slice(0, 5).join(' / '));
+});
+await step('new groups filter the library: Mobility, Forearms, Full Body', async () => {
+  await page.locator('.picker-search').fill('');
+  for (const [group, expect] of [['Mobility', 'Couch Stretch'], ['Forearms', 'Wrist Curl'], ['Full Body', 'Devil Press']]) {
+    await page.locator('.picker .chip', { hasText: new RegExp(`^${group}$`) }).click();
+    const items = await page.locator('.picker-item').allInnerTexts();
+    if (!items.some((t) => t.includes(expect))) throw new Error(`${group} lacks ${expect}`);
+    if (items.length < 5) throw new Error(`${group} shows only ${items.length}`);
+  }
+});
+await step('equipment searches work too: band, suspension, smith', async () => {
+  await page.locator('.picker .chip', { hasText: /^All$/ }).click();
+  for (const term of ['band', 'suspension', 'smith']) {
+    await page.locator('.picker-search').fill(term);
+    const n = await page.locator('.picker-item').count();
+    if (n < 5) throw new Error(`"${term}" found only ${n}`);
+  }
 });
 
 console.log('\n== console errors ==');
