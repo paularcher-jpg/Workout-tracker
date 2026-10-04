@@ -62,7 +62,7 @@ export function activeWorkout() {
   return getState().active;
 }
 
-export function startWorkout({ routineId = null, name = '' } = {}) {
+export function startWorkout({ routineId = null, name = '', scheduled = null } = {}) {
   const s = getState();
   if (s.active) return s.active;
 
@@ -71,6 +71,9 @@ export function startWorkout({ routineId = null, name = '' } = {}) {
     startedAt: now(),
     finishedAt: null,
     routineId,
+    // which planned day this was started from, so the plan marks that day
+    // done rather than every day with the same session
+    ...(scheduled && { scheduled }),
     name: name || defaultSessionName(),
     notes: '',
     entries: [],
@@ -248,6 +251,7 @@ export function finishWorkout() {
     startedAt: w.startedAt,
     finishedAt: now(),
     routineId: w.routineId,
+    ...(w.scheduled && { scheduled: w.scheduled }),
     name: w.name,
     notes: w.notes,
     entries,
@@ -437,6 +441,15 @@ export function routinesLoggedBetween(from, to) {
     if (!done.has(w.routineId)) done.set(w.routineId, w);
   }
   return done;
+}
+
+/** Finished workouts started within the given days, oldest first. */
+export function workoutsBetween(from, to) {
+  const start = new Date(from).setHours(0, 0, 0, 0);
+  const end = new Date(to).setHours(23, 59, 59, 999);
+  return list('workouts')
+    .filter((w) => w.startedAt >= start && w.startedAt <= end)
+    .sort((a, b) => a.startedAt - b.startedAt);
 }
 
 export function exercisesUsed() {

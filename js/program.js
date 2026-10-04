@@ -231,14 +231,55 @@ export function slotFor(program, date) {
 export function scheduledFor(date, program = activeProgram()) {
   const slot = slotFor(program, date);
   if (!slot) return null;
-  const routine = slot.routineId ? get('routines', slot.routineId) : null;
+  // a session moved on its own (dragged to another day) is a one-off change
+  // to that date, kept apart from the plan's weeks so the rest of the plan
+  // stays as it was
+  const iso = toISODate(slot.date);
+  const moved = !!program.overrides && Object.hasOwn(program.overrides, iso);
+  const routineId = moved ? program.overrides[iso] : slot.routineId;
+  const routine = routineId ? get('routines', routineId) : null;
   return {
     ...slot,
     program,
-    routineId: routine ? slot.routineId : null,
+    routineId: routine ? routineId : null,
     routine,
     rest: !routine,
+    moved,
   };
+}
+
+/**
+ * Can the session on `fromDate` move to `toDate`? Any day of the plan from
+ * today on, in any week. A day that already has a session swaps with it,
+ * unless that would push it into the past.
+ */
+export function canMoveSession(program, fromDate, toDate, today = new Date()) {
+  const from = scheduledFor(fromDate, program);
+  const to = scheduledFor(toDate, program);
+  if (!from?.routineId || !to) return false;
+  if (toISODate(from.date) === toISODate(to.date)) return false;
+  const now = startOfDay(today);
+  if (to.date < now) return false;
+  if (to.routineId && from.date < now) return false;
+  return true;
+}
+
+/** Move one session to another date, swapping with whatever is there. */
+export function moveSession(program, fromDate, toDate, today = new Date()) {
+  if (!canMoveSession(program, fromDate, toDate, today)) return program;
+  const from = scheduledFor(fromDate, program);
+  const to = scheduledFor(toDate, program);
+  const overrides = { ...(program.overrides || {}) };
+  const put = (slot, routineId) => {
+    const iso = toISODate(slot.date);
+    const planned = slotFor(program, slot.date)?.routineId || null;
+    // back to what the plan says: no need to remember a change
+    if ((routineId || null) === planned) delete overrides[iso];
+    else overrides[iso] = routineId || null;
+  };
+  put(to, from.routineId);
+  put(from, to.routineId);
+  return upsert('programs', { ...program, overrides });
 }
 
 export function todaysSession(program = activeProgram()) {
@@ -288,14 +329,17 @@ export function programSummary(program) {
 }
 
 /** Assign a routine (or null for a rest day) to one slot. */
-export function setSlot(program, weekIndex, dayIndex, routineId) {
+export function setSlot(program, weekIndex, dayIndex, routineId, date = null) {
   const weeks = program.weeks.map((w, i) => {
     if (i !== weekIndex) return { days: [...w.days] };
     const days = [...w.days];
     days[dayIndex] = routineId ? { routineId } : null;
     return { days };
   });
-  return upsert('programs', { ...program, weeks });
+  // a one-off move on that date would otherwise hide the new choice
+  const overrides = { ...(program.overrides || {}) };
+  if (date) delete overrides[toISODate(date)];
+  return upsert('programs', { ...program, weeks, overrides });
 }
 
 /** Move a slot from one day to another within the same cycle week. Swaps if destination is occupied. */

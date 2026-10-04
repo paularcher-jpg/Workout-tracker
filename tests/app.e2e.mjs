@@ -96,7 +96,7 @@ async function startPlan(p) {
 }
 
 /** A clean install of the app: fresh storage, fresh service worker. */
-async function newSession({ welcome = false, init = null } = {}) {
+async function newSession({ welcome = false, init = null, time = null } = {}) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -108,6 +108,7 @@ async function newSession({ welcome = false, init = null } = {}) {
   const p = await context.newPage();
   p.on('console', (m) => { if (m.type() === 'error') problems.push('console: ' + m.text()); });
   p.on('pageerror', (e) => problems.push('pageerror: ' + e.message));
+  if (time) await p.clock.install({ time: new Date(time) });
   await p.goto(BASE, { waitUntil: 'networkidle' });
   await p.waitForSelector('.tabbar', { timeout: 10000 });
   if (!welcome) await skipWelcome(p);
@@ -862,8 +863,10 @@ await step('a session can be dragged to another day', async () => {
   const before = await page.locator('.sched-row').allInnerTexts();
   const fromIdx = before.findIndex((r) => /Full Body B/.test(r));
   if (fromIdx < 0) throw new Error('no Full Body B row to drag');
-  const toIdx = before.findIndex((r, i) => i !== fromIdx && /Rest/.test(r) && i < 7);
-  if (toIdx < 0) throw new Error('no rest row in week 1 to drop onto');
+  // a session can only go to today or later
+  const past = await page.locator('.sched-row').evaluateAll((rows) => rows.map((r) => r.classList.contains('is-past')));
+  const toIdx = before.findIndex((r, i) => i !== fromIdx && /Rest/.test(r) && !past[i]);
+  if (toIdx < 0) throw new Error('no rest row from today on to drop onto');
 
   const grip = page.locator('.sched-row').nth(fromIdx).locator('.sched-grip');
   if (!(await grip.count())) throw new Error('session row has no drag grip');
@@ -1501,6 +1504,83 @@ await step('the update check runs when the app comes back to the foreground', as
   const src = await (await fetch(`http://localhost:${PORT}/js/app.js`)).text();
   if (!/visibilitychange/.test(src)) throw new Error('no foreground update check');
   if (!/controllerchange/.test(src)) throw new Error('nothing reloads the page when the worker changes');
+});
+
+console.log('\n== a session done on another day ==');
+/** Drag one schedule row's grip onto another row. */
+async function dragRow(p, fromIdx, toIdx) {
+  // both rows have to be on screen for the pointer to reach them
+  await p.locator('.sched-row').nth(fromIdx).scrollIntoViewIfNeeded();
+  await p.evaluate(() => window.scrollBy(0, 150));
+  const from = await p.locator('.sched-row').nth(fromIdx).locator('.sched-grip').boundingBox();
+  const to = await p.locator('.sched-row').nth(toIdx).boundingBox();
+  await p.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await p.mouse.down();
+  await p.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+  await p.mouse.up();
+  await p.waitForTimeout(400);
+}
+/** Start the session on a schedule row, log one set, finish. */
+async function doRow(p, rowText) {
+  await p.locator('.tab[data-tab="plan"]').click();
+  // the first matching row is this week's
+  await p.locator('.sched-row', { hasText: rowText }).first().locator('.sched-start').click();
+  await p.waitForSelector('.set-row', { timeout: 5000 });
+  const row = p.locator('.set-row').first();
+  await row.locator('.set-input').nth(0).fill('60');
+  await row.locator('.set-input').nth(1).fill('5');
+  await row.locator('.set-check').click();
+  await endSession(p);
+  await p.locator('.tab[data-tab="plan"]').click();
+  await p.waitForSelector('.sched-row', { timeout: 5000 });
+}
+const rowsNow = async (p) => (await p.locator('.sched-row').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
+await step('a plan with the same session on two days (Wed and Sun legs, Fri push)', async () => {
+  await ctx.close();
+  ({ context: ctx, page } = await newSession({ time: '2026-09-30T09:00:00' }));   // a Wednesday
+  await page.locator('.tab[data-tab="plan"]').click();
+  await page.getByRole('button', { name: 'Paste a plan' }).click();
+  await page.waitForSelector('.plan-input');
+  await page.locator('input[type="file"]').setInputFiles(path.join(ROOT, 'tests/fixtures/repeat-plan.csv'));
+  await page.waitForSelector('.plan-ok', { timeout: 5000 });
+  await page.getByRole('button', { name: 'Add this plan' }).click();
+  await startPlan(page);
+  await page.waitForSelector('.sched-row', { timeout: 6000 });
+});
+await step("doing Wednesday's legs marks Wednesday, not Sunday", async () => {
+  await doRow(page, 'Wed');
+  const rows = await rowsNow(page);
+  const wed = rows.find((r) => r.startsWith('Wed'));
+  const sun = rows.find((r) => r.startsWith('Sun'));
+  if (!/done/.test(wed)) throw new Error('Wednesday not done: ' + wed);
+  if (/done/.test(sun)) throw new Error('Sunday shown done: ' + sun);
+});
+await step("on Sunday, doing Friday's push marks Friday and leaves Sunday's legs to do", async () => {
+  await page.clock.setSystemTime(new Date('2026-10-04T10:00:00'));   // Sunday
+  await page.reload({ waitUntil: 'networkidle' });
+  await doRow(page, 'Fri');
+  const rows = await rowsNow(page);
+  const fri = rows.find((r) => r.startsWith('Fri'));
+  const sun = rows.find((r) => r.startsWith('Sun'));
+  if (!/done/.test(fri)) throw new Error('Friday not done: ' + fri);
+  if (/done/.test(sun)) throw new Error("Sunday's legs shown done: " + sun);
+  if (!/Leg Day/.test(sun)) throw new Error('Sunday lost its session: ' + sun);
+});
+await step("Sunday's session can be moved into next week", async () => {
+  const rows = await rowsNow(page);
+  const from = rows.findIndex((r) => r.startsWith('Sun') && /Leg Day/.test(r));
+  const to = rows.findIndex((r, i) => i > from && r.startsWith('Tue'));
+  if (from < 0 || to < 0) throw new Error('rows not found: ' + rows.join(' / '));
+  await dragRow(page, from, to);
+  const vh = page.viewportSize().height;
+  const boxes = [await page.locator('.sched-row').nth(from).boundingBox(), await page.locator('.sched-row').nth(to).boundingBox()];
+  if (boxes.some((b) => b.y < 0 || b.y + b.height > vh)) throw new Error('rows off screen: ' + JSON.stringify(boxes));
+  const after = await rowsNow(page);
+  if (!/Leg Day/.test(after[to])) throw new Error('Tuesday is ' + after[to]);
+  if (/Leg Day/.test(after[from])) throw new Error('Sunday still has legs: ' + after[from]);
+  // a one-off: the Sunday after is untouched
+  const nextSun = after.findIndex((r, i) => i > to && r.startsWith('Sun'));
+  if (nextSun > 0 && !/Leg Day/.test(after[nextSun])) throw new Error('the next Sunday changed too: ' + after[nextSun]);
 });
 
 console.log('\n== console errors ==');

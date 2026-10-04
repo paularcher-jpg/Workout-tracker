@@ -205,6 +205,7 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
   const cell = (row, key) => (map[key] === undefined ? '' : String(row[map[key]] ?? '').trim());
 
   const sessions = {};
+  const lastDayCell = {};         // phase|workout -> weekday cell of its last row
   const phaseWeeks = new Map();   // phase key -> week numbers
   const phaseOrder = [];          // phase key -> ordered session keys
   let totalExercises = 0;
@@ -216,15 +217,18 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
 
     const phase = cell(row, 'phase') || 'Plan';
     const workout = cell(row, 'workout') || 'Session';
-    const key = `${phase}|${workout}`;
+    // The same workout written out again for another day ("Leg Day" on Wed,
+    // then the same rows on Sun) is grouped per day here and merged below if
+    // the rows match. A blank weekday cell carries on from the row above.
+    const named = `${phase}|${workout}`;
+    const dayCell = cell(row, 'weekday') || lastDayCell[named] || '';
+    lastDayCell[named] = dayCell;
+    const key = `${named}|${dayCell}`;
 
     if (!sessions[key]) {
-      sessions[key] = { key, name: workout, phase, exercises: [], weekdays: [] };
+      sessions[key] = { key, name: workout, phase, exercises: [], weekdays: parseWeekdays(dayCell) };
       if (!phaseOrder.find((p) => p.phase === phase)) phaseOrder.push({ phase, keys: [] });
       phaseOrder.find((p) => p.phase === phase).keys.push(key);
-    }
-    if (!sessions[key].weekdays.length) {
-      sessions[key].weekdays = parseWeekdays(cell(row, 'weekday'));
     }
 
     if (!phaseWeeks.has(phase)) {
@@ -266,6 +270,26 @@ export function parseCSVPlan(text, { name = 'My plan' } = {}) {
 
   for (const session of Object.values(sessions)) {
     session.exercises.sort((a, b) => a.order - b.order);
+  }
+
+  // One workout written out once per day is one session on several days. If
+  // the days' rows differ, each keeps its own session under the same name.
+  const content = (session) => JSON.stringify(session.exercises.map(({ order, ...ex }) => ex));
+  for (const group of phaseOrder) {
+    const kept = [];
+    for (const key of group.keys) {
+      const session = sessions[key];
+      const twin = kept.map((k) => sessions[k])
+        .find((other) => other.name === session.name && content(other) === content(session));
+      if (twin) {
+        twin.weekdays = [...new Set([...twin.weekdays, ...session.weekdays])].sort((a, b) => a - b);
+        totalExercises -= session.exercises.length;
+        delete sessions[key];
+      } else {
+        kept.push(key);
+      }
+    }
+    group.keys = kept;
   }
 
   // lay the phases out across weeks

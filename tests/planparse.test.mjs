@@ -353,3 +353,43 @@ test('the shipped template parses clean', async () => {
   const holds = Object.values(p.sessions).flatMap((s) => s.exercises).filter((e) => e.mode === 'time');
   assert.deepEqual(holds.map((e) => e.reps).sort(), ['30s each', '45s']);
 });
+
+test('the same workout written out for two days lands on both days', () => {
+  const csv = [
+    'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+    'Block,1-4,Wed,Leg Day,1,Back Squat,3,5',
+    'Block,1-4,Wed,Leg Day,2,Walking Lunge,3,10',
+    'Block,1-4,Fri,Push Day,1,Bench Press,3,8',
+    'Block,1-4,Sun,Leg Day,1,Back Squat,3,5',
+    'Block,1-4,Sun,Leg Day,2,Walking Lunge,3,10',
+  ].join('\n');
+  const parsed = parsePlan(csv);
+  const days = parsed.weeks[0].days;
+  assert.ok(days[2] && days[2] === days[6], 'Wednesday and Sunday share one Leg Day session');
+  assert.ok(days[4], 'Friday push');
+  assert.equal(sessionList(parsed).length, 2, 'two sessions, not three');
+});
+
+test('a blank weekday cell carries on from the row above', () => {
+  const csv = [
+    'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+    'Block,1-4,Mon,Upper,1,Bench Press,3,8',
+    'Block,1-4,,Upper,2,Barbell Row,3,8',
+    'Block,1-4,Thu,Lower,1,Back Squat,3,5',
+  ].join('\n');
+  const parsed = parsePlan(csv);
+  const upper = sessionList(parsed).find((s) => s.name === 'Upper');
+  assert.equal(upper.exercises.length, 2, 'both exercises stay in Monday’s session');
+  assert.ok(parsed.weeks[0].days[0] && !parsed.weeks[0].days[1], 'nothing spills onto Tuesday');
+});
+
+test('same name, different exercises on different days: each day keeps its own', () => {
+  const csv = [
+    'Phase,Weeks,Weekday,Workout,Order,Exercise,Sets,Reps',
+    'Block,1-4,Mon,Legs,1,Back Squat,3,5',
+    'Block,1-4,Thu,Legs,1,Deadlift,3,5',
+  ].join('\n');
+  const parsed = parsePlan(csv);
+  const [mon, thu] = [parsed.weeks[0].days[0], parsed.weeks[0].days[3]];
+  assert.ok(mon && thu && mon !== thu, 'two different sessions');
+});

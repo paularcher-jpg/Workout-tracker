@@ -88,7 +88,10 @@ function trainingDays(program) {
 function startScheduled(slot, refresh, navigate) {
   if (W.activeWorkout()) { toast('Finish your current workout first', 'error'); return; }
   upsert('routines', { ...slot.routine, lastUsedAt: Date.now() });
-  W.startWorkout({ routineId: slot.routineId });
+  W.startWorkout({
+    routineId: slot.routineId,
+    scheduled: { programId: slot.program.id, date: P.toISODate(slot.date) },
+  });
   navigate('train');
 }
 
@@ -229,7 +232,7 @@ function openAssignSheet(date, programs, refresh, programId = null) {
         }
         const selected = slot.routineId;
         const assign = (routineId) => {
-          P.setSlot(get('programs', target.id), slot.weekIndex, slot.dayIndex, routineId);
+          P.setSlot(get('programs', target.id), slot.weekIndex, slot.dayIndex, routineId, date);
           refresh();
           close();
         };
@@ -266,6 +269,46 @@ function openAssignSheet(date, programs, refresh, programId = null) {
 
 /* --------------------------------------------------------------- upcoming */
 
+const slotKey = (slot) => `${slot.program.id}|${P.toISODate(slot.date)}`;
+
+/**
+ * The planned sessions this week that have been done, one per workout. A
+ * workout started from the plan names its day. One that doesn't (started from
+ * Routines, or logged before days were recorded) counts for one day with
+ * that session only: the same day if planned then, else the latest earlier
+ * one still open, else the next. So a plan with the same session on two days
+ * never shows both done for one workout.
+ */
+function doneSlots(programs, weekStart) {
+  const open = [];
+  for (let i = 0; i < 7; i++) {
+    for (const slot of P.scheduledAcross(P.addDays(weekStart, i), programs)) {
+      if (slot.routineId) open.push(slot);
+    }
+  }
+  const done = new Set();
+  const claim = (slot) => { done.add(slotKey(slot)); open.splice(open.indexOf(slot), 1); };
+  const workouts = W.workoutsBetween(weekStart, P.addDays(weekStart, 6)).filter((w) => w.routineId);
+
+  const unplaced = [];
+  for (const w of workouts) {
+    const planned = w.scheduled
+      && open.find((s) => s.program.id === w.scheduled.programId && P.toISODate(s.date) === w.scheduled.date
+        && s.routineId === w.routineId);
+    if (planned) claim(planned);
+    else unplaced.push(w);
+  }
+  for (const w of unplaced) {
+    const day = P.toISODate(new Date(w.startedAt));
+    const same = open.filter((s) => s.routineId === w.routineId);
+    const pick = same.find((s) => P.toISODate(s.date) === day)
+      || same.filter((s) => P.toISODate(s.date) < day).at(-1)
+      || same[0];
+    if (pick) claim(pick);
+  }
+  return done;
+}
+
 function upcomingCard(programs, refresh, navigate) {
   const card = h('section', { class: 'card' });
   const live = W.activeWorkout();
@@ -279,7 +322,7 @@ function upcomingCard(programs, refresh, navigate) {
 
   const todayISO = P.toISODate(new Date());
   const today = P.startOfDay(new Date());
-  const doneThisWeek = W.routinesLoggedBetween(weekStart, P.addDays(weekStart, 6));
+  const doneThisWeek = doneSlots(programs, weekStart);
 
   card.appendChild(h('div', { class: 'card-head' },
     h('h3', {}, 'Your weeks'),
@@ -300,10 +343,9 @@ function upcomingCard(programs, refresh, navigate) {
     const iso = P.toISODate(date);
     const isToday = iso === todayISO;
     const isPast = date < today;
-    const sameWeek = date >= weekStart && date <= P.addDays(weekStart, 6);
 
     const rowFor = (slot) => {
-      const done = !!(slot && sameWeek && doneThisWeek.has(slot.routineId));
+      const done = !!(slot && doneThisWeek.has(slotKey(slot)));
       const classes = ['sched-row'];
       if (slot) classes.push('sched-draggable');
       if (isToday) classes.push('is-today');
@@ -373,17 +415,14 @@ function upcomingCard(programs, refresh, navigate) {
     else listEl.appendChild(rowFor(null));
   }
 
-  // Drag-to-move. A session moves within its own plan's cycle week, so a
-  // target is valid when that plan puts the same cycle week on the target
-  // date — whichever plan's row happens to be under the pointer.
+  // Drag-to-move. A session can go to any day of its plan from today on, in
+  // any week, as a one-off; a day that already has a session swaps with it.
   let activeDrag = null;
 
   function targetFor(candidate, sourceSlot) {
     if (!candidate || candidate === activeDrag?.sourceRow) return null;
-    const there = P.slotFor(sourceSlot.program, candidate.dataset.iso);
-    return there && there.weekIndex === sourceSlot.weekIndex && there.dayIndex !== sourceSlot.dayIndex
-      ? there
-      : null;
+    const iso = candidate.dataset.iso;
+    return iso && P.canMoveSession(sourceSlot.program, sourceSlot.date, iso) ? iso : null;
   }
 
   function startDrag(downEvent, grip, sourceRow, sourceSlot) {
@@ -419,7 +458,7 @@ function upcomingCard(programs, refresh, navigate) {
       const slot = activeDrag.sourceSlot;
       cleanupDrag();
       if (!there) return;
-      P.moveSlot(get('programs', slot.program.id), slot.weekIndex, slot.dayIndex, there.dayIndex);
+      P.moveSession(get('programs', slot.program.id), slot.date, there);
       refresh();
     };
 
